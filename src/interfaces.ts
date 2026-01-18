@@ -1,6 +1,3 @@
-/**
- * Authentication data stored for a provider.
- */
 export interface ContentProviderAuthData {
   access_token: string;
   refresh_token: string;
@@ -10,9 +7,6 @@ export interface ContentProviderAuthData {
   scope: string;
 }
 
-/**
- * Configuration for a content provider.
- */
 export interface ContentProviderConfig {
   id: string;
   name: string;
@@ -20,16 +14,11 @@ export interface ContentProviderConfig {
   oauthBase: string;
   clientId: string;
   scopes: string[];
-  /** Device Flow support (RFC 8628) */
   supportsDeviceFlow?: boolean;
   deviceAuthEndpoint?: string;
-  /** API endpoint mappings - provider-specific paths */
   endpoints: Record<string, string | ((id: string) => string)>;
 }
 
-/**
- * Device Authorization Response (RFC 8628 Section 3.2)
- */
 export interface DeviceAuthorizationResponse {
   device_code: string;
   user_code: string;
@@ -39,9 +28,6 @@ export interface DeviceAuthorizationResponse {
   interval?: number;
 }
 
-/**
- * Device Flow UI state
- */
 export interface DeviceFlowState {
   status: 'loading' | 'awaiting_user' | 'polling' | 'success' | 'error' | 'expired';
   deviceAuth?: DeviceAuthorizationResponse;
@@ -49,53 +35,30 @@ export interface DeviceFlowState {
   pollCount?: number;
 }
 
-/**
- * Authentication types supported by a provider.
- */
 export type AuthType = 'none' | 'oauth_pkce' | 'device_flow';
 
-/**
- * Logo URLs for a provider (light and dark themes).
- */
 export interface ProviderLogos {
-  /** Logo URL for light theme backgrounds */
   light: string;
-  /** Logo URL for dark theme backgrounds */
   dark: string;
 }
 
-/**
- * Information about a provider for listing purposes.
- */
 export interface ProviderInfo {
   id: string;
   name: string;
-  /** Logo URLs for light and dark themes */
   logos: ProviderLogos;
-  /** Whether the provider is fully implemented */
   implemented: boolean;
-  /** Whether the provider requires authentication */
   requiresAuth: boolean;
-  /** List of supported authentication types */
   authTypes: AuthType[];
 }
 
-/**
- * A folder in the content hierarchy.
- * Can contain other folders or files.
- */
 export interface ContentFolder {
   type: 'folder';
   id: string;
   title: string;
   image?: string;
-  /** Provider-specific data needed to fetch children (opaque to app) */
   providerData?: Record<string, unknown>;
 }
 
-/**
- * A playable file (video or image).
- */
 export interface ContentFile {
   type: 'file';
   id: string;
@@ -104,43 +67,24 @@ export interface ContentFile {
   thumbnail?: string;
   url: string;
   muxPlaybackId?: string;
-  /** Provider-specific data (opaque to app) */
   providerData?: Record<string, unknown>;
 }
 
-/**
- * Union type for items that can appear in a folder listing.
- */
 export type ContentItem = ContentFolder | ContentFile;
 
-/**
- * Type guard to check if an item is a folder.
- */
 export function isContentFolder(item: ContentItem): item is ContentFolder {
   return item.type === 'folder';
 }
 
-/**
- * Type guard to check if an item is a file.
- */
 export function isContentFile(item: ContentItem): item is ContentFile {
   return item.type === 'file';
 }
 
-/**
- * Result from Device Flow polling.
- */
 export type DeviceFlowPollResult =
   | ContentProviderAuthData
   | { error: string; shouldSlowDown?: boolean }
   | null;
 
-// ============= PLAN/PRESENTATION ABSTRACTION =============
-
-/**
- * A playable unit within a plan section.
- * Contains one or more files that play together as a group.
- */
 export interface PlanPresentation {
   id: string;
   name: string;
@@ -148,33 +92,21 @@ export interface PlanPresentation {
   files: ContentFile[];
 }
 
-/**
- * A section within a plan, containing multiple presentations.
- * Conceptually similar to a service plan section (worship, message, etc.).
- */
 export interface PlanSection {
   id: string;
   name: string;
   presentations: PlanPresentation[];
 }
 
-/**
- * A plan represents structured instructions with sections and presentations.
- * This is the top-level container returned by getPlanContents().
- */
 export interface Plan {
   id: string;
   name: string;
   description?: string;
   image?: string;
   sections: PlanSection[];
-  /** All files flattened for easy playlist access */
   allFiles: ContentFile[];
 }
 
-/**
- * Feed file interface for venue feed API responses.
- */
 export interface FeedFileInterface {
   id?: string;
   name?: string;
@@ -184,9 +116,6 @@ export interface FeedFileInterface {
   fileType?: string;
 }
 
-/**
- * Feed action interface for venue feed API responses.
- */
 export interface FeedActionInterface {
   id?: string;
   actionType?: string;
@@ -194,18 +123,12 @@ export interface FeedActionInterface {
   files?: FeedFileInterface[];
 }
 
-/**
- * Feed section interface for venue feed API responses.
- */
 export interface FeedSectionInterface {
   id?: string;
   name?: string;
   actions?: FeedActionInterface[];
 }
 
-/**
- * Feed venue interface for venue feed API responses.
- */
 export interface FeedVenueInterface {
   id?: string;
   lessonId?: string;

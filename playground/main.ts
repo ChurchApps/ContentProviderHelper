@@ -1,35 +1,19 @@
-import {
-  getAvailableProviders,
-  getProvider,
-  ContentProvider,
-  ContentFolder,
-  ContentItem,
-  ContentProviderAuthData,
-  DeviceAuthorizationResponse,
-  isContentFolder,
-  isContentFile,
-  Plan,
-  PlanPresentation,
-} from "../src";
+import { getAvailableProviders, getProvider, ContentProvider, ContentFolder, ContentItem, ContentProviderAuthData, DeviceAuthorizationResponse, isContentFolder, isContentFile, Plan, PlanPresentation } from "../src";
 
-// Constants
 const OAUTH_REDIRECT_URI = `${window.location.origin}${window.location.pathname}`;
 const STORAGE_KEY_VERIFIER = 'oauth_code_verifier';
 const STORAGE_KEY_PROVIDER = 'oauth_provider_id';
 
-// State management
 interface AppState {
   currentView: 'providers' | 'browser' | 'plan';
   currentProvider: ContentProvider | null;
   currentAuth: ContentProviderAuthData | null;
   folderStack: ContentFolder[];
   connectedProviders: Map<string, ContentProviderAuthData | null>;
-  // Device flow state
   deviceFlowActive: boolean;
   deviceFlowData: DeviceAuthorizationResponse | null;
   pollingInterval: number | null;
   slowDownCount: number;
-  // Plan view state
   currentPlan: Plan | null;
   currentVenueFolder: ContentFolder | null;
 }
@@ -45,10 +29,9 @@ const state: AppState = {
   pollingInterval: null,
   slowDownCount: 0,
   currentPlan: null,
-  currentVenueFolder: null,
+  currentVenueFolder: null
 };
 
-// DOM Elements
 const providersView = document.getElementById('providers-view')!;
 const browserView = document.getElementById('browser-view')!;
 const providersGrid = document.getElementById('providers-grid')!;
@@ -61,7 +44,6 @@ const loadingEl = document.getElementById('loading')!;
 const emptyEl = document.getElementById('empty')!;
 const statusEl = document.getElementById('status')!;
 
-// Modal elements
 const modal = document.getElementById('device-flow-modal')!;
 const modalTitle = document.getElementById('modal-title')!;
 const modalClose = document.getElementById('modal-close')!;
@@ -76,22 +58,16 @@ const qrCode = document.getElementById('qr-code')! as HTMLImageElement;
 const errorMessage = document.getElementById('error-message')!;
 const retryBtn = document.getElementById('retry-btn')!;
 
-// OAuth elements
 const oauthSection = document.getElementById('oauth-flow-section')!;
 const oauthSigninBtn = document.getElementById('oauth-signin-btn')!;
 const oauthProcessing = document.getElementById('oauth-processing')!;
 
-
-// Initialize
 function init() {
-  // Check for OAuth callback first
   handleOAuthCallback();
-
   renderProviders();
   setupEventListeners();
 }
 
-// Setup event listeners
 function setupEventListeners() {
   backBtn.addEventListener('click', handleBack);
   modalClose.addEventListener('click', closeModal);
@@ -99,7 +75,6 @@ function setupEventListeners() {
   retryBtn.addEventListener('click', retryAuth);
   oauthSigninBtn.addEventListener('click', startOAuthRedirect);
 
-  // Close modal on backdrop click
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
       closeModal();
@@ -107,7 +82,6 @@ function setupEventListeners() {
   });
 }
 
-// Render provider grid
 function renderProviders() {
   const providers = getAvailableProviders();
 
@@ -148,7 +122,6 @@ function renderProviders() {
     `;
   }).join('');
 
-  // Add click handlers (only for implemented providers)
   providersGrid.querySelectorAll('.provider-card').forEach(card => {
     card.addEventListener('click', () => {
       const implemented = card.getAttribute('data-implemented') === 'true';
@@ -162,7 +135,6 @@ function renderProviders() {
   });
 }
 
-// Handle provider click
 async function handleProviderClick(providerId: string) {
   const provider = getProvider(providerId);
   if (!provider) {
@@ -172,38 +144,28 @@ async function handleProviderClick(providerId: string) {
 
   state.currentProvider = provider;
 
-  // Check if already connected
   if (state.connectedProviders.has(providerId)) {
     state.currentAuth = state.connectedProviders.get(providerId) || null;
     await navigateToBrowser();
     return;
   }
 
-  // Check if auth is needed
   if (provider.requiresAuth()) {
-    // Check if Device Flow is supported - prefer it for better UX
     if (provider.supportsDeviceFlow()) {
       await startDeviceFlow();
     } else {
-      // Use OAuth PKCE flow
       showOAuthModal();
     }
     return;
   }
 
-  // No auth needed - connect directly
   state.connectedProviders.set(providerId, null);
   state.currentAuth = null;
-
-  // Navigate to browser
   await navigateToBrowser();
 }
 
-// ============= OAUTH PKCE FLOW =============
-
 function showOAuthModal() {
   if (!state.currentProvider) return;
-
   modalTitle.textContent = `Connect to ${state.currentProvider.name}`;
   showModal('oauth');
 }
@@ -212,17 +174,10 @@ async function startOAuthRedirect() {
   if (!state.currentProvider) return;
 
   try {
-    // Generate code verifier
     const codeVerifier = state.currentProvider.generateCodeVerifier();
-
-    // Store verifier and provider ID for callback
     sessionStorage.setItem(STORAGE_KEY_VERIFIER, codeVerifier);
     sessionStorage.setItem(STORAGE_KEY_PROVIDER, state.currentProvider.id);
-
-    // Build auth URL with localhost redirect
     const { url } = await state.currentProvider.buildAuthUrl(codeVerifier, OAUTH_REDIRECT_URI);
-
-    // Redirect to OAuth provider
     window.location.href = url;
   } catch (error) {
     showModal('error');
@@ -231,14 +186,12 @@ async function startOAuthRedirect() {
 }
 
 async function handleOAuthCallback() {
-  // Check for authorization code in URL
   const urlParams = new URLSearchParams(window.location.search);
   const code = urlParams.get('code');
   const state_param = urlParams.get('state');
   const error = urlParams.get('error');
 
   if (error) {
-    // Clear URL params
     window.history.replaceState({}, '', window.location.pathname);
     showStatus(`OAuth error: ${error}`, 'error');
     return;
@@ -246,15 +199,11 @@ async function handleOAuthCallback() {
 
   if (!code) return;
 
-  // Get stored verifier and provider
   const codeVerifier = sessionStorage.getItem(STORAGE_KEY_VERIFIER);
   const providerId = sessionStorage.getItem(STORAGE_KEY_PROVIDER) || state_param;
 
-  // Clear stored values
   sessionStorage.removeItem(STORAGE_KEY_VERIFIER);
   sessionStorage.removeItem(STORAGE_KEY_PROVIDER);
-
-  // Clear URL params
   window.history.replaceState({}, '', window.location.pathname);
 
   if (!codeVerifier || !providerId) {
@@ -269,13 +218,10 @@ async function handleOAuthCallback() {
   }
 
   state.currentProvider = provider;
-
-  // Show processing modal
   modalTitle.textContent = `Connecting to ${provider.name}`;
   showModal('processing');
 
   try {
-    // Exchange code for tokens
     const authData = await provider.exchangeCodeForTokens(code, codeVerifier, OAUTH_REDIRECT_URI);
 
     if (!authData) {
@@ -284,10 +230,8 @@ async function handleOAuthCallback() {
       return;
     }
 
-    // Success!
     state.currentAuth = authData;
     state.connectedProviders.set(provider.id, authData);
-
     showModal('success');
 
     setTimeout(() => {
@@ -302,17 +246,13 @@ async function handleOAuthCallback() {
   }
 }
 
-// ============= DEVICE FLOW =============
-
 async function startDeviceFlow() {
   if (!state.currentProvider) return;
 
-  // Show modal in loading state
   showModal('loading');
   modalTitle.textContent = `Connect to ${state.currentProvider.name}`;
 
   try {
-    // Initiate device flow
     const deviceAuth = await state.currentProvider.initiateDeviceFlow();
 
     if (!deviceAuth) {
@@ -325,17 +265,14 @@ async function startDeviceFlow() {
     state.deviceFlowActive = true;
     state.slowDownCount = 0;
 
-    // Show code to user
     showModal('code');
     verificationUrl.href = deviceAuth.verification_uri_complete || deviceAuth.verification_uri;
     verificationUrl.textContent = deviceAuth.verification_uri;
     userCode.textContent = deviceAuth.user_code;
 
-    // Generate QR code using a free API
     const qrUrl = deviceAuth.verification_uri_complete || `${deviceAuth.verification_uri}?user_code=${deviceAuth.user_code}`;
     qrCode.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrUrl)}`;
 
-    // Start polling
     startPolling(deviceAuth);
 
   } catch (error) {
@@ -355,7 +292,6 @@ function startPolling(deviceAuth: DeviceAuthorizationResponse) {
       return;
     }
 
-    // Check expiration
     if (Date.now() > expiresAt) {
       state.deviceFlowActive = false;
       showModal('error');
@@ -367,7 +303,6 @@ function startPolling(deviceAuth: DeviceAuthorizationResponse) {
       const result = await state.currentProvider.pollDeviceFlowToken(state.deviceFlowData.device_code);
 
       if (result === null) {
-        // Failed - expired or denied
         state.deviceFlowActive = false;
         showModal('error');
         errorMessage.textContent = 'Authorization failed or was denied.';
@@ -375,41 +310,34 @@ function startPolling(deviceAuth: DeviceAuthorizationResponse) {
       }
 
       if ('error' in result) {
-        // Still pending or slow down
         if (result.shouldSlowDown) {
           state.slowDownCount++;
         }
 
-        // Schedule next poll
         const delay = state.currentProvider.calculatePollDelay(baseInterval, state.slowDownCount);
         state.pollingInterval = window.setTimeout(poll, delay);
         return;
       }
 
-      // Success! We have auth data
       state.deviceFlowActive = false;
       state.currentAuth = result;
       state.connectedProviders.set(state.currentProvider.id, result);
 
-      // Show success briefly
       showModal('success');
 
-      // Navigate to browser after a moment
       setTimeout(() => {
         closeModal();
         navigateToBrowser();
-        renderProviders(); // Update connected status
+        renderProviders();
       }, 1500);
 
     } catch (error) {
       console.error('Polling error:', error);
-      // Continue polling on network errors
       const delay = state.currentProvider!.calculatePollDelay(baseInterval, state.slowDownCount);
       state.pollingInterval = window.setTimeout(poll, delay);
     }
   };
 
-  // Start first poll after initial interval
   const initialDelay = state.currentProvider.calculatePollDelay(baseInterval, 0);
   state.pollingInterval = window.setTimeout(poll, initialDelay);
 }
@@ -476,9 +404,6 @@ function retryAuth() {
   }
 }
 
-// ============= NAVIGATION =============
-
-// Navigate to content browser
 async function navigateToBrowser() {
   state.currentView = 'browser';
   state.folderStack = [];
@@ -491,7 +416,6 @@ async function navigateToBrowser() {
   await loadContent();
 }
 
-// Navigate back to providers
 function navigateToProviders() {
   state.currentView = 'providers';
   state.currentProvider = null;
@@ -504,7 +428,6 @@ function navigateToProviders() {
   renderProviders();
 }
 
-// Handle back button
 function handleBack() {
   if (state.folderStack.length > 0) {
     state.folderStack.pop();
@@ -515,7 +438,6 @@ function handleBack() {
   }
 }
 
-// Update breadcrumb
 function updateBreadcrumb() {
   const parts: string[] = [state.currentProvider?.name || 'Unknown'];
   state.folderStack.forEach(folder => {
@@ -531,9 +453,6 @@ function updateBreadcrumb() {
     : state.currentProvider?.name || 'Content';
 }
 
-// ============= CONTENT LOADING =============
-
-// Load content for current location
 async function loadContent() {
   if (!state.currentProvider) return;
 
@@ -545,10 +464,8 @@ async function loadContent() {
     let items: ContentItem[];
 
     if (state.folderStack.length === 0) {
-      // Root level
       items = await state.currentProvider.getRootContents(state.currentAuth);
     } else {
-      // Inside a folder
       const currentFolder = state.folderStack[state.folderStack.length - 1];
       items = await state.currentProvider.getFolderContents(currentFolder, state.currentAuth);
     }
@@ -567,7 +484,6 @@ async function loadContent() {
   }
 }
 
-// Render content items
 function renderContent(items: ContentItem[]) {
   contentGrid.innerHTML = items.map(item => {
     if (isContentFolder(item)) {
@@ -578,7 +494,6 @@ function renderContent(items: ContentItem[]) {
     return '';
   }).join('');
 
-  // Add click handlers for folders
   contentGrid.querySelectorAll('.folder-card').forEach(card => {
     card.addEventListener('click', () => {
       const folderId = card.getAttribute('data-folder-id')!;
@@ -589,7 +504,6 @@ function renderContent(items: ContentItem[]) {
     });
   });
 
-  // Add click handlers for files
   contentGrid.querySelectorAll('.file-card').forEach(card => {
     card.addEventListener('click', () => {
       const fileId = card.getAttribute('data-file-id')!;
@@ -601,7 +515,6 @@ function renderContent(items: ContentItem[]) {
   });
 }
 
-// Render a folder card
 function renderFolder(folder: ContentFolder): string {
   const imageHtml = folder.image
     ? `<img class="card-image" src="${folder.image}" alt="${folder.title}" onerror="this.outerHTML='<div class=\\'card-image placeholder\\'>📁</div>'">`
@@ -616,7 +529,6 @@ function renderFolder(folder: ContentFolder): string {
   `;
 }
 
-// Render a file card
 function renderFile(file: ContentItem & { type: 'file' }): string {
   const imageHtml = file.thumbnail
     ? `<img class="card-image" src="${file.thumbnail}" alt="${file.title}" onerror="this.outerHTML='<div class=\\'card-image placeholder\\'>${file.mediaType === 'video' ? '🎬' : '🖼️'}</div>'">`
@@ -635,27 +547,21 @@ function renderFile(file: ContentItem & { type: 'file' }): string {
   `;
 }
 
-// Handle folder click
 function handleFolderClick(folder: ContentFolder) {
-  // Check if this is a venue folder (has venueId in providerData)
   const isVenue = folder.providerData?.venueId || folder.providerData?.level === 'playlist';
 
   if (isVenue && state.currentProvider) {
-    // Show choice modal for venue folders
     showVenueChoiceModal(folder);
   } else {
-    // Normal folder navigation
     state.folderStack.push(folder);
     updateBreadcrumb();
     loadContent();
   }
 }
 
-// Show modal to choose between playlist and instructions view
 function showVenueChoiceModal(folder: ContentFolder) {
   state.currentVenueFolder = folder;
 
-  // Create and show a choice modal
   const choiceHtml = `
     <div class="venue-choice-modal" id="venue-choice-modal">
       <div class="venue-choice-content">
@@ -678,13 +584,11 @@ function showVenueChoiceModal(folder: ContentFolder) {
     </div>
   `;
 
-  // Add modal to page
   const existingModal = document.getElementById('venue-choice-modal');
   if (existingModal) existingModal.remove();
 
   document.body.insertAdjacentHTML('beforeend', choiceHtml);
 
-  // Add event listeners
   document.getElementById('view-playlist-btn')!.addEventListener('click', () => {
     closeVenueChoiceModal();
     viewAsPlaylist(folder);
@@ -697,7 +601,6 @@ function showVenueChoiceModal(folder: ContentFolder) {
 
   document.getElementById('venue-choice-cancel')!.addEventListener('click', closeVenueChoiceModal);
 
-  // Close on backdrop click
   document.getElementById('venue-choice-modal')!.addEventListener('click', (e) => {
     if ((e.target as HTMLElement).id === 'venue-choice-modal') {
       closeVenueChoiceModal();
@@ -711,14 +614,12 @@ function closeVenueChoiceModal() {
   state.currentVenueFolder = null;
 }
 
-// View venue as simple playlist (existing behavior)
 function viewAsPlaylist(folder: ContentFolder) {
   state.folderStack.push(folder);
   updateBreadcrumb();
   loadContent();
 }
 
-// View venue as structured instructions (plan view)
 async function viewAsInstructions(folder: ContentFolder) {
   if (!state.currentProvider) return;
 
@@ -737,7 +638,6 @@ async function viewAsInstructions(folder: ContentFolder) {
     state.currentVenueFolder = folder;
     state.currentView = 'plan';
 
-    // Update breadcrumb to show we're in plan view
     state.folderStack.push(folder);
     updateBreadcrumb();
 
@@ -750,7 +650,6 @@ async function viewAsInstructions(folder: ContentFolder) {
   }
 }
 
-// Render the plan/instructions view
 function renderPlanView(plan: Plan) {
   browserTitle.textContent = `${plan.name} (Instructions)`;
 
@@ -808,7 +707,6 @@ function renderPlanView(plan: Plan) {
   contentGrid.innerHTML = html;
   emptyEl.classList.add('hidden');
 
-  // Add event listeners
   document.getElementById('play-all-btn')?.addEventListener('click', () => {
     playPlanFiles(plan.allFiles);
   });
@@ -824,7 +722,6 @@ function renderPlanView(plan: Plan) {
 
   contentGrid.querySelectorAll('.presentation-card').forEach(card => {
     card.addEventListener('click', (e) => {
-      // Don't trigger if clicking the play button
       if ((e.target as HTMLElement).classList.contains('play-presentation-btn')) return;
 
       const sectionIdx = parseInt(card.getAttribute('data-section')!);
@@ -835,7 +732,6 @@ function renderPlanView(plan: Plan) {
   });
 }
 
-// Show details of a presentation (list its files)
 function showPresentationDetails(presentation: PlanPresentation) {
   const filesHtml = presentation.files.map(file => `
     <div class="presentation-file-item">
@@ -847,19 +743,15 @@ function showPresentationDetails(presentation: PlanPresentation) {
   `).join('');
 
   showStatus(`${presentation.name}: ${presentation.files.length} file(s)`, 'success');
-
-  // Could expand this to show a modal with file details
   console.log('Presentation details:', presentation);
 }
 
-// Play files from plan
 function playPlanFiles(files: ContentItem[]) {
   if (files.length === 0) {
     showStatus('No files to play', 'error');
     return;
   }
 
-  // Open first file and log all files
   const firstFile = files[0];
   if (isContentFile(firstFile)) {
     window.open(firstFile.url, '_blank');
@@ -869,16 +761,11 @@ function playPlanFiles(files: ContentItem[]) {
   console.log('Playlist:', files);
 }
 
-// Handle file click
 function handleFileClick(file: ContentItem & { type: 'file' }) {
-  // Open the file URL in a new tab
   window.open(file.url, '_blank');
   showStatus(`Opening: ${file.title}`, 'success');
 }
 
-// ============= UI HELPERS =============
-
-// Show/hide loading
 function showLoading(show: boolean) {
   if (show) {
     loadingEl.classList.remove('hidden');
@@ -887,7 +774,6 @@ function showLoading(show: boolean) {
   }
 }
 
-// Show status message
 function showStatus(message: string, type: 'success' | 'error' = 'success') {
   statusEl.textContent = message;
   statusEl.className = `status ${type}`;
@@ -898,10 +784,8 @@ function showStatus(message: string, type: 'success' | 'error' = 'success') {
   }, 4000);
 }
 
-// Start the app
 init();
 
-// Log for debugging
 console.log('Content Provider Helper Playground loaded');
 console.log('Available providers:', getAvailableProviders());
 console.log('OAuth redirect URI:', OAUTH_REDIRECT_URI);

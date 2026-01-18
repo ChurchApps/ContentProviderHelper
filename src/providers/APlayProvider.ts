@@ -1,30 +1,13 @@
-import {
-  ContentProviderConfig,
-  ContentProviderAuthData,
-  ContentItem,
-  ContentFolder,
-  ContentFile,
-  ProviderLogos,
-  Plan,
-} from '../interfaces';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan } from '../interfaces';
 import { ContentProvider } from '../ContentProvider';
 
-/**
- * APlay content provider (Amazing Kids).
- *
- * Hierarchy mapping:
- * - Level 0: Modules → Folders
- * - Level 1: Products → Folders (nested in module response)
- * - Level 2: Libraries → Folders (fetched via API)
- * - Level 3: Media → Files (fetched via API)
- */
 export class APlayProvider extends ContentProvider {
   readonly id = 'aplay';
   readonly name = 'APlay';
 
   readonly logos: ProviderLogos = {
     light: 'https://joinaplay.com/hs-fs/hubfs/APlay_Logo_Horizontal_Jungle%20Green.png?width=400&height=122&name=APlay_Logo_Horizontal_Jungle%20Green.png',
-    dark: 'https://joinaplay.com/hs-fs/hubfs/APlay_Logo_Horizontal_Jungle%20Green.png?width=400&height=122&name=APlay_Logo_Horizontal_Jungle%20Green.png',
+    dark: 'https://joinaplay.com/hs-fs/hubfs/APlay_Logo_Horizontal_Jungle%20Green.png?width=400&height=122&name=APlay_Logo_Horizontal_Jungle%20Green.png'
   };
 
   readonly config: ContentProviderConfig = {
@@ -36,21 +19,13 @@ export class APlayProvider extends ContentProvider {
     scopes: ['openid', 'profile', 'email'],
     endpoints: {
       modules: '/prod/curriculum/modules',
-      productLibraries: (productId: string) =>
-        `/prod/curriculum/modules/products/${productId}/libraries`,
-      libraryMedia: (libraryId: string) =>
-        `/prod/creators/libraries/${libraryId}/media`,
-    },
+      productLibraries: (productId: string) => `/prod/curriculum/modules/products/${productId}/libraries`,
+      libraryMedia: (libraryId: string) => `/prod/creators/libraries/${libraryId}/media`
+    }
   };
 
-  /**
-   * Get root content (modules with their products as nested folders).
-   */
   async getRootContents(auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
-    const response = await this.apiRequest<Record<string, unknown>>(
-      this.config.endpoints.modules as string,
-      auth
-    );
+    const response = await this.apiRequest<Record<string, unknown>>(this.config.endpoints.modules as string, auth);
     if (!response) return [];
 
     const modules = (response.data || response.modules || response) as Record<string, unknown>[];
@@ -65,32 +40,23 @@ export class APlayProvider extends ContentProvider {
       const products = allProducts.filter((p) => !p.isHidden);
 
       if (products.length === 0) {
-        // Module with no products - treat as a folder that goes directly to libraries
         items.push({
           type: 'folder',
           id: (m.id || m.moduleId) as string,
           title: (m.title || m.name) as string,
           image: m.image as string | undefined,
-          providerData: {
-            level: 'libraries',
-            productId: m.id || m.moduleId,
-          },
+          providerData: { level: 'libraries', productId: m.id || m.moduleId }
         });
       } else if (products.length === 1) {
-        // Single product - skip to libraries level
         const product = products[0];
         items.push({
           type: 'folder',
           id: (product.productId || product.id) as string,
-          title: (m.title || m.name) as string, // Use module title
+          title: (m.title || m.name) as string,
           image: (m.image || product.image) as string | undefined,
-          providerData: {
-            level: 'libraries',
-            productId: product.productId || product.id,
-          },
+          providerData: { level: 'libraries', productId: product.productId || product.id }
         });
       } else {
-        // Multiple products - create a module folder containing product folders
         items.push({
           type: 'folder',
           id: (m.id || m.moduleId) as string,
@@ -98,12 +64,8 @@ export class APlayProvider extends ContentProvider {
           image: m.image as string | undefined,
           providerData: {
             level: 'products',
-            products: products.map((p) => ({
-              id: p.productId || p.id,
-              title: p.title || p.name,
-              image: p.image,
-            })),
-          },
+            products: products.map((p) => ({ id: p.productId || p.id, title: p.title || p.name, image: p.image }))
+          }
         });
       }
     }
@@ -111,53 +73,33 @@ export class APlayProvider extends ContentProvider {
     return items;
   }
 
-  /**
-   * Get folder contents based on the folder's level.
-   */
   async getFolderContents(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const level = folder.providerData?.level;
-
     switch (level) {
-      case 'products':
-        return this.getProductFolders(folder);
-      case 'libraries':
-        return this.getLibraryFolders(folder, auth);
-      case 'media':
-        return this.getMediaFiles(folder, auth);
-      default:
-        return [];
+      case 'products': return this.getProductFolders(folder);
+      case 'libraries': return this.getLibraryFolders(folder, auth);
+      case 'media': return this.getMediaFiles(folder, auth);
+      default: return [];
     }
   }
 
-  /**
-   * Get product folders from providerData (already fetched with modules).
-   */
   private getProductFolders(folder: ContentFolder): ContentItem[] {
     const products = (folder.providerData?.products as Record<string, unknown>[]) || [];
-
     return products.map((p) => ({
       type: 'folder' as const,
       id: p.id as string,
       title: p.title as string,
       image: p.image as string | undefined,
-      providerData: {
-        level: 'libraries',
-        productId: p.id,
-      },
+      providerData: { level: 'libraries', productId: p.id }
     }));
   }
 
-  /**
-   * Fetch libraries for a product from the API.
-   */
   private async getLibraryFolders(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const productId = folder.providerData?.productId as string | undefined;
     if (!productId) return [];
 
     const pathFn = this.config.endpoints.productLibraries as (id: string) => string;
-    const path = pathFn(productId);
-    const response = await this.apiRequest<Record<string, unknown>>(path, auth);
-
+    const response = await this.apiRequest<Record<string, unknown>>(pathFn(productId), auth);
     if (!response) return [];
 
     const libraries = (response.data || response.libraries || response) as Record<string, unknown>[];
@@ -168,24 +110,16 @@ export class APlayProvider extends ContentProvider {
       id: (l.libraryId || l.id) as string,
       title: (l.title || l.name) as string,
       image: l.image as string | undefined,
-      providerData: {
-        level: 'media',
-        libraryId: l.libraryId || l.id,
-      },
+      providerData: { level: 'media', libraryId: l.libraryId || l.id }
     }));
   }
 
-  /**
-   * Fetch media files for a library from the API.
-   */
   private async getMediaFiles(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const libraryId = folder.providerData?.libraryId as string | undefined;
     if (!libraryId) return [];
 
     const pathFn = this.config.endpoints.libraryMedia as (id: string) => string;
-    const path = pathFn(libraryId);
-    const response = await this.apiRequest<Record<string, unknown>>(path, auth);
-
+    const response = await this.apiRequest<Record<string, unknown>>(pathFn(libraryId), auth);
     if (!response) return [];
 
     const mediaItems = (response.data || response.media || response) as Record<string, unknown>[];
@@ -195,8 +129,6 @@ export class APlayProvider extends ContentProvider {
 
     for (const item of mediaItems) {
       const mediaType = (item.mediaType as string)?.toLowerCase();
-
-      // Extract URL based on media type
       let url = '';
       let thumbnail = ((item.thumbnail as Record<string, unknown>)?.src || '') as string;
       let muxPlaybackId: string | undefined;
@@ -222,11 +154,7 @@ export class APlayProvider extends ContentProvider {
 
       if (!url) continue;
 
-      const isVideo =
-        mediaType === 'video' ||
-        url.includes('.mp4') ||
-        url.includes('.m3u8') ||
-        url.includes('stream.mux.com');
+      const isVideo = mediaType === 'video' || url.includes('.mp4') || url.includes('.m3u8') || url.includes('stream.mux.com');
 
       files.push({
         type: 'file',
@@ -235,16 +163,13 @@ export class APlayProvider extends ContentProvider {
         mediaType: isVideo ? 'video' : 'image',
         thumbnail,
         url,
-        muxPlaybackId,
+        muxPlaybackId
       });
     }
 
     return files;
   }
 
-  /**
-   * APlay does not support plan/instructions structure.
-   */
   async getPlanContents(_folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
     return null;
   }
