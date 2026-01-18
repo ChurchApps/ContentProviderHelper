@@ -93,4 +93,8 @@ export class SignPresenterProvider extends ContentProvider {
   async getInstructions(_folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
     return null;
   }
+
+  async getExpandedInstructions(_folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
+    return null;
+  }
 }

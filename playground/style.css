@@ -555,7 +555,7 @@ h2 {
   background: #16213e;
   border-radius: 16px;
   padding: 2rem;
-  max-width: 500px;
+  max-width: 600px;
   width: 90%;
   border: 1px solid #2a2a4a;
   text-align: center;
@@ -572,7 +572,8 @@ h2 {
 }
 
 .venue-choice-buttons {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
@@ -621,6 +622,10 @@ h2 {
 
 .venue-btn.instructions-btn:hover {
   border-color: #7952b3;
+}
+
+.venue-btn.expanded-btn:hover {
+  border-color: #f39c12;
 }
 
 .cancel-btn {
@@ -847,7 +852,7 @@ h2 {
   }
 
   .venue-choice-buttons {
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
 }
 
@@ -949,4 +954,60 @@ h2 {
 
 .instruction-embed-link:hover {
   text-decoration: underline;
+}
+
+/* ============= JSON VIEWER ============= */
+.json-viewer {
+  margin-top: 2rem;
+  background: #0a0a1a;
+  border-radius: 8px;
+  border: 1px solid #2a2a4a;
+  overflow: hidden;
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.json-viewer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #16213e;
+  border-bottom: 1px solid #2a2a4a;
+}
+
+.json-viewer-header h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #888;
+  font-weight: 500;
+}
+
+.json-copy-btn {
+  background: #2a2a4a;
+  color: #fff;
+  border: none;
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.json-copy-btn:hover {
+  background: #4a4a7a;
+}
+
+.json-content {
+  margin: 0;
+  padding: 1rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: #4ecdc4;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 400px;
+  white-space: pre;
 }

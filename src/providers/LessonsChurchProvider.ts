@@ -1,4 +1,4 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, FeedVenueInterface, Instructions, InstructionItem } from '../interfaces';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, FeedVenueInterface, Instructions, InstructionItem, VenueActionsResponseInterface } from '../interfaces';
 import { ContentProvider } from '../ContentProvider';
 
 export class LessonsChurchProvider extends ContentProvider {
@@ -192,6 +192,78 @@ export class LessonsChurchProvider extends ContentProvider {
     return {
       venueName: response.venueName,
       items: (response.items || []).map(processItem)
+    };
+  }
+
+  async getExpandedInstructions(folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
+    const venueId = folder.providerData?.venueId as string | undefined;
+    if (!venueId) return null;
+
+    const [planItemsResponse, actionsResponse] = await Promise.all([
+      this.apiRequest<{ venueName?: string; items?: Record<string, unknown>[] }>(`/venues/public/planItems/${venueId}`),
+      this.apiRequest<VenueActionsResponseInterface>(`/venues/public/actions/${venueId}`)
+    ]);
+
+    if (!planItemsResponse) return null;
+
+    const sectionActionsMap = new Map<string, InstructionItem[]>();
+    if (actionsResponse?.sections) {
+      for (const section of actionsResponse.sections) {
+        if (section.id && section.actions) {
+          sectionActionsMap.set(section.id, section.actions.map(action => ({
+            id: action.id,
+            itemType: 'lessonAction',
+            relatedId: action.id,
+            label: action.name,
+            description: action.actionType,
+            seconds: action.seconds,
+            embedUrl: this.getEmbedUrl('lessonAction', action.id)
+          })));
+        }
+      }
+    }
+
+    const processItem = (item: Record<string, unknown>): InstructionItem => {
+      const relatedId = item.relatedId as string | undefined;
+      const itemType = item.itemType as string | undefined;
+      const children = item.children as Record<string, unknown>[] | undefined;
+
+      let processedChildren: InstructionItem[] | undefined;
+
+      if (children) {
+        processedChildren = children.map(child => {
+          const childRelatedId = child.relatedId as string | undefined;
+          if (childRelatedId && sectionActionsMap.has(childRelatedId)) {
+            return {
+              id: child.id as string | undefined,
+              itemType: child.itemType as string | undefined,
+              relatedId: childRelatedId,
+              label: child.label as string | undefined,
+              description: child.description as string | undefined,
+              seconds: child.seconds as number | undefined,
+              children: sectionActionsMap.get(childRelatedId),
+              embedUrl: this.getEmbedUrl(child.itemType as string | undefined, childRelatedId)
+            };
+          }
+          return processItem(child);
+        });
+      }
+
+      return {
+        id: item.id as string | undefined,
+        itemType,
+        relatedId,
+        label: item.label as string | undefined,
+        description: item.description as string | undefined,
+        seconds: item.seconds as number | undefined,
+        children: processedChildren,
+        embedUrl: this.getEmbedUrl(itemType, relatedId)
+      };
+    };
+
+    return {
+      venueName: planItemsResponse.venueName,
+      items: (planItemsResponse.items || []).map(processItem)
     };
   }
 

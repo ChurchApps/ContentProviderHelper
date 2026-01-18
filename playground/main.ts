@@ -487,7 +487,7 @@ async function loadContent() {
 }
 
 function renderContent(items: ContentItem[]) {
-  contentGrid.innerHTML = items.map(item => {
+  let html = items.map(item => {
     if (isContentFolder(item)) {
       return renderFolder(item);
     } else if (isContentFile(item)) {
@@ -495,6 +495,16 @@ function renderContent(items: ContentItem[]) {
     }
     return '';
   }).join('');
+
+  // Add JSON viewer for all content views
+  if (items.length > 0) {
+    const allFiles = items.every(item => isContentFile(item));
+    const allFolders = items.every(item => isContentFolder(item));
+    const title = allFiles ? 'Playlist JSON' : allFolders ? 'Folders JSON' : 'Content JSON';
+    html += renderJsonViewer(items, title);
+  }
+
+  contentGrid.innerHTML = html;
 
   contentGrid.querySelectorAll('.folder-card').forEach(card => {
     card.addEventListener('click', () => {
@@ -583,7 +593,12 @@ function showVenueChoiceModal(folder: ContentFolder) {
           <button id="view-instructions-btn" class="venue-btn instructions-btn">
             <span class="btn-icon">📖</span>
             <span class="btn-text">Instructions</span>
-            <span class="btn-desc">Hierarchical items with embed URLs</span>
+            <span class="btn-desc">Headers and sections only</span>
+          </button>
+          <button id="view-expanded-btn" class="venue-btn expanded-btn">
+            <span class="btn-icon">📚</span>
+            <span class="btn-text">Expanded</span>
+            <span class="btn-desc">Full hierarchy with all actions</span>
           </button>
         </div>
         <button id="venue-choice-cancel" class="cancel-btn">Cancel</button>
@@ -609,6 +624,11 @@ function showVenueChoiceModal(folder: ContentFolder) {
   document.getElementById('view-instructions-btn')!.addEventListener('click', () => {
     closeVenueChoiceModal();
     viewAsInstructions(folder);
+  });
+
+  document.getElementById('view-expanded-btn')!.addEventListener('click', () => {
+    closeVenueChoiceModal();
+    viewAsExpandedInstructions(folder);
   });
 
   document.getElementById('venue-choice-cancel')!.addEventListener('click', closeVenueChoiceModal);
@@ -692,8 +712,51 @@ async function viewAsInstructions(folder: ContentFolder) {
   }
 }
 
+async function viewAsExpandedInstructions(folder: ContentFolder) {
+  if (!state.currentProvider) return;
+
+  showLoading(true);
+
+  try {
+    const instructions = await state.currentProvider.getExpandedInstructions(folder, state.currentAuth);
+
+    if (!instructions) {
+      showStatus('This provider does not support expanded instructions view', 'error');
+      showLoading(false);
+      return;
+    }
+
+    state.currentInstructions = instructions;
+    state.currentVenueFolder = folder;
+    state.currentView = 'instructions';
+
+    state.folderStack.push(folder);
+    updateBreadcrumb();
+
+    showLoading(false);
+    renderInstructionsView(instructions, true);
+
+  } catch (error) {
+    showLoading(false);
+    showStatus(`Failed to load expanded instructions: ${error}`, 'error');
+  }
+}
+
+function renderJsonViewer(data: unknown, title: string = 'JSON Data'): string {
+  const jsonStr = JSON.stringify(data, null, 2);
+  return `
+    <div class="json-viewer">
+      <div class="json-viewer-header">
+        <h3>${title}</h3>
+        <button class="json-copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.textContent).then(() => this.textContent = 'Copied!').catch(() => this.textContent = 'Failed')">Copy</button>
+      </div>
+      <pre class="json-content">${jsonStr.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+    </div>
+  `;
+}
+
 function renderPlanView(plan: Plan) {
-  browserTitle.textContent = `${plan.name} (Instructions)`;
+  browserTitle.textContent = `${plan.name} (Presentations)`;
 
   let html = `
     <div class="plan-view">
@@ -745,6 +808,8 @@ function renderPlanView(plan: Plan) {
       </div>
     </div>
   `;
+
+  html += renderJsonViewer(plan, 'Plan JSON');
 
   contentGrid.innerHTML = html;
   emptyEl.classList.add('hidden');
@@ -803,8 +868,9 @@ function playPlanFiles(files: ContentItem[]) {
   console.log('Playlist:', files);
 }
 
-function renderInstructionsView(instructions: Instructions) {
-  browserTitle.textContent = `${instructions.venueName || 'Instructions'} (Instructions)`;
+function renderInstructionsView(instructions: Instructions, isExpanded: boolean = false) {
+  const viewType = isExpanded ? 'Expanded' : 'Instructions';
+  browserTitle.textContent = `${instructions.venueName || 'Instructions'} (${viewType})`;
 
   const countItems = (items: InstructionItem[]): number => {
     let count = items.length;
@@ -861,6 +927,8 @@ function renderInstructionsView(instructions: Instructions) {
       </div>
     </div>
   `;
+
+  html += renderJsonViewer(instructions, `${viewType} JSON`);
 
   contentGrid.innerHTML = html;
   emptyEl.classList.add('hidden');

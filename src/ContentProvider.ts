@@ -10,6 +10,7 @@ export abstract class ContentProvider {
   abstract getFolderContents(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<ContentItem[]>;
   abstract getPresentations(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Plan | null>;
   abstract getInstructions(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
+  abstract getExpandedInstructions(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
 
   requiresAuth(): boolean {
     return !!this.config.clientId;

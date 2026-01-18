@@ -154,3 +154,21 @@ export interface Instructions {
   venueName?: string;
   items: InstructionItem[];
 }
+
+export interface VenueActionInterface {
+  id?: string;
+  name?: string;
+  actionType?: string;
+  seconds?: number;
+}
+
+export interface VenueSectionActionsInterface {
+  id?: string;
+  name?: string;
+  actions?: VenueActionInterface[];
+}
+
+export interface VenueActionsResponseInterface {
+  venueName?: string;
+  sections?: VenueSectionActionsInterface[];
+}
