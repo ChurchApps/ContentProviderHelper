@@ -4,6 +4,7 @@ import {
   ContentItem,
   ContentFolder,
   ContentFile,
+  ProviderLogos,
 } from '../interfaces';
 import { ContentProvider } from '../ContentProvider';
 
@@ -19,6 +20,11 @@ import { ContentProvider } from '../ContentProvider';
 export class APlayProvider extends ContentProvider {
   readonly id = 'aplay';
   readonly name = 'APlay';
+
+  readonly logos: ProviderLogos = {
+    light: 'https://joinaplay.com/hs-fs/hubfs/APlay_Logo_Horizontal_Jungle%20Green.png?width=400&height=122&name=APlay_Logo_Horizontal_Jungle%20Green.png',
+    dark: 'https://joinaplay.com/hs-fs/hubfs/APlay_Logo_Horizontal_Jungle%20Green.png?width=400&height=122&name=APlay_Logo_Horizontal_Jungle%20Green.png',
+  };
 
   readonly config: ContentProviderConfig = {
     id: 'aplay',

@@ -5,6 +5,8 @@ import {
   ContentFolder,
   DeviceAuthorizationResponse,
   DeviceFlowPollResult,
+  ProviderLogos,
+  AuthType,
 } from './interfaces';
 
 /**
@@ -21,6 +23,9 @@ export abstract class ContentProvider {
 
   /** Display name for this provider */
   abstract readonly name: string;
+
+  /** Logo URLs for light and dark themes */
+  abstract readonly logos: ProviderLogos;
 
   /** Provider configuration (API endpoints, OAuth settings, etc.) */
   abstract readonly config: ContentProviderConfig;
@@ -48,6 +53,20 @@ export abstract class ContentProvider {
    */
   requiresAuth(): boolean {
     return !!this.config.clientId;
+  }
+
+  /**
+   * Get the list of supported authentication types for this provider.
+   */
+  getAuthTypes(): AuthType[] {
+    if (!this.requiresAuth()) {
+      return ['none'];
+    }
+    const types: AuthType[] = ['oauth_pkce'];
+    if (this.supportsDeviceFlow()) {
+      types.push('device_flow');
+    }
+    return types;
   }
 
   /**

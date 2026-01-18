@@ -74,12 +74,6 @@ const oauthSection = document.getElementById('oauth-flow-section')!;
 const oauthSigninBtn = document.getElementById('oauth-signin-btn')!;
 const oauthProcessing = document.getElementById('oauth-processing')!;
 
-// Provider icons/emojis
-const providerIcons: Record<string, string> = {
-  aplay: '🎬',
-  signpresenter: '📺',
-  lessonschurch: '⛪',
-};
 
 // Initialize
 function init() {
@@ -111,7 +105,6 @@ function renderProviders() {
   const providers = getAvailableProviders();
 
   providersGrid.innerHTML = providers.map(provider => {
-    const icon = providerIcons[provider.id] || '📦';
     const isConnected = state.connectedProviders.has(provider.id);
 
     let badges = '';
@@ -120,13 +113,13 @@ function renderProviders() {
     } else {
       badges += '<span class="provider-badge badge-auth">Auth Required</span>';
     }
-    if (provider.supportsDeviceFlow) {
+    if (provider.authTypes.includes('device_flow')) {
       badges += '<span class="provider-badge badge-device">Device Flow</span>';
     }
 
     return `
       <div class="card provider-card" data-provider-id="${provider.id}">
-        <div class="card-image placeholder">${icon}</div>
+        <img class="card-image provider-logo" src="${provider.logos.dark}" alt="${provider.name}" onerror="this.outerHTML='<div class=\\'card-image placeholder\\'>📦</div>'">
         <h3 class="card-title">${provider.name}</h3>
         <p class="card-subtitle">${isConnected ? '✓ Connected' : 'Click to connect'}</p>
         <div>${badges}</div>

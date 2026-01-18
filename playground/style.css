@@ -102,6 +102,13 @@ h2 {
   height: 100px;
 }
 
+.provider-card .provider-logo {
+  height: 100px;
+  object-fit: contain;
+  padding: 1rem;
+  background: #0f0f23;
+}
+
 .provider-badge {
   display: inline-block;
   padding: 0.25rem 0.5rem;

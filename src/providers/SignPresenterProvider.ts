@@ -4,6 +4,7 @@ import {
   ContentItem,
   ContentFolder,
   ContentFile,
+  ProviderLogos,
 } from '../interfaces';
 import { ContentProvider } from '../ContentProvider';
 
@@ -17,6 +18,11 @@ import { ContentProvider } from '../ContentProvider';
 export class SignPresenterProvider extends ContentProvider {
   readonly id = 'signpresenter';
   readonly name = 'SignPresenter';
+
+  readonly logos: ProviderLogos = {
+    light: 'https://signpresenter.com/files/shared/images/logo.png',
+    dark: 'https://signpresenter.com/files/shared/images/logo.png',
+  };
 
   readonly config: ContentProviderConfig = {
     id: 'signpresenter',

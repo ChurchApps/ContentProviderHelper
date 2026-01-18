@@ -50,13 +50,32 @@ export interface DeviceFlowState {
 }
 
 /**
+ * Authentication types supported by a provider.
+ */
+export type AuthType = 'none' | 'oauth_pkce' | 'device_flow';
+
+/**
+ * Logo URLs for a provider (light and dark themes).
+ */
+export interface ProviderLogos {
+  /** Logo URL for light theme backgrounds */
+  light: string;
+  /** Logo URL for dark theme backgrounds */
+  dark: string;
+}
+
+/**
  * Information about a provider for listing purposes.
  */
 export interface ProviderInfo {
   id: string;
   name: string;
+  /** Logo URLs for light and dark themes */
+  logos: ProviderLogos;
+  /** Whether the provider requires authentication */
   requiresAuth: boolean;
-  supportsDeviceFlow: boolean;
+  /** List of supported authentication types */
+  authTypes: AuthType[];
 }
 
 /**

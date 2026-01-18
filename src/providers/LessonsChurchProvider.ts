@@ -4,6 +4,7 @@ import {
   ContentItem,
   ContentFolder,
   ContentFile,
+  ProviderLogos,
 } from '../interfaces';
 import { ContentProvider } from '../ContentProvider';
 
@@ -20,6 +21,11 @@ import { ContentProvider } from '../ContentProvider';
 export class LessonsChurchProvider extends ContentProvider {
   readonly id = 'lessonschurch';
   readonly name = 'Lessons.church';
+
+  readonly logos: ProviderLogos = {
+    light: 'https://lessons.church/images/logo.png',
+    dark: 'https://lessons.church/images/logo-dark.png',
+  };
 
   readonly config: ContentProviderConfig = {
     id: 'lessonschurch',

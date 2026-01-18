@@ -55,13 +55,14 @@ export function getProviderConfig(providerId: string) {
 }
 
 /**
- * Get list of available providers with basic info.
+ * Get list of available providers with their info including logos and auth types.
  */
 export function getAvailableProviders(): ProviderInfo[] {
   return getAllProviders().map((provider) => ({
     id: provider.id,
     name: provider.name,
+    logos: provider.logos,
     requiresAuth: provider.requiresAuth(),
-    supportsDeviceFlow: provider.supportsDeviceFlow(),
+    authTypes: provider.getAuthTypes(),
   }));
 }
