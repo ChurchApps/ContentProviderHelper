@@ -26,7 +26,6 @@ export class APlayProvider extends ContentProvider {
     apiBase: 'https://api-prod.amazingkids.app',
     oauthBase: 'https://api.joinamazing.com/prod/aims/oauth',
     clientId: 'xFJFq7yNYuXXXMx0YBiQ',
-    redirectUri: 'church.lessons.screen://provider/callback',
     scopes: ['openid', 'profile', 'email'],
     endpoints: {
       modules: '/prod/curriculum/modules',

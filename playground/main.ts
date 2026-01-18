@@ -5,10 +5,15 @@ import {
   ContentFolder,
   ContentItem,
   ContentProviderAuthData,
+  DeviceAuthorizationResponse,
   isContentFolder,
   isContentFile,
-  ProviderInfo,
 } from "../src";
+
+// Constants
+const OAUTH_REDIRECT_URI = `${window.location.origin}${window.location.pathname}`;
+const STORAGE_KEY_VERIFIER = 'oauth_code_verifier';
+const STORAGE_KEY_PROVIDER = 'oauth_provider_id';
 
 // State management
 interface AppState {
@@ -17,6 +22,11 @@ interface AppState {
   currentAuth: ContentProviderAuthData | null;
   folderStack: ContentFolder[];
   connectedProviders: Map<string, ContentProviderAuthData | null>;
+  // Device flow state
+  deviceFlowActive: boolean;
+  deviceFlowData: DeviceAuthorizationResponse | null;
+  pollingInterval: number | null;
+  slowDownCount: number;
 }
 
 const state: AppState = {
@@ -25,6 +35,10 @@ const state: AppState = {
   currentAuth: null,
   folderStack: [],
   connectedProviders: new Map(),
+  deviceFlowActive: false,
+  deviceFlowData: null,
+  pollingInterval: null,
+  slowDownCount: 0,
 };
 
 // DOM Elements
@@ -40,6 +54,26 @@ const loadingEl = document.getElementById('loading')!;
 const emptyEl = document.getElementById('empty')!;
 const statusEl = document.getElementById('status')!;
 
+// Modal elements
+const modal = document.getElementById('device-flow-modal')!;
+const modalTitle = document.getElementById('modal-title')!;
+const modalClose = document.getElementById('modal-close')!;
+const modalLoading = document.getElementById('device-flow-loading')!;
+const modalCode = document.getElementById('device-flow-code')!;
+const modalSuccess = document.getElementById('device-flow-success')!;
+const modalError = document.getElementById('device-flow-error')!;
+const verificationUrl = document.getElementById('verification-url')! as HTMLAnchorElement;
+const userCode = document.getElementById('user-code')!;
+const copyCodeBtn = document.getElementById('copy-code-btn')!;
+const qrCode = document.getElementById('qr-code')! as HTMLImageElement;
+const errorMessage = document.getElementById('error-message')!;
+const retryBtn = document.getElementById('retry-btn')!;
+
+// OAuth elements
+const oauthSection = document.getElementById('oauth-flow-section')!;
+const oauthSigninBtn = document.getElementById('oauth-signin-btn')!;
+const oauthProcessing = document.getElementById('oauth-processing')!;
+
 // Provider icons/emojis
 const providerIcons: Record<string, string> = {
   aplay: '🎬',
@@ -49,6 +83,9 @@ const providerIcons: Record<string, string> = {
 
 // Initialize
 function init() {
+  // Check for OAuth callback first
+  handleOAuthCallback();
+
   renderProviders();
   setupEventListeners();
 }
@@ -56,6 +93,17 @@ function init() {
 // Setup event listeners
 function setupEventListeners() {
   backBtn.addEventListener('click', handleBack);
+  modalClose.addEventListener('click', closeModal);
+  copyCodeBtn.addEventListener('click', copyUserCode);
+  retryBtn.addEventListener('click', retryAuth);
+  oauthSigninBtn.addEventListener('click', startOAuthRedirect);
+
+  // Close modal on backdrop click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
 }
 
 // Render provider grid
@@ -105,10 +153,22 @@ async function handleProviderClick(providerId: string) {
 
   state.currentProvider = provider;
 
+  // Check if already connected
+  if (state.connectedProviders.has(providerId)) {
+    state.currentAuth = state.connectedProviders.get(providerId) || null;
+    await navigateToBrowser();
+    return;
+  }
+
   // Check if auth is needed
   if (provider.requiresAuth()) {
-    // For now, just show a message - in a real app you'd implement OAuth
-    showStatus(`${provider.name} requires authentication. For testing, only public APIs work in the playground.`, 'error');
+    // Check if Device Flow is supported - prefer it for better UX
+    if (provider.supportsDeviceFlow()) {
+      await startDeviceFlow();
+    } else {
+      // Use OAuth PKCE flow
+      showOAuthModal();
+    }
     return;
   }
 
@@ -119,6 +179,285 @@ async function handleProviderClick(providerId: string) {
   // Navigate to browser
   await navigateToBrowser();
 }
+
+// ============= OAUTH PKCE FLOW =============
+
+function showOAuthModal() {
+  if (!state.currentProvider) return;
+
+  modalTitle.textContent = `Connect to ${state.currentProvider.name}`;
+  showModal('oauth');
+}
+
+async function startOAuthRedirect() {
+  if (!state.currentProvider) return;
+
+  try {
+    // Generate code verifier
+    const codeVerifier = state.currentProvider.generateCodeVerifier();
+
+    // Store verifier and provider ID for callback
+    sessionStorage.setItem(STORAGE_KEY_VERIFIER, codeVerifier);
+    sessionStorage.setItem(STORAGE_KEY_PROVIDER, state.currentProvider.id);
+
+    // Build auth URL with localhost redirect
+    const { url } = await state.currentProvider.buildAuthUrl(codeVerifier, OAUTH_REDIRECT_URI);
+
+    // Redirect to OAuth provider
+    window.location.href = url;
+  } catch (error) {
+    showModal('error');
+    errorMessage.textContent = `Failed to start OAuth: ${error}`;
+  }
+}
+
+async function handleOAuthCallback() {
+  // Check for authorization code in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
+  const state_param = urlParams.get('state');
+  const error = urlParams.get('error');
+
+  if (error) {
+    // Clear URL params
+    window.history.replaceState({}, '', window.location.pathname);
+    showStatus(`OAuth error: ${error}`, 'error');
+    return;
+  }
+
+  if (!code) return;
+
+  // Get stored verifier and provider
+  const codeVerifier = sessionStorage.getItem(STORAGE_KEY_VERIFIER);
+  const providerId = sessionStorage.getItem(STORAGE_KEY_PROVIDER) || state_param;
+
+  // Clear stored values
+  sessionStorage.removeItem(STORAGE_KEY_VERIFIER);
+  sessionStorage.removeItem(STORAGE_KEY_PROVIDER);
+
+  // Clear URL params
+  window.history.replaceState({}, '', window.location.pathname);
+
+  if (!codeVerifier || !providerId) {
+    showStatus('OAuth callback error: missing verifier or provider', 'error');
+    return;
+  }
+
+  const provider = getProvider(providerId);
+  if (!provider) {
+    showStatus('OAuth callback error: provider not found', 'error');
+    return;
+  }
+
+  state.currentProvider = provider;
+
+  // Show processing modal
+  modalTitle.textContent = `Connecting to ${provider.name}`;
+  showModal('processing');
+
+  try {
+    // Exchange code for tokens
+    const authData = await provider.exchangeCodeForTokens(code, codeVerifier, OAUTH_REDIRECT_URI);
+
+    if (!authData) {
+      showModal('error');
+      errorMessage.textContent = 'Failed to exchange authorization code for tokens.';
+      return;
+    }
+
+    // Success!
+    state.currentAuth = authData;
+    state.connectedProviders.set(provider.id, authData);
+
+    showModal('success');
+
+    setTimeout(() => {
+      closeModal();
+      navigateToBrowser();
+      renderProviders();
+    }, 1500);
+
+  } catch (error) {
+    showModal('error');
+    errorMessage.textContent = `Token exchange failed: ${error}`;
+  }
+}
+
+// ============= DEVICE FLOW =============
+
+async function startDeviceFlow() {
+  if (!state.currentProvider) return;
+
+  // Show modal in loading state
+  showModal('loading');
+  modalTitle.textContent = `Connect to ${state.currentProvider.name}`;
+
+  try {
+    // Initiate device flow
+    const deviceAuth = await state.currentProvider.initiateDeviceFlow();
+
+    if (!deviceAuth) {
+      showModal('error');
+      errorMessage.textContent = 'Failed to initiate device authorization. Please try again.';
+      return;
+    }
+
+    state.deviceFlowData = deviceAuth;
+    state.deviceFlowActive = true;
+    state.slowDownCount = 0;
+
+    // Show code to user
+    showModal('code');
+    verificationUrl.href = deviceAuth.verification_uri_complete || deviceAuth.verification_uri;
+    verificationUrl.textContent = deviceAuth.verification_uri;
+    userCode.textContent = deviceAuth.user_code;
+
+    // Generate QR code using a free API
+    const qrUrl = deviceAuth.verification_uri_complete || `${deviceAuth.verification_uri}?user_code=${deviceAuth.user_code}`;
+    qrCode.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrUrl)}`;
+
+    // Start polling
+    startPolling(deviceAuth);
+
+  } catch (error) {
+    showModal('error');
+    errorMessage.textContent = `Error: ${error}`;
+  }
+}
+
+function startPolling(deviceAuth: DeviceAuthorizationResponse) {
+  if (!state.currentProvider) return;
+
+  const baseInterval = deviceAuth.interval || 5;
+  const expiresAt = Date.now() + (deviceAuth.expires_in * 1000);
+
+  const poll = async () => {
+    if (!state.deviceFlowActive || !state.currentProvider || !state.deviceFlowData) {
+      return;
+    }
+
+    // Check expiration
+    if (Date.now() > expiresAt) {
+      state.deviceFlowActive = false;
+      showModal('error');
+      errorMessage.textContent = 'Authorization expired. Please try again.';
+      return;
+    }
+
+    try {
+      const result = await state.currentProvider.pollDeviceFlowToken(state.deviceFlowData.device_code);
+
+      if (result === null) {
+        // Failed - expired or denied
+        state.deviceFlowActive = false;
+        showModal('error');
+        errorMessage.textContent = 'Authorization failed or was denied.';
+        return;
+      }
+
+      if ('error' in result) {
+        // Still pending or slow down
+        if (result.shouldSlowDown) {
+          state.slowDownCount++;
+        }
+
+        // Schedule next poll
+        const delay = state.currentProvider.calculatePollDelay(baseInterval, state.slowDownCount);
+        state.pollingInterval = window.setTimeout(poll, delay);
+        return;
+      }
+
+      // Success! We have auth data
+      state.deviceFlowActive = false;
+      state.currentAuth = result;
+      state.connectedProviders.set(state.currentProvider.id, result);
+
+      // Show success briefly
+      showModal('success');
+
+      // Navigate to browser after a moment
+      setTimeout(() => {
+        closeModal();
+        navigateToBrowser();
+        renderProviders(); // Update connected status
+      }, 1500);
+
+    } catch (error) {
+      console.error('Polling error:', error);
+      // Continue polling on network errors
+      const delay = state.currentProvider!.calculatePollDelay(baseInterval, state.slowDownCount);
+      state.pollingInterval = window.setTimeout(poll, delay);
+    }
+  };
+
+  // Start first poll after initial interval
+  const initialDelay = state.currentProvider.calculatePollDelay(baseInterval, 0);
+  state.pollingInterval = window.setTimeout(poll, initialDelay);
+}
+
+function showModal(view: 'loading' | 'code' | 'success' | 'error' | 'oauth' | 'processing') {
+  modal.classList.remove('hidden');
+  modalLoading.classList.add('hidden');
+  modalCode.classList.add('hidden');
+  modalSuccess.classList.add('hidden');
+  modalError.classList.add('hidden');
+  oauthSection.classList.add('hidden');
+  oauthProcessing.classList.add('hidden');
+
+  switch (view) {
+    case 'loading':
+      modalLoading.classList.remove('hidden');
+      break;
+    case 'code':
+      modalCode.classList.remove('hidden');
+      break;
+    case 'success':
+      modalSuccess.classList.remove('hidden');
+      break;
+    case 'error':
+      modalError.classList.remove('hidden');
+      break;
+    case 'oauth':
+      oauthSection.classList.remove('hidden');
+      break;
+    case 'processing':
+      oauthProcessing.classList.remove('hidden');
+      break;
+  }
+}
+
+function closeModal() {
+  modal.classList.add('hidden');
+  state.deviceFlowActive = false;
+  if (state.pollingInterval) {
+    clearTimeout(state.pollingInterval);
+    state.pollingInterval = null;
+  }
+}
+
+function copyUserCode() {
+  const code = userCode.textContent || '';
+  navigator.clipboard.writeText(code).then(() => {
+    showStatus('Code copied to clipboard!', 'success');
+  }).catch(() => {
+    showStatus('Failed to copy code', 'error');
+  });
+}
+
+function retryAuth() {
+  if (!state.currentProvider) {
+    closeModal();
+    return;
+  }
+
+  if (state.currentProvider.supportsDeviceFlow()) {
+    startDeviceFlow();
+  } else {
+    showOAuthModal();
+  }
+}
+
+// ============= NAVIGATION =============
 
 // Navigate to content browser
 async function navigateToBrowser() {
@@ -172,6 +511,8 @@ function updateBreadcrumb() {
     ? state.folderStack[state.folderStack.length - 1].title
     : state.currentProvider?.name || 'Content';
 }
+
+// ============= CONTENT LOADING =============
 
 // Load content for current location
 async function loadContent() {
@@ -289,6 +630,8 @@ function handleFileClick(file: ContentItem & { type: 'file' }) {
   showStatus(`Opening: ${file.title}`, 'success');
 }
 
+// ============= UI HELPERS =============
+
 // Show/hide loading
 function showLoading(show: boolean) {
   if (show) {
@@ -315,3 +658,4 @@ init();
 // Log for debugging
 console.log('Content Provider Helper Playground loaded');
 console.log('Available providers:', getAvailableProviders());
+console.log('OAuth redirect URI:', OAUTH_REDIRECT_URI);

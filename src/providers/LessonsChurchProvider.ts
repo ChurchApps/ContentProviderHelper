@@ -28,7 +28,6 @@ export class LessonsChurchProvider extends ContentProvider {
     // No OAuth needed - public API
     oauthBase: '',
     clientId: '',
-    redirectUri: '',
     scopes: [],
     endpoints: {
       programs: '/programs/public',

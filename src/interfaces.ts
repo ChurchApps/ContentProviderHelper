@@ -19,7 +19,6 @@ export interface ContentProviderConfig {
   apiBase: string;
   oauthBase: string;
   clientId: string;
-  redirectUri: string;
   scopes: string[];
   /** Device Flow support (RFC 8628) */
   supportsDeviceFlow?: boolean;

@@ -24,7 +24,6 @@ export class SignPresenterProvider extends ContentProvider {
     apiBase: 'https://api.signpresenter.com',
     oauthBase: 'https://api.signpresenter.com/oauth',
     clientId: 'lessonsscreen-tv',
-    redirectUri: 'church.lessons.screen://provider/callback',
     scopes: ['openid', 'profile', 'content'],
 
     // Device Flow support (RFC 8628)

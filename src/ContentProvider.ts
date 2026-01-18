@@ -110,14 +110,16 @@ export abstract class ContentProvider {
 
   /**
    * Build OAuth authorization URL.
+   * @param codeVerifier - PKCE code verifier
+   * @param redirectUri - The redirect URI for OAuth callback (provided by your application)
    */
-  async buildAuthUrl(codeVerifier: string): Promise<{ url: string; challengeMethod: string }> {
+  async buildAuthUrl(codeVerifier: string, redirectUri: string): Promise<{ url: string; challengeMethod: string }> {
     const codeChallenge = await this.generateCodeChallenge(codeVerifier);
 
     const params = new URLSearchParams({
       response_type: 'code',
       client_id: this.config.clientId,
-      redirect_uri: this.config.redirectUri,
+      redirect_uri: redirectUri,
       scope: this.config.scopes.join(' '),
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
@@ -132,17 +134,21 @@ export abstract class ContentProvider {
 
   /**
    * Exchange authorization code for tokens.
+   * @param code - Authorization code from OAuth callback
+   * @param codeVerifier - PKCE code verifier used when building auth URL
+   * @param redirectUri - The redirect URI (must match the one used in buildAuthUrl)
    * @returns Auth data (caller should store this) or null on failure
    */
   async exchangeCodeForTokens(
     code: string,
-    codeVerifier: string
+    codeVerifier: string,
+    redirectUri: string
   ): Promise<ContentProviderAuthData | null> {
     try {
       const params = new URLSearchParams({
         grant_type: 'authorization_code',
         code,
-        redirect_uri: this.config.redirectUri,
+        redirect_uri: redirectUri,
         client_id: this.config.clientId,
         code_verifier: codeVerifier,
       });
