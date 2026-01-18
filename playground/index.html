@@ -8,9 +8,33 @@
   </head>
   <body>
     <div id="app">
-      <h1>Content Provider Helper Playground</h1>
-      <p>Use this page to test library methods.</p>
-      <div id="output"></div>
+      <header>
+        <h1>Content Provider Helper</h1>
+        <p class="subtitle">Test and explore content providers</p>
+      </header>
+
+      <!-- Breadcrumb navigation -->
+      <nav id="breadcrumb" class="breadcrumb hidden">
+        <button id="back-btn" class="back-btn">&larr; Back</button>
+        <span id="breadcrumb-path"></span>
+      </nav>
+
+      <!-- Provider grid view -->
+      <section id="providers-view">
+        <h2>Available Providers</h2>
+        <div id="providers-grid" class="grid"></div>
+      </section>
+
+      <!-- Content browser view -->
+      <section id="browser-view" class="hidden">
+        <h2 id="browser-title">Content</h2>
+        <div id="content-grid" class="grid"></div>
+        <div id="loading" class="loading hidden">Loading...</div>
+        <div id="empty" class="empty hidden">No content found</div>
+      </section>
+
+      <!-- Status/error messages -->
+      <div id="status" class="status hidden"></div>
     </div>
     <script type="module" src="main.ts"></script>
   </body>

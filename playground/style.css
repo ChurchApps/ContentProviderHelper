@@ -6,27 +6,280 @@ body {
   font-family: system-ui, -apple-system, sans-serif;
   margin: 0;
   padding: 2rem;
-  background: #f5f5f5;
-  color: #333;
+  background: #1a1a2e;
+  color: #eee;
+  min-height: 100vh;
 }
 
 #app {
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
-  background: #fff;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+header {
+  text-align: center;
+  margin-bottom: 2rem;
 }
 
 h1 {
-  margin-top: 0;
-  color: #1a1a1a;
+  margin: 0;
+  color: #fff;
+  font-size: 2rem;
 }
 
-#output {
-  background: #f0f0f0;
+.subtitle {
+  color: #888;
+  margin: 0.5rem 0 0;
+}
+
+h2 {
+  color: #fff;
+  font-size: 1.25rem;
+  margin: 0 0 1rem;
+}
+
+/* Grid layout */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+/* Card styles */
+.card {
+  background: #16213e;
+  border-radius: 12px;
   padding: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid #2a2a4a;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  border-color: #4a4a7a;
+}
+
+.card-image {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #0f0f23;
+}
+
+.card-image.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  color: #4a4a7a;
+}
+
+.card-title {
+  margin: 0.75rem 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-subtitle {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+/* Provider-specific styles */
+.provider-card {
+  text-align: center;
+}
+
+.provider-card .card-image.placeholder {
+  height: 100px;
+}
+
+.provider-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
   border-radius: 4px;
-  font-family: monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-top: 0.5rem;
+}
+
+.badge-public {
+  background: #0d7377;
+  color: #fff;
+}
+
+.badge-auth {
+  background: #e94560;
+  color: #fff;
+}
+
+.badge-device {
+  background: #7952b3;
+  color: #fff;
+}
+
+/* Folder/File icons */
+.folder-icon::before {
+  content: "📁";
+  margin-right: 0.5rem;
+}
+
+.file-icon::before {
+  content: "🎬";
+  margin-right: 0.5rem;
+}
+
+.file-icon.image::before {
+  content: "🖼️";
+}
+
+/* Breadcrumb navigation */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: #16213e;
+  border-radius: 8px;
+}
+
+.back-btn {
+  background: #e94560;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.back-btn:hover {
+  background: #ff6b6b;
+}
+
+#breadcrumb-path {
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+#breadcrumb-path span {
+  color: #fff;
+}
+
+/* Loading state */
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: #888;
+  font-size: 1.1rem;
+}
+
+.loading::before {
+  content: "";
+  display: block;
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 1rem;
+  border: 3px solid #2a2a4a;
+  border-top-color: #e94560;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Empty state */
+.empty {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+}
+
+/* Status messages */
+.status {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1rem 2rem;
+  background: #16213e;
+  border: 1px solid #2a2a4a;
+  border-radius: 8px;
+  color: #fff;
+  z-index: 100;
+}
+
+.status.error {
+  border-color: #e94560;
+  background: #2a1a2e;
+}
+
+.status.success {
+  border-color: #0d7377;
+  background: #1a2a2e;
+}
+
+/* Hidden utility */
+.hidden {
+  display: none !important;
+}
+
+/* Content item card */
+.content-card .card-image {
+  height: 140px;
+}
+
+.content-card.file-card {
+  border-color: #3a3a6a;
+}
+
+.content-card.file-card:hover {
+  border-color: #0d7377;
+}
+
+/* Media type badge */
+.media-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.media-badge.video {
+  background: #e94560;
+}
+
+.media-badge.image {
+  background: #0d7377;
+}
+
+.card-image-wrapper {
+  position: relative;
+}
+
+/* File details */
+.file-url {
+  margin-top: 0.5rem;
+  font-size: 0.7rem;
+  color: #666;
+  word-break: break-all;
+  max-height: 2.5em;
+  overflow: hidden;
 }
