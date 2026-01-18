@@ -72,6 +72,8 @@ export interface ProviderInfo {
   name: string;
   /** Logo URLs for light and dark themes */
   logos: ProviderLogos;
+  /** Whether the provider is fully implemented */
+  implemented: boolean;
   /** Whether the provider requires authentication */
   requiresAuth: boolean;
   /** List of supported authentication types */

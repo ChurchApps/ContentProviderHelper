@@ -106,9 +106,12 @@ function renderProviders() {
 
   providersGrid.innerHTML = providers.map(provider => {
     const isConnected = state.connectedProviders.has(provider.id);
+    const disabledClass = provider.implemented ? '' : 'disabled';
 
     let badges = '';
-    if (!provider.requiresAuth) {
+    if (!provider.implemented) {
+      badges += '<span class="provider-badge badge-coming-soon">Coming Soon</span>';
+    } else if (!provider.requiresAuth) {
       badges += '<span class="provider-badge badge-public">Public API</span>';
     } else {
       badges += '<span class="provider-badge badge-auth">Auth Required</span>';
@@ -117,19 +120,35 @@ function renderProviders() {
       badges += '<span class="provider-badge badge-device">Device Flow</span>';
     }
 
+    let subtitle = 'Click to connect';
+    if (!provider.implemented) {
+      subtitle = 'Not yet available';
+    } else if (isConnected) {
+      subtitle = '✓ Connected';
+    }
+
+    const logoHtml = provider.logos.dark
+      ? `<img class="card-image provider-logo" src="${provider.logos.dark}" alt="${provider.name}" onerror="this.outerHTML='<div class=\\'card-image placeholder\\'>📦</div>'">`
+      : '<div class="card-image placeholder">📦</div>';
+
     return `
-      <div class="card provider-card" data-provider-id="${provider.id}">
-        <img class="card-image provider-logo" src="${provider.logos.dark}" alt="${provider.name}" onerror="this.outerHTML='<div class=\\'card-image placeholder\\'>📦</div>'">
+      <div class="card provider-card ${disabledClass}" data-provider-id="${provider.id}" data-implemented="${provider.implemented}">
+        ${logoHtml}
         <h3 class="card-title">${provider.name}</h3>
-        <p class="card-subtitle">${isConnected ? '✓ Connected' : 'Click to connect'}</p>
+        <p class="card-subtitle">${subtitle}</p>
         <div>${badges}</div>
       </div>
     `;
   }).join('');
 
-  // Add click handlers
+  // Add click handlers (only for implemented providers)
   providersGrid.querySelectorAll('.provider-card').forEach(card => {
     card.addEventListener('click', () => {
+      const implemented = card.getAttribute('data-implemented') === 'true';
+      if (!implemented) {
+        showStatus('This provider is coming soon!', 'error');
+        return;
+      }
       const providerId = card.getAttribute('data-provider-id')!;
       handleProviderClick(providerId);
     });

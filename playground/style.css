@@ -109,6 +109,21 @@ h2 {
   background: #0f0f23;
 }
 
+.provider-card.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.provider-card.disabled:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: #2a2a4a;
+}
+
+.provider-card.disabled .provider-logo {
+  filter: grayscale(100%);
+}
+
 .provider-badge {
   display: inline-block;
   padding: 0.25rem 0.5rem;
@@ -132,6 +147,11 @@ h2 {
 .badge-device {
   background: #7952b3;
   color: #fff;
+}
+
+.badge-coming-soon {
+  background: #555;
+  color: #ccc;
 }
 
 /* Folder/File icons */

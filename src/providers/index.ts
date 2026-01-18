@@ -1,5 +1,5 @@
 import { ContentProvider } from '../ContentProvider';
-import { ProviderInfo } from '../interfaces';
+import { ProviderInfo, ProviderLogos } from '../interfaces';
 import { APlayProvider } from './APlayProvider';
 import { SignPresenterProvider } from './SignPresenterProvider';
 import { LessonsChurchProvider } from './LessonsChurchProvider';
@@ -10,6 +10,72 @@ export { LessonsChurchProvider } from './LessonsChurchProvider';
 
 // Provider registry - singleton instances
 const providerRegistry: Map<string, ContentProvider> = new Map();
+
+// Unimplemented providers (coming soon)
+interface UnimplementedProvider {
+  id: string;
+  name: string;
+  logos: ProviderLogos;
+}
+
+const unimplementedProviders: UnimplementedProvider[] = [
+  {
+    id: 'freeshow',
+    name: 'FreeShow',
+    logos: {
+      light: 'https://freeshow.app/images/favicon.png',
+      dark: 'https://freeshow.app/images/favicon.png',
+    },
+  },
+  {
+    id: 'gocurriculum',
+    name: 'Go Curriculum',
+    logos: {
+      light: 'https://gocurriculum.com/wp-content/uploads/go-logo-curriculum-v2.png',
+      dark: 'https://gocurriculum.com/wp-content/uploads/go-logo-curriculum-v2.png',
+    },
+  },
+  {
+    id: 'lifechurch',
+    name: 'LifeChurch',
+    logos: {
+      light: 'https://cdn.brandfetch.io/idRrA6pM45/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1668042253613',
+      dark: 'https://cdn.brandfetch.io/idRrA6pM45/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1668042253613',
+    },
+  },
+  {
+    id: 'awana',
+    name: 'Awana',
+    logos: {
+      light: 'https://cdn.freebiesupply.com/logos/large/2x/awana-1-logo-png-transparent.png',
+      dark: 'https://cdn.freebiesupply.com/logos/large/2x/awana-1-logo-png-transparent.png',
+    },
+  },
+  {
+    id: 'b1church',
+    name: 'B1.Church',
+    logos: {
+      light: 'https://b1.church/b1-church-logo.png',
+      dark: 'https://b1.church/b1-church-logo.png',
+    },
+  },
+  {
+    id: 'iteachchurch',
+    name: 'iTeachChurch',
+    logos: {
+      light: 'https://iteachchurch.com/wp-content/uploads/2022/05/iTeachChurch_Artboard-1-copy-3@2x.png',
+      dark: 'https://iteachchurch.com/wp-content/uploads/2022/05/iTeachChurch_Artboard-1-copy-3@2x.png',
+    },
+  },
+  {
+    id: 'ministrystuff',
+    name: 'MinistryStuff',
+    logos: {
+      light: '',
+      dark: '',
+    },
+  },
+];
 
 // Register built-in providers
 function initializeProviders() {
@@ -56,13 +122,28 @@ export function getProviderConfig(providerId: string) {
 
 /**
  * Get list of available providers with their info including logos and auth types.
+ * Includes both implemented providers and coming soon providers.
  */
 export function getAvailableProviders(): ProviderInfo[] {
-  return getAllProviders().map((provider) => ({
+  // Implemented providers
+  const implemented: ProviderInfo[] = getAllProviders().map((provider) => ({
     id: provider.id,
     name: provider.name,
     logos: provider.logos,
+    implemented: true,
     requiresAuth: provider.requiresAuth(),
     authTypes: provider.getAuthTypes(),
   }));
+
+  // Coming soon providers
+  const comingSoon: ProviderInfo[] = unimplementedProviders.map((p) => ({
+    id: p.id,
+    name: p.name,
+    logos: p.logos,
+    implemented: false,
+    requiresAuth: false,
+    authTypes: [],
+  }));
+
+  return [...implemented, ...comingSoon];
 }
