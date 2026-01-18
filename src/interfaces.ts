@@ -138,3 +138,19 @@ export interface FeedVenueInterface {
   lessonImage?: string;
   sections?: FeedSectionInterface[];
 }
+
+export interface InstructionItem {
+  id?: string;
+  itemType?: string;
+  relatedId?: string;
+  label?: string;
+  description?: string;
+  seconds?: number;
+  children?: InstructionItem[];
+  embedUrl?: string;
+}
+
+export interface Instructions {
+  venueName?: string;
+  items: InstructionItem[];
+}

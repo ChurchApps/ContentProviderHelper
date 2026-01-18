@@ -1,4 +1,4 @@
-import { ContentProviderAuthData, ContentProviderConfig, ContentItem, ContentFolder, DeviceAuthorizationResponse, DeviceFlowPollResult, ProviderLogos, AuthType, Plan } from './interfaces';
+import { ContentProviderAuthData, ContentProviderConfig, ContentItem, ContentFolder, DeviceAuthorizationResponse, DeviceFlowPollResult, ProviderLogos, AuthType, Plan, Instructions } from './interfaces';
 
 export abstract class ContentProvider {
   abstract readonly id: string;
@@ -8,7 +8,8 @@ export abstract class ContentProvider {
 
   abstract getRootContents(auth?: ContentProviderAuthData | null): Promise<ContentItem[]>;
   abstract getFolderContents(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<ContentItem[]>;
-  abstract getPlanContents(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Plan | null>;
+  abstract getPresentations(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Plan | null>;
+  abstract getInstructions(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
 
   requiresAuth(): boolean {
     return !!this.config.clientId;

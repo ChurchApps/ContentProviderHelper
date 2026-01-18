@@ -615,6 +615,10 @@ h2 {
   border-color: #0d7377;
 }
 
+.venue-btn.presentations-btn:hover {
+  border-color: #e94560;
+}
+
 .venue-btn.instructions-btn:hover {
   border-color: #7952b3;
 }
@@ -845,4 +849,104 @@ h2 {
   .venue-choice-buttons {
     flex-direction: column;
   }
+}
+
+/* ============= INSTRUCTIONS VIEW ============= */
+.instructions-view {
+  background: #0f0f23;
+  border-radius: 12px;
+  padding: 1.5rem;
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+#content-grid:has(.instructions-view) {
+  display: block;
+}
+
+.instructions-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #2a2a4a;
+}
+
+.instructions-info h2 {
+  margin: 0 0 0.5rem;
+  color: #fff;
+}
+
+.instructions-stats {
+  color: #666;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.instructions-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.instruction-item {
+  background: #16213e;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.instruction-item:hover {
+  border-color: #4a4a7a;
+  background: #1a1a3e;
+}
+
+.instruction-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.instruction-icon {
+  font-size: 1.2rem;
+}
+
+.instruction-label {
+  flex: 1;
+  color: #fff;
+  font-weight: 500;
+}
+
+.instruction-type {
+  padding: 0.2rem 0.5rem;
+  background: #2a2a4a;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.instruction-seconds {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.instruction-description {
+  margin-top: 0.5rem;
+  color: #888;
+  font-size: 0.85rem;
+  padding-left: 2rem;
+}
+
+.instruction-embed-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  margin-left: 2rem;
+  color: #4ecdc4;
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.instruction-embed-link:hover {
+  text-decoration: underline;
 }

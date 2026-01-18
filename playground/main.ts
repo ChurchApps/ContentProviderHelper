@@ -1,11 +1,11 @@
-import { getAvailableProviders, getProvider, ContentProvider, ContentFolder, ContentItem, ContentProviderAuthData, DeviceAuthorizationResponse, isContentFolder, isContentFile, Plan, PlanPresentation } from "../src";
+import { getAvailableProviders, getProvider, ContentProvider, ContentFolder, ContentItem, ContentProviderAuthData, DeviceAuthorizationResponse, isContentFolder, isContentFile, Plan, PlanPresentation, Instructions, InstructionItem } from "../src";
 
 const OAUTH_REDIRECT_URI = `${window.location.origin}${window.location.pathname}`;
 const STORAGE_KEY_VERIFIER = 'oauth_code_verifier';
 const STORAGE_KEY_PROVIDER = 'oauth_provider_id';
 
 interface AppState {
-  currentView: 'providers' | 'browser' | 'plan';
+  currentView: 'providers' | 'browser' | 'plan' | 'instructions';
   currentProvider: ContentProvider | null;
   currentAuth: ContentProviderAuthData | null;
   folderStack: ContentFolder[];
@@ -15,6 +15,7 @@ interface AppState {
   pollingInterval: number | null;
   slowDownCount: number;
   currentPlan: Plan | null;
+  currentInstructions: Instructions | null;
   currentVenueFolder: ContentFolder | null;
 }
 
@@ -29,6 +30,7 @@ const state: AppState = {
   pollingInterval: null,
   slowDownCount: 0,
   currentPlan: null,
+  currentInstructions: null,
   currentVenueFolder: null
 };
 
@@ -573,10 +575,15 @@ function showVenueChoiceModal(folder: ContentFolder) {
             <span class="btn-text">Playlist</span>
             <span class="btn-desc">Simple list of media files</span>
           </button>
+          <button id="view-presentations-btn" class="venue-btn presentations-btn">
+            <span class="btn-icon">🎬</span>
+            <span class="btn-text">Presentations</span>
+            <span class="btn-desc">Structured sections with media files</span>
+          </button>
           <button id="view-instructions-btn" class="venue-btn instructions-btn">
             <span class="btn-icon">📖</span>
             <span class="btn-text">Instructions</span>
-            <span class="btn-desc">Structured sections with shows</span>
+            <span class="btn-desc">Hierarchical items with embed URLs</span>
           </button>
         </div>
         <button id="venue-choice-cancel" class="cancel-btn">Cancel</button>
@@ -592,6 +599,11 @@ function showVenueChoiceModal(folder: ContentFolder) {
   document.getElementById('view-playlist-btn')!.addEventListener('click', () => {
     closeVenueChoiceModal();
     viewAsPlaylist(folder);
+  });
+
+  document.getElementById('view-presentations-btn')!.addEventListener('click', () => {
+    closeVenueChoiceModal();
+    viewAsPresentations(folder);
   });
 
   document.getElementById('view-instructions-btn')!.addEventListener('click', () => {
@@ -620,16 +632,16 @@ function viewAsPlaylist(folder: ContentFolder) {
   loadContent();
 }
 
-async function viewAsInstructions(folder: ContentFolder) {
+async function viewAsPresentations(folder: ContentFolder) {
   if (!state.currentProvider) return;
 
   showLoading(true);
 
   try {
-    const plan = await state.currentProvider.getPlanContents(folder, state.currentAuth);
+    const plan = await state.currentProvider.getPresentations(folder, state.currentAuth);
 
     if (!plan) {
-      showStatus('This provider does not support instructions view', 'error');
+      showStatus('This provider does not support presentations view', 'error');
       showLoading(false);
       return;
     }
@@ -643,6 +655,36 @@ async function viewAsInstructions(folder: ContentFolder) {
 
     showLoading(false);
     renderPlanView(plan);
+
+  } catch (error) {
+    showLoading(false);
+    showStatus(`Failed to load presentations: ${error}`, 'error');
+  }
+}
+
+async function viewAsInstructions(folder: ContentFolder) {
+  if (!state.currentProvider) return;
+
+  showLoading(true);
+
+  try {
+    const instructions = await state.currentProvider.getInstructions(folder, state.currentAuth);
+
+    if (!instructions) {
+      showStatus('This provider does not support instructions view', 'error');
+      showLoading(false);
+      return;
+    }
+
+    state.currentInstructions = instructions;
+    state.currentVenueFolder = folder;
+    state.currentView = 'instructions';
+
+    state.folderStack.push(folder);
+    updateBreadcrumb();
+
+    showLoading(false);
+    renderInstructionsView(instructions);
 
   } catch (error) {
     showLoading(false);
@@ -759,6 +801,80 @@ function playPlanFiles(files: ContentItem[]) {
   }
 
   console.log('Playlist:', files);
+}
+
+function renderInstructionsView(instructions: Instructions) {
+  browserTitle.textContent = `${instructions.venueName || 'Instructions'} (Instructions)`;
+
+  const countItems = (items: InstructionItem[]): number => {
+    let count = items.length;
+    for (const item of items) {
+      if (item.children) count += countItems(item.children);
+    }
+    return count;
+  };
+
+  const totalItems = countItems(instructions.items);
+
+  let html = `
+    <div class="instructions-view">
+      <div class="instructions-header">
+        <div class="instructions-info">
+          <h2>${instructions.venueName || 'Instructions'}</h2>
+          <p class="instructions-stats">${instructions.items.length} top-level items • ${totalItems} total items</p>
+        </div>
+      </div>
+      <div class="instructions-tree">
+  `;
+
+  const renderItem = (item: InstructionItem, depth: number = 0): string => {
+    const indent = depth * 20;
+    const hasChildren = item.children && item.children.length > 0;
+    const typeIcon = item.itemType === 'header' ? '📁' :
+                     item.itemType === 'lessonSection' ? '📋' :
+                     item.itemType === 'lessonAction' ? '▶️' :
+                     item.itemType === 'lessonAddOn' ? '➕' : '📄';
+
+    let itemHtml = `
+      <div class="instruction-item" style="margin-left: ${indent}px;" data-embed-url="${item.embedUrl || ''}">
+        <div class="instruction-content">
+          <span class="instruction-icon">${typeIcon}</span>
+          <span class="instruction-label">${item.label || 'Untitled'}</span>
+          ${item.itemType ? `<span class="instruction-type">${item.itemType}</span>` : ''}
+          ${item.seconds ? `<span class="instruction-seconds">${item.seconds}s</span>` : ''}
+        </div>
+        ${item.description ? `<div class="instruction-description">${item.description}</div>` : ''}
+        ${item.embedUrl ? `<a href="${item.embedUrl}" target="_blank" class="instruction-embed-link">Open Embed</a>` : ''}
+      </div>
+    `;
+
+    if (hasChildren) {
+      itemHtml += item.children!.map(child => renderItem(child, depth + 1)).join('');
+    }
+
+    return itemHtml;
+  };
+
+  html += instructions.items.map(item => renderItem(item)).join('');
+
+  html += `
+      </div>
+    </div>
+  `;
+
+  contentGrid.innerHTML = html;
+  emptyEl.classList.add('hidden');
+
+  contentGrid.querySelectorAll('.instruction-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).classList.contains('instruction-embed-link')) return;
+      const embedUrl = item.getAttribute('data-embed-url');
+      if (embedUrl) {
+        showStatus(`Embed URL: ${embedUrl}`, 'success');
+        console.log('Instruction item:', item);
+      }
+    });
+  });
 }
 
 function handleFileClick(file: ContentItem & { type: 'file' }) {

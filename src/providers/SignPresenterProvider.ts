@@ -1,4 +1,4 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan } from '../interfaces';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, Instructions } from '../interfaces';
 import { ContentProvider } from '../ContentProvider';
 
 export class SignPresenterProvider extends ContentProvider {
@@ -86,7 +86,11 @@ export class SignPresenterProvider extends ContentProvider {
     return files;
   }
 
-  async getPlanContents(_folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
+  async getPresentations(_folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
+    return null;
+  }
+
+  async getInstructions(_folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
     return null;
   }
 }

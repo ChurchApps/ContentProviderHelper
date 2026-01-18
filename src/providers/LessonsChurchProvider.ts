@@ -1,4 +1,4 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, FeedVenueInterface } from '../interfaces';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, FeedVenueInterface, Instructions, InstructionItem } from '../interfaces';
 import { ContentProvider } from '../ContentProvider';
 
 export class LessonsChurchProvider extends ContentProvider {
@@ -158,7 +158,7 @@ export class LessonsChurchProvider extends ContentProvider {
     return files;
   }
 
-  async getPlanContents(folder: ContentFolder, _auth?: ContentProviderAuthData | null, resolution?: number): Promise<Plan | null> {
+  async getPresentations(folder: ContentFolder, _auth?: ContentProviderAuthData | null, resolution?: number): Promise<Plan | null> {
     const venueId = folder.providerData?.venueId as string | undefined;
     if (!venueId) return null;
 
@@ -169,6 +169,42 @@ export class LessonsChurchProvider extends ContentProvider {
     if (!venueData) return null;
 
     return this.convertVenueToPlan(venueData);
+  }
+
+  async getInstructions(folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
+    const venueId = folder.providerData?.venueId as string | undefined;
+    if (!venueId) return null;
+
+    const response = await this.apiRequest<{ venueName?: string; items?: Record<string, unknown>[] }>(`/venues/public/planItems/${venueId}`);
+    if (!response) return null;
+
+    const processItem = (item: Record<string, unknown>): InstructionItem => ({
+      id: item.id as string | undefined,
+      itemType: item.itemType as string | undefined,
+      relatedId: item.relatedId as string | undefined,
+      label: item.label as string | undefined,
+      description: item.description as string | undefined,
+      seconds: item.seconds as number | undefined,
+      children: (item.children as Record<string, unknown>[] | undefined)?.map(processItem),
+      embedUrl: this.getEmbedUrl(item.itemType as string | undefined, item.relatedId as string | undefined)
+    });
+
+    return {
+      venueName: response.venueName,
+      items: (response.items || []).map(processItem)
+    };
+  }
+
+  private getEmbedUrl(itemType?: string, relatedId?: string): string | undefined {
+    if (!relatedId) return undefined;
+
+    const baseUrl = 'https://lessons.church';
+    switch (itemType) {
+      case 'lessonAction': return `${baseUrl}/embed/action/${relatedId}`;
+      case 'lessonAddOn': return `${baseUrl}/embed/addon/${relatedId}`;
+      case 'lessonSection': return `${baseUrl}/embed/section/${relatedId}`;
+      default: return undefined;
+    }
   }
 
   private convertVenueToPlan(venue: FeedVenueInterface): Plan {
