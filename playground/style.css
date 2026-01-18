@@ -536,3 +536,313 @@ h2 {
   color: #666;
   margin-top: 1.5rem !important;
 }
+
+/* ============= VENUE CHOICE MODAL ============= */
+.venue-choice-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.venue-choice-content {
+  background: #16213e;
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  border: 1px solid #2a2a4a;
+  text-align: center;
+}
+
+.venue-choice-content h2 {
+  margin: 0 0 0.5rem;
+  color: #fff;
+}
+
+.venue-choice-content > p {
+  color: #888;
+  margin: 0 0 1.5rem;
+}
+
+.venue-choice-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.venue-btn {
+  flex: 1;
+  background: #0f0f23;
+  border: 2px solid #2a2a4a;
+  border-radius: 12px;
+  padding: 1.5rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.venue-btn:hover {
+  border-color: #4a4a7a;
+  transform: translateY(-2px);
+}
+
+.venue-btn .btn-icon {
+  font-size: 2rem;
+}
+
+.venue-btn .btn-text {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.venue-btn .btn-desc {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.venue-btn.playlist-btn:hover {
+  border-color: #0d7377;
+}
+
+.venue-btn.instructions-btn:hover {
+  border-color: #7952b3;
+}
+
+.cancel-btn {
+  background: transparent;
+  border: 1px solid #2a2a4a;
+  color: #888;
+  padding: 0.5rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-btn:hover {
+  border-color: #4a4a7a;
+  color: #fff;
+}
+
+/* ============= PLAN VIEW ============= */
+.plan-view {
+  background: #0f0f23;
+  border-radius: 12px;
+  padding: 1.5rem;
+  /* Override grid layout - take full width */
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+/* When content-grid contains meeting view, don't use grid layout */
+#content-grid:has(.plan-view) {
+  display: block;
+}
+
+.plan-header {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #2a2a4a;
+}
+
+.plan-image {
+  width: 200px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.plan-info {
+  flex: 1;
+}
+
+.plan-info h2 {
+  margin: 0 0 0.5rem;
+  color: #fff;
+}
+
+.plan-description {
+  color: #888;
+  margin: 0 0 0.75rem;
+  line-height: 1.4;
+}
+
+.plan-stats {
+  color: #666;
+  font-size: 0.85rem;
+  margin: 0 0 1rem;
+}
+
+.play-all-btn {
+  background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
+  color: #fff;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.play-all-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(233, 69, 96, 0.4);
+}
+
+.plan-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.plan-section {
+  background: #16213e;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.section-title {
+  margin: 0 0 1rem;
+  color: #fff;
+  font-size: 1.1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #2a2a4a;
+}
+
+.section-presentations {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.presentation-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: #0f0f23;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.presentation-card:hover {
+  border-color: #4a4a7a;
+  background: #1a1a3e;
+}
+
+.presentation-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.presentation-name {
+  color: #fff;
+  font-weight: 500;
+}
+
+.action-badge {
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.action-badge.play {
+  background: #0d7377;
+  color: #fff;
+}
+
+.action-badge.addon {
+  background: #7952b3;
+  color: #fff;
+}
+
+.presentation-files {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.play-presentation-btn {
+  background: #2a2a4a;
+  color: #fff;
+  border: none;
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.play-presentation-btn:hover {
+  background: #e94560;
+}
+
+/* Presentation file details */
+.presentation-file-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: #16213e;
+  border-radius: 4px;
+}
+
+.file-type {
+  font-size: 1.2rem;
+}
+
+.file-title {
+  flex: 1;
+  color: #fff;
+}
+
+.file-seconds {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.file-link {
+  color: #4ecdc4;
+  text-decoration: none;
+  font-size: 0.8rem;
+}
+
+.file-link:hover {
+  text-decoration: underline;
+}
+
+/* Responsive adjustments for plan view */
+@media (max-width: 600px) {
+  .plan-header {
+    flex-direction: column;
+  }
+
+  .plan-image {
+    width: 100%;
+    height: 200px;
+  }
+
+  .venue-choice-buttons {
+    flex-direction: column;
+  }
+}

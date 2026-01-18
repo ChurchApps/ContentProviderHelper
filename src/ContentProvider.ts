@@ -7,6 +7,7 @@ import {
   DeviceFlowPollResult,
   ProviderLogos,
   AuthType,
+  Plan,
 } from './interfaces';
 
 /**
@@ -44,6 +45,17 @@ export abstract class ContentProvider {
    * @param auth - Authentication data (optional for public APIs)
    */
   abstract getFolderContents(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<ContentItem[]>;
+
+  /**
+   * Get structured plan/instructions for a venue folder.
+   * Returns sections with shows, unlike getFolderContents() which returns flat files.
+   * Only applicable for folders where providerData.venueId exists.
+   *
+   * @param folder - The folder (venue) to get plan contents for
+   * @param auth - Authentication data (optional for public APIs)
+   * @returns Plan structure or null if not supported by this provider
+   */
+  abstract getPlanContents(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Plan | null>;
 
   // ============= AUTH HELPER METHODS =============
 

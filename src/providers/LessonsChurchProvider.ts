@@ -5,6 +5,10 @@ import {
   ContentFolder,
   ContentFile,
   ProviderLogos,
+  Plan,
+  PlanSection,
+  PlanPresentation,
+  FeedVenueInterface,
 } from '../interfaces';
 import { ContentProvider } from '../ContentProvider';
 
@@ -41,6 +45,7 @@ export class LessonsChurchProvider extends ContentProvider {
       lessons: (studyId: string) => `/lessons/public/study/${studyId}`,
       venues: (lessonId: string) => `/venues/public/lesson/${lessonId}`,
       playlist: (venueId: string) => `/venues/playlist/${venueId}`,
+      feed: (venueId: string) => `/venues/public/feed/${venueId}`,
     },
   };
 
@@ -253,5 +258,105 @@ export class LessonsChurchProvider extends ContentProvider {
     }
 
     return files;
+  }
+
+  /**
+   * Get plan structure for a venue folder.
+   * Uses the /venues/public/feed/{venueId} endpoint to get structured data.
+   * @param folder - The venue folder
+   * @param _auth - Not used (public API)
+   * @param resolution - Optional resolution for media (720 or 1080)
+   */
+  async getPlanContents(
+    folder: ContentFolder,
+    _auth?: ContentProviderAuthData | null,
+    resolution?: number
+  ): Promise<Plan | null> {
+    const venueId = folder.providerData?.venueId as string | undefined;
+    if (!venueId) return null;
+
+    let path = `/venues/public/feed/${venueId}`;
+    if (resolution) {
+      path += `?resolution=${resolution}`;
+    }
+
+    const venueData = await this.apiRequest<FeedVenueInterface>(path);
+    if (!venueData) return null;
+
+    return this.convertVenueToPlan(venueData);
+  }
+
+  /**
+   * Convert FeedVenueInterface to Plan structure.
+   */
+  private convertVenueToPlan(venue: FeedVenueInterface): Plan {
+    const sections: PlanSection[] = [];
+    const allFiles: ContentFile[] = [];
+
+    for (const section of venue.sections || []) {
+      const presentations: PlanPresentation[] = [];
+
+      for (const action of section.actions || []) {
+        const actionType = (action.actionType?.toLowerCase() || 'other') as 'play' | 'add-on' | 'other';
+
+        // Only include playable actions
+        if (actionType !== 'play' && actionType !== 'add-on') continue;
+
+        const files: ContentFile[] = [];
+
+        for (const file of action.files || []) {
+          if (!file.url) continue;
+
+          const isVideo =
+            file.fileType === 'video' ||
+            file.url.includes('.mp4') ||
+            file.url.includes('.webm') ||
+            file.url.includes('.m3u8') ||
+            file.url.includes('stream.mux.com');
+
+          const contentFile: ContentFile = {
+            type: 'file',
+            id: file.id || '',
+            title: file.name || '',
+            mediaType: isVideo ? 'video' : 'image',
+            thumbnail: venue.lessonImage,
+            url: file.url,
+            providerData: {
+              seconds: file.seconds,
+              streamUrl: file.streamUrl,
+            },
+          };
+
+          files.push(contentFile);
+          allFiles.push(contentFile);
+        }
+
+        if (files.length > 0) {
+          presentations.push({
+            id: action.id || '',
+            name: action.content || section.name || 'Untitled',
+            actionType,
+            files,
+          });
+        }
+      }
+
+      if (presentations.length > 0) {
+        sections.push({
+          id: section.id || '',
+          name: section.name || 'Untitled Section',
+          presentations,
+        });
+      }
+    }
+
+    return {
+      id: venue.id || '',
+      name: venue.lessonName || venue.name || 'Plan',
+      description: venue.lessonDescription,
+      image: venue.lessonImage,
+      sections,
+      allFiles,
+    };
   }
 }

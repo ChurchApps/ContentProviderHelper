@@ -8,6 +8,8 @@ import {
   DeviceAuthorizationResponse,
   isContentFolder,
   isContentFile,
+  Plan,
+  PlanPresentation,
 } from "../src";
 
 // Constants
@@ -17,7 +19,7 @@ const STORAGE_KEY_PROVIDER = 'oauth_provider_id';
 
 // State management
 interface AppState {
-  currentView: 'providers' | 'browser';
+  currentView: 'providers' | 'browser' | 'plan';
   currentProvider: ContentProvider | null;
   currentAuth: ContentProviderAuthData | null;
   folderStack: ContentFolder[];
@@ -27,6 +29,9 @@ interface AppState {
   deviceFlowData: DeviceAuthorizationResponse | null;
   pollingInterval: number | null;
   slowDownCount: number;
+  // Plan view state
+  currentPlan: Plan | null;
+  currentVenueFolder: ContentFolder | null;
 }
 
 const state: AppState = {
@@ -39,6 +44,8 @@ const state: AppState = {
   deviceFlowData: null,
   pollingInterval: null,
   slowDownCount: 0,
+  currentPlan: null,
+  currentVenueFolder: null,
 };
 
 // DOM Elements
@@ -630,9 +637,236 @@ function renderFile(file: ContentItem & { type: 'file' }): string {
 
 // Handle folder click
 function handleFolderClick(folder: ContentFolder) {
+  // Check if this is a venue folder (has venueId in providerData)
+  const isVenue = folder.providerData?.venueId || folder.providerData?.level === 'playlist';
+
+  if (isVenue && state.currentProvider) {
+    // Show choice modal for venue folders
+    showVenueChoiceModal(folder);
+  } else {
+    // Normal folder navigation
+    state.folderStack.push(folder);
+    updateBreadcrumb();
+    loadContent();
+  }
+}
+
+// Show modal to choose between playlist and instructions view
+function showVenueChoiceModal(folder: ContentFolder) {
+  state.currentVenueFolder = folder;
+
+  // Create and show a choice modal
+  const choiceHtml = `
+    <div class="venue-choice-modal" id="venue-choice-modal">
+      <div class="venue-choice-content">
+        <h2>Choose View for "${folder.title}"</h2>
+        <p>How would you like to view this content?</p>
+        <div class="venue-choice-buttons">
+          <button id="view-playlist-btn" class="venue-btn playlist-btn">
+            <span class="btn-icon">📋</span>
+            <span class="btn-text">Playlist</span>
+            <span class="btn-desc">Simple list of media files</span>
+          </button>
+          <button id="view-instructions-btn" class="venue-btn instructions-btn">
+            <span class="btn-icon">📖</span>
+            <span class="btn-text">Instructions</span>
+            <span class="btn-desc">Structured sections with shows</span>
+          </button>
+        </div>
+        <button id="venue-choice-cancel" class="cancel-btn">Cancel</button>
+      </div>
+    </div>
+  `;
+
+  // Add modal to page
+  const existingModal = document.getElementById('venue-choice-modal');
+  if (existingModal) existingModal.remove();
+
+  document.body.insertAdjacentHTML('beforeend', choiceHtml);
+
+  // Add event listeners
+  document.getElementById('view-playlist-btn')!.addEventListener('click', () => {
+    closeVenueChoiceModal();
+    viewAsPlaylist(folder);
+  });
+
+  document.getElementById('view-instructions-btn')!.addEventListener('click', () => {
+    closeVenueChoiceModal();
+    viewAsInstructions(folder);
+  });
+
+  document.getElementById('venue-choice-cancel')!.addEventListener('click', closeVenueChoiceModal);
+
+  // Close on backdrop click
+  document.getElementById('venue-choice-modal')!.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).id === 'venue-choice-modal') {
+      closeVenueChoiceModal();
+    }
+  });
+}
+
+function closeVenueChoiceModal() {
+  const modal = document.getElementById('venue-choice-modal');
+  if (modal) modal.remove();
+  state.currentVenueFolder = null;
+}
+
+// View venue as simple playlist (existing behavior)
+function viewAsPlaylist(folder: ContentFolder) {
   state.folderStack.push(folder);
   updateBreadcrumb();
   loadContent();
+}
+
+// View venue as structured instructions (plan view)
+async function viewAsInstructions(folder: ContentFolder) {
+  if (!state.currentProvider) return;
+
+  showLoading(true);
+
+  try {
+    const plan = await state.currentProvider.getPlanContents(folder, state.currentAuth);
+
+    if (!plan) {
+      showStatus('This provider does not support instructions view', 'error');
+      showLoading(false);
+      return;
+    }
+
+    state.currentPlan = plan;
+    state.currentVenueFolder = folder;
+    state.currentView = 'plan';
+
+    // Update breadcrumb to show we're in plan view
+    state.folderStack.push(folder);
+    updateBreadcrumb();
+
+    showLoading(false);
+    renderPlanView(plan);
+
+  } catch (error) {
+    showLoading(false);
+    showStatus(`Failed to load instructions: ${error}`, 'error');
+  }
+}
+
+// Render the plan/instructions view
+function renderPlanView(plan: Plan) {
+  browserTitle.textContent = `${plan.name} (Instructions)`;
+
+  let html = `
+    <div class="plan-view">
+      <div class="plan-header">
+        ${plan.image ? `<img class="plan-image" src="${plan.image}" alt="${plan.name}">` : ''}
+        <div class="plan-info">
+          <h2>${plan.name}</h2>
+          ${plan.description ? `<p class="plan-description">${plan.description}</p>` : ''}
+          <p class="plan-stats">${plan.sections.length} sections • ${plan.allFiles.length} total files</p>
+          <button id="play-all-btn" class="play-all-btn">▶ Play All (${plan.allFiles.length} files)</button>
+        </div>
+      </div>
+      <div class="plan-sections">
+  `;
+
+  plan.sections.forEach((section, sectionIndex) => {
+    html += `
+      <div class="plan-section">
+        <h3 class="section-title">${section.name}</h3>
+        <div class="section-presentations">
+    `;
+
+    section.presentations.forEach((presentation, presentationIndex) => {
+      const actionBadge = presentation.actionType === 'add-on'
+        ? '<span class="action-badge addon">Add-on</span>'
+        : '<span class="action-badge play">Play</span>';
+
+      html += `
+        <div class="presentation-card" data-section="${sectionIndex}" data-presentation="${presentationIndex}">
+          <div class="presentation-info">
+            <span class="presentation-name">${presentation.name}</span>
+            ${actionBadge}
+          </div>
+          <div class="presentation-files">
+            ${presentation.files.length} file${presentation.files.length !== 1 ? 's' : ''}
+          </div>
+          <button class="play-presentation-btn" data-section="${sectionIndex}" data-presentation="${presentationIndex}">▶ Play</button>
+        </div>
+      `;
+    });
+
+    html += `
+        </div>
+      </div>
+    `;
+  });
+
+  html += `
+      </div>
+    </div>
+  `;
+
+  contentGrid.innerHTML = html;
+  emptyEl.classList.add('hidden');
+
+  // Add event listeners
+  document.getElementById('play-all-btn')?.addEventListener('click', () => {
+    playPlanFiles(plan.allFiles);
+  });
+
+  contentGrid.querySelectorAll('.play-presentation-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const sectionIdx = parseInt((e.target as HTMLElement).getAttribute('data-section')!);
+      const presentationIdx = parseInt((e.target as HTMLElement).getAttribute('data-presentation')!);
+      const presentation = plan.sections[sectionIdx].presentations[presentationIdx];
+      playPlanFiles(presentation.files);
+    });
+  });
+
+  contentGrid.querySelectorAll('.presentation-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      // Don't trigger if clicking the play button
+      if ((e.target as HTMLElement).classList.contains('play-presentation-btn')) return;
+
+      const sectionIdx = parseInt(card.getAttribute('data-section')!);
+      const presentationIdx = parseInt(card.getAttribute('data-presentation')!);
+      const presentation = plan.sections[sectionIdx].presentations[presentationIdx];
+      showPresentationDetails(presentation);
+    });
+  });
+}
+
+// Show details of a presentation (list its files)
+function showPresentationDetails(presentation: PlanPresentation) {
+  const filesHtml = presentation.files.map(file => `
+    <div class="presentation-file-item">
+      <span class="file-type ${file.mediaType}">${file.mediaType === 'video' ? '🎬' : '🖼️'}</span>
+      <span class="file-title">${file.title || 'Untitled'}</span>
+      <span class="file-seconds">${file.providerData?.seconds ? `${file.providerData.seconds}s` : ''}</span>
+      <a href="${file.url}" target="_blank" class="file-link">Open</a>
+    </div>
+  `).join('');
+
+  showStatus(`${presentation.name}: ${presentation.files.length} file(s)`, 'success');
+
+  // Could expand this to show a modal with file details
+  console.log('Presentation details:', presentation);
+}
+
+// Play files from plan
+function playPlanFiles(files: ContentItem[]) {
+  if (files.length === 0) {
+    showStatus('No files to play', 'error');
+    return;
+  }
+
+  // Open first file and log all files
+  const firstFile = files[0];
+  if (isContentFile(firstFile)) {
+    window.open(firstFile.url, '_blank');
+    showStatus(`Playing: ${firstFile.title} (${files.length} total files)`, 'success');
+  }
+
+  console.log('Playlist:', files);
 }
 
 // Handle file click

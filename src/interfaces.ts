@@ -134,3 +134,84 @@ export type DeviceFlowPollResult =
   | ContentProviderAuthData
   | { error: string; shouldSlowDown?: boolean }
   | null;
+
+// ============= PLAN/PRESENTATION ABSTRACTION =============
+
+/**
+ * A playable unit within a plan section.
+ * Contains one or more files that play together as a group.
+ */
+export interface PlanPresentation {
+  id: string;
+  name: string;
+  actionType: 'play' | 'add-on' | 'other';
+  files: ContentFile[];
+}
+
+/**
+ * A section within a plan, containing multiple presentations.
+ * Conceptually similar to a service plan section (worship, message, etc.).
+ */
+export interface PlanSection {
+  id: string;
+  name: string;
+  presentations: PlanPresentation[];
+}
+
+/**
+ * A plan represents structured instructions with sections and presentations.
+ * This is the top-level container returned by getPlanContents().
+ */
+export interface Plan {
+  id: string;
+  name: string;
+  description?: string;
+  image?: string;
+  sections: PlanSection[];
+  /** All files flattened for easy playlist access */
+  allFiles: ContentFile[];
+}
+
+/**
+ * Feed file interface for venue feed API responses.
+ */
+export interface FeedFileInterface {
+  id?: string;
+  name?: string;
+  url?: string;
+  streamUrl?: string;
+  seconds?: number;
+  fileType?: string;
+}
+
+/**
+ * Feed action interface for venue feed API responses.
+ */
+export interface FeedActionInterface {
+  id?: string;
+  actionType?: string;
+  content?: string;
+  files?: FeedFileInterface[];
+}
+
+/**
+ * Feed section interface for venue feed API responses.
+ */
+export interface FeedSectionInterface {
+  id?: string;
+  name?: string;
+  actions?: FeedActionInterface[];
+}
+
+/**
+ * Feed venue interface for venue feed API responses.
+ */
+export interface FeedVenueInterface {
+  id?: string;
+  lessonId?: string;
+  name?: string;
+  lessonName?: string;
+  lessonDescription?: string;
+  lessonImage?: string;
+  sections?: FeedSectionInterface[];
+}

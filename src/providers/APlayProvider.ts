@@ -5,6 +5,7 @@ import {
   ContentFolder,
   ContentFile,
   ProviderLogos,
+  Plan,
 } from '../interfaces';
 import { ContentProvider } from '../ContentProvider';
 
@@ -239,5 +240,12 @@ export class APlayProvider extends ContentProvider {
     }
 
     return files;
+  }
+
+  /**
+   * APlay does not support plan/instructions structure.
+   */
+  async getPlanContents(_folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
+    return null;
   }
 }

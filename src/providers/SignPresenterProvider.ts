@@ -5,6 +5,7 @@ import {
   ContentFolder,
   ContentFile,
   ProviderLogos,
+  Plan,
 } from '../interfaces';
 import { ContentProvider } from '../ContentProvider';
 
@@ -124,5 +125,12 @@ export class SignPresenterProvider extends ContentProvider {
     }
 
     return files;
+  }
+
+  /**
+   * SignPresenter does not support plan/instructions structure.
+   */
+  async getPlanContents(_folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
+    return null;
   }
 }
