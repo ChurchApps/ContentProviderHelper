@@ -111,16 +111,36 @@ function renderProviders() {
     const isConnected = state.connectedProviders.has(provider.id);
     const disabledClass = provider.implemented ? '' : 'disabled';
 
-    let badges = '';
+    // Auth method badges
+    let authBadges = '';
     if (!provider.implemented) {
-      badges += '<span class="provider-badge badge-coming-soon">Coming Soon</span>';
+      authBadges += '<span class="provider-badge badge-coming-soon">Coming Soon</span>';
     } else if (!provider.requiresAuth) {
-      badges += '<span class="provider-badge badge-public">Public API</span>';
+      authBadges += '<span class="provider-badge badge-public">Public API</span>';
     } else {
-      badges += '<span class="provider-badge badge-auth">Auth Required</span>';
+      if (provider.authTypes.includes('device_flow')) {
+        authBadges += '<span class="provider-badge badge-device">Device Flow</span>';
+      }
+      if (provider.authTypes.includes('oauth_pkce')) {
+        authBadges += '<span class="provider-badge badge-auth">OAuth</span>';
+      }
     }
-    if (provider.authTypes.includes('device_flow')) {
-      badges += '<span class="provider-badge badge-device">Device Flow</span>';
+
+    // Capability badges
+    let capBadges = '';
+    if (provider.implemented && provider.capabilities) {
+      if (provider.capabilities.browse) {
+        capBadges += '<span class="provider-badge badge-cap-browse">Playlist</span>';
+      }
+      if (provider.capabilities.presentations) {
+        capBadges += '<span class="provider-badge badge-cap-presentations">Presentations</span>';
+      }
+      if (provider.capabilities.instructions) {
+        capBadges += '<span class="provider-badge badge-cap-instructions">Instructions</span>';
+      }
+      if (provider.capabilities.expandedInstructions) {
+        capBadges += '<span class="provider-badge badge-cap-expanded">Expanded</span>';
+      }
     }
 
     let subtitle = 'Click to connect';
@@ -139,7 +159,8 @@ function renderProviders() {
         ${logoHtml}
         <h3 class="card-title">${provider.name}</h3>
         <p class="card-subtitle">${subtitle}</p>
-        <div>${badges}</div>
+        <div class="badge-row auth-badges">${authBadges}</div>
+        <div class="badge-row cap-badges">${capBadges}</div>
       </div>
     `;
   }).join('');

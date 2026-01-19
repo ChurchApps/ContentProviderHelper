@@ -133,6 +133,7 @@ export function getAvailableProviders(): ProviderInfo[] {
     implemented: true,
     requiresAuth: provider.requiresAuth(),
     authTypes: provider.getAuthTypes(),
+    capabilities: provider.getCapabilities(),
   }));
 
   // Coming soon providers
@@ -143,6 +144,7 @@ export function getAvailableProviders(): ProviderInfo[] {
     implemented: false,
     requiresAuth: false,
     authTypes: [],
+    capabilities: { browse: false, presentations: false, instructions: false, expandedInstructions: false },
   }));
 
   return [...implemented, ...comingSoon];

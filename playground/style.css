@@ -124,16 +124,28 @@ h2 {
   filter: grayscale(100%);
 }
 
-.provider-badge {
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  justify-content: center;
   margin-top: 0.5rem;
 }
 
+.badge-row:empty {
+  display: none;
+}
+
+.provider-badge {
+  display: inline-block;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Auth method badges */
 .badge-public {
   background: #0d7377;
   color: #fff;
@@ -152,6 +164,27 @@ h2 {
 .badge-coming-soon {
   background: #555;
   color: #ccc;
+}
+
+/* Capability badges */
+.badge-cap-browse {
+  background: #2563eb;
+  color: #fff;
+}
+
+.badge-cap-presentations {
+  background: #059669;
+  color: #fff;
+}
+
+.badge-cap-instructions {
+  background: #d97706;
+  color: #fff;
+}
+
+.badge-cap-expanded {
+  background: #7c3aed;
+  color: #fff;
 }
 
 /* Folder/File icons */

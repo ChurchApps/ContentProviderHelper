@@ -49,6 +49,7 @@ export interface ProviderInfo {
   implemented: boolean;
   requiresAuth: boolean;
   authTypes: AuthType[];
+  capabilities: ProviderCapabilities;
 }
 
 export interface ContentFolder {
