@@ -1,8 +1,28 @@
-import { getAvailableProviders, getProvider, ContentProvider, ContentFolder, ContentItem, ContentProviderAuthData, DeviceAuthorizationResponse, isContentFolder, isContentFile, Plan, PlanPresentation, Instructions, InstructionItem } from "../src";
+import { getAvailableProviders, getProvider, ContentProvider, ContentFolder, ContentItem, ContentProviderAuthData, DeviceAuthorizationResponse, isContentFolder, isContentFile, Plan, PlanPresentation, Instructions, InstructionItem, B1ChurchProvider, PlanningCenterProvider } from "../src";
 
 const OAUTH_REDIRECT_URI = `${window.location.origin}${window.location.pathname}`;
 const STORAGE_KEY_VERIFIER = 'oauth_code_verifier';
 const STORAGE_KEY_PROVIDER = 'oauth_provider_id';
+
+// Configure client IDs for OAuth providers (using FreeShow's registered app credentials for testing)
+const PCO_CLIENT_ID = '35d1112d839d678ce3f1de730d2cff0b81038c2944b11c5e2edf03f8b43abc05';
+const B1_CLIENT_ID = 'nEgWOCjpj3p';
+const B1_CLIENT_SECRET = 'raEFO2kT0Lc';
+
+// Configure providers with client IDs
+function configureProviders() {
+  const pcoProvider = getProvider('planningcenter') as PlanningCenterProvider | null;
+  if (pcoProvider) {
+    (pcoProvider.config as any).clientId = PCO_CLIENT_ID;
+  }
+
+  const b1Provider = getProvider('b1church') as B1ChurchProvider | null;
+  if (b1Provider) {
+    (b1Provider.config as any).clientId = B1_CLIENT_ID;
+  }
+}
+
+configureProviders();
 
 interface AppState {
   currentView: 'providers' | 'browser' | 'plan' | 'instructions';
@@ -224,7 +244,15 @@ async function handleOAuthCallback() {
   showModal('processing');
 
   try {
-    const authData = await provider.exchangeCodeForTokens(code, codeVerifier, OAUTH_REDIRECT_URI);
+    let authData: ContentProviderAuthData | null;
+
+    // B1Church uses standard OAuth with client_secret (not PKCE)
+    if (provider.id === 'b1church') {
+      const b1Provider = provider as B1ChurchProvider;
+      authData = await b1Provider.exchangeCodeForTokensWithSecret(code, OAUTH_REDIRECT_URI, B1_CLIENT_SECRET);
+    } else {
+      authData = await provider.exchangeCodeForTokens(code, codeVerifier, OAUTH_REDIRECT_URI);
+    }
 
     if (!authData) {
       showModal('error');

@@ -15,6 +15,8 @@ export { ContentProvider } from './ContentProvider';
 export { APlayProvider } from './providers/APlayProvider';
 export { SignPresenterProvider } from './providers/SignPresenterProvider';
 export { LessonsChurchProvider } from './providers/LessonsChurchProvider';
+export { B1ChurchProvider } from './providers/B1ChurchProvider';
+export { PlanningCenterProvider } from './providers/PlanningCenterProvider';
 
 // Registry functions
 export {

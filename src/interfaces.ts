@@ -16,7 +16,7 @@ export interface ContentProviderConfig {
   scopes: string[];
   supportsDeviceFlow?: boolean;
   deviceAuthEndpoint?: string;
-  endpoints: Record<string, string | ((id: string) => string)>;
+  endpoints: Record<string, string | ((...args: string[]) => string)>;
 }
 
 export interface DeviceAuthorizationResponse {

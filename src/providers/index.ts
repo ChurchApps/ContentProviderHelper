@@ -3,10 +3,14 @@ import { ProviderInfo, ProviderLogos } from '../interfaces';
 import { APlayProvider } from './APlayProvider';
 import { SignPresenterProvider } from './SignPresenterProvider';
 import { LessonsChurchProvider } from './LessonsChurchProvider';
+import { B1ChurchProvider } from './B1ChurchProvider';
+import { PlanningCenterProvider } from './PlanningCenterProvider';
 
 export { APlayProvider } from './APlayProvider';
 export { SignPresenterProvider } from './SignPresenterProvider';
 export { LessonsChurchProvider } from './LessonsChurchProvider';
+export { B1ChurchProvider } from './B1ChurchProvider';
+export { PlanningCenterProvider } from './PlanningCenterProvider';
 
 // Provider registry - singleton instances
 const providerRegistry: Map<string, ContentProvider> = new Map();
@@ -52,14 +56,6 @@ const unimplementedProviders: UnimplementedProvider[] = [
     },
   },
   {
-    id: 'b1church',
-    name: 'B1.Church',
-    logos: {
-      light: 'https://b1.church/b1-church-logo.png',
-      dark: 'https://b1.church/b1-church-logo.png',
-    },
-  },
-  {
     id: 'iteachchurch',
     name: 'iTeachChurch',
     logos: {
@@ -82,10 +78,14 @@ function initializeProviders() {
   const aplay = new APlayProvider();
   const signPresenter = new SignPresenterProvider();
   const lessonsChurch = new LessonsChurchProvider();
+  const b1Church = new B1ChurchProvider();
+  const planningCenter = new PlanningCenterProvider();
 
   providerRegistry.set(aplay.id, aplay);
   providerRegistry.set(signPresenter.id, signPresenter);
   providerRegistry.set(lessonsChurch.id, lessonsChurch);
+  providerRegistry.set(b1Church.id, b1Church);
+  providerRegistry.set(planningCenter.id, planningCenter);
 }
 
 // Initialize on module load
