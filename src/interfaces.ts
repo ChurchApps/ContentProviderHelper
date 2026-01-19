@@ -172,3 +172,10 @@ export interface VenueActionsResponseInterface {
   venueName?: string;
   sections?: VenueSectionActionsInterface[];
 }
+
+export interface ProviderCapabilities {
+  browse: boolean;
+  presentations: boolean;
+  instructions: boolean;
+  expandedInstructions: boolean;
+}

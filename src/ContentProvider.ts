@@ -1,4 +1,4 @@
-import { ContentProviderAuthData, ContentProviderConfig, ContentItem, ContentFolder, DeviceAuthorizationResponse, DeviceFlowPollResult, ProviderLogos, AuthType, Plan, Instructions } from './interfaces';
+import { ContentProviderAuthData, ContentProviderConfig, ContentItem, ContentFolder, DeviceAuthorizationResponse, DeviceFlowPollResult, ProviderLogos, AuthType, Plan, Instructions, ProviderCapabilities } from './interfaces';
 
 export abstract class ContentProvider {
   abstract readonly id: string;
@@ -14,6 +14,15 @@ export abstract class ContentProvider {
 
   requiresAuth(): boolean {
     return !!this.config.clientId;
+  }
+
+  getCapabilities(): ProviderCapabilities {
+    return {
+      browse: true,
+      presentations: false,
+      instructions: false,
+      expandedInstructions: false
+    };
   }
 
   getAuthTypes(): AuthType[] {

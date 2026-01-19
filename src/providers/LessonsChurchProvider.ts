@@ -1,4 +1,4 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, FeedVenueInterface, Instructions, InstructionItem, VenueActionsResponseInterface } from '../interfaces';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, FeedVenueInterface, Instructions, InstructionItem, VenueActionsResponseInterface, ProviderCapabilities } from '../interfaces';
 import { ContentProvider } from '../ContentProvider';
 
 export class LessonsChurchProvider extends ContentProvider {
@@ -29,6 +29,15 @@ export class LessonsChurchProvider extends ContentProvider {
 
   override requiresAuth(): boolean {
     return false;
+  }
+
+  override getCapabilities(): ProviderCapabilities {
+    return {
+      browse: true,
+      presentations: true,
+      instructions: true,
+      expandedInstructions: true
+    };
   }
 
   protected override async apiRequest<T>(path: string): Promise<T | null> {

@@ -1,4 +1,4 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, Instructions } from '../interfaces';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanPresentation, Instructions, ProviderCapabilities } from '../interfaces';
 import { ContentProvider } from '../ContentProvider';
 
 export class SignPresenterProvider extends ContentProvider {
@@ -24,6 +24,15 @@ export class SignPresenterProvider extends ContentProvider {
       messages: (playlistId: string) => `/content/playlists/${playlistId}/messages`
     }
   };
+
+  override getCapabilities(): ProviderCapabilities {
+    return {
+      browse: true,
+      presentations: true,
+      instructions: false,
+      expandedInstructions: false
+    };
+  }
 
   async getRootContents(auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const path = this.config.endpoints.playlists as string;
@@ -86,8 +95,31 @@ export class SignPresenterProvider extends ContentProvider {
     return files;
   }
 
-  async getPresentations(_folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
-    return null;
+  async getPresentations(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Plan | null> {
+    const playlistId = folder.providerData?.playlistId as string | undefined;
+    if (!playlistId) return null;
+
+    const files = await this.getMessages(folder, auth) as ContentFile[];
+    if (files.length === 0) return null;
+
+    const presentations: PlanPresentation[] = files.map(f => ({
+      id: f.id,
+      name: f.title,
+      actionType: 'play' as const,
+      files: [f]
+    }));
+
+    return {
+      id: playlistId,
+      name: folder.title,
+      image: folder.image,
+      sections: [{
+        id: `section-${playlistId}`,
+        name: folder.title || 'Playlist',
+        presentations
+      }],
+      allFiles: files
+    };
   }
 
   async getInstructions(_folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {

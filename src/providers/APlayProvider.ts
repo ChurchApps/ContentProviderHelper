@@ -1,4 +1,4 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, Instructions } from '../interfaces';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanPresentation, Instructions, ProviderCapabilities } from '../interfaces';
 import { ContentProvider } from '../ContentProvider';
 
 export class APlayProvider extends ContentProvider {
@@ -23,6 +23,15 @@ export class APlayProvider extends ContentProvider {
       libraryMedia: (libraryId: string) => `/prod/creators/libraries/${libraryId}/media`
     }
   };
+
+  override getCapabilities(): ProviderCapabilities {
+    return {
+      browse: true,
+      presentations: true,
+      instructions: false,
+      expandedInstructions: false
+    };
+  }
 
   async getRootContents(auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const response = await this.apiRequest<Record<string, unknown>>(this.config.endpoints.modules as string, auth);
@@ -170,8 +179,31 @@ export class APlayProvider extends ContentProvider {
     return files;
   }
 
-  async getPresentations(_folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
-    return null;
+  async getPresentations(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Plan | null> {
+    const libraryId = folder.providerData?.libraryId as string | undefined;
+    if (!libraryId) return null;
+
+    const files = await this.getMediaFiles(folder, auth) as ContentFile[];
+    if (files.length === 0) return null;
+
+    const presentations: PlanPresentation[] = files.map(f => ({
+      id: f.id,
+      name: f.title,
+      actionType: 'play' as const,
+      files: [f]
+    }));
+
+    return {
+      id: libraryId,
+      name: folder.title,
+      image: folder.image,
+      sections: [{
+        id: `section-${libraryId}`,
+        name: folder.title || 'Library',
+        presentations
+      }],
+      allFiles: files
+    };
   }
 
   async getInstructions(_folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
