@@ -88,22 +88,22 @@ export class LessonsChurchProvider extends ContentProvider {
     }
   }
 
-  async getRootContents(): Promise<ContentItem[]> {
-    const path = this.config.endpoints.programs as string;
-    const response = await this.apiRequest<Record<string, unknown>[]>(path);
-    if (!response) return [];
+  async browse(folder?: ContentFolder | null, _auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentItem[]> {
+    if (!folder) {
+      const path = this.config.endpoints.programs as string;
+      const response = await this.apiRequest<Record<string, unknown>[]>(path);
+      if (!response) return [];
 
-    const programs = Array.isArray(response) ? response : [];
-    return programs.map((p) => ({
-      type: 'folder' as const,
-      id: p.id as string,
-      title: p.name as string,
-      image: p.image as string | undefined,
-      providerData: { level: 'studies', programId: p.id }
-    }));
-  }
+      const programs = Array.isArray(response) ? response : [];
+      return programs.map((p) => ({
+        type: 'folder' as const,
+        id: p.id as string,
+        title: p.name as string,
+        image: p.image as string | undefined,
+        providerData: { level: 'studies', programId: p.id }
+      }));
+    }
 
-  async getFolderContents(folder: ContentFolder, _auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentItem[]> {
     const level = folder.providerData?.level;
     switch (level) {
       case 'studies': return this.getStudies(folder);

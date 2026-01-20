@@ -40,16 +40,8 @@
             <h3>Main Methods</h3>
 
             <div class="docs-method">
-              <h4><code>getRootContents(auth?)</code></h4>
-              <p class="docs-desc">Get the root-level content items (folders and/or files).</p>
-              <div class="docs-returns">
-                <strong>Returns:</strong> <code>Promise&lt;ContentItem[]&gt;</code>
-              </div>
-            </div>
-
-            <div class="docs-method">
-              <h4><code>getFolderContents(folder, auth?)</code></h4>
-              <p class="docs-desc">Get the contents of a folder.</p>
+              <h4><code>browse(folder?, auth?)</code></h4>
+              <p class="docs-desc">Browse the content hierarchy. If folder is null/undefined, returns root-level items. If folder is provided, returns items within that folder.</p>
               <div class="docs-returns">
                 <strong>Returns:</strong> <code>Promise&lt;ContentItem[]&gt;</code>
               </div>

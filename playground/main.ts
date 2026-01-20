@@ -539,14 +539,10 @@ async function loadContent() {
   emptyEl.classList.add('hidden');
 
   try {
-    let items: ContentItem[];
-
-    if (state.folderStack.length === 0) {
-      items = await state.currentProvider.getRootContents(state.currentAuth);
-    } else {
-      const currentFolder = state.folderStack[state.folderStack.length - 1];
-      items = await state.currentProvider.getFolderContents(currentFolder, state.currentAuth);
-    }
+    const currentFolder = state.folderStack.length > 0
+      ? state.folderStack[state.folderStack.length - 1]
+      : null;
+    const items = await state.currentProvider.browse(currentFolder, state.currentAuth);
 
     showLoading(false);
 

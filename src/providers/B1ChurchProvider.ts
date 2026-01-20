@@ -184,26 +184,26 @@ export class B1ChurchProvider extends ContentProvider {
     };
   }
 
-  async getRootContents(auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
-    const response = await this.apiRequest<B1Plan[]>(this.config.endpoints.plans as string, auth);
-    if (!response || !Array.isArray(response)) return [];
+  async browse(folder?: ContentFolder | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
+    if (!folder) {
+      const response = await this.apiRequest<B1Plan[]>(this.config.endpoints.plans as string, auth);
+      if (!response || !Array.isArray(response)) return [];
 
-    return response.map((plan) => ({
-      type: 'folder' as const,
-      id: plan.id,
-      title: plan.name,
-      providerData: {
-        level: 'plan',
-        planId: plan.id,
-        churchId: plan.churchId,
-        serviceDate: plan.serviceDate,
-        contentType: plan.contentType,
-        contentId: plan.contentId
-      }
-    }));
-  }
+      return response.map((plan) => ({
+        type: 'folder' as const,
+        id: plan.id,
+        title: plan.name,
+        providerData: {
+          level: 'plan',
+          planId: plan.id,
+          churchId: plan.churchId,
+          serviceDate: plan.serviceDate,
+          contentType: plan.contentType,
+          contentId: plan.contentId
+        }
+      }));
+    }
 
-  async getFolderContents(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const level = folder.providerData?.level;
     if (level !== 'plan') return [];
 

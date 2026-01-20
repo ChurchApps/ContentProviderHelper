@@ -8,8 +8,7 @@ import { detectMediaType } from './utils';
  * ## Main Methods (for consumers)
  *
  * ### Content Browsing
- * - `getRootContents(auth?)` - Get top-level folders/files
- * - `getFolderContents(folder, auth?)` - Get contents of a folder
+ * - `browse(folder?, auth?)` - Browse content hierarchy (root if no folder, or folder contents)
  *
  * ### Structured Data
  * - `getPresentations(folder, auth?)` - Get structured plan with sections and presentations
@@ -43,19 +42,13 @@ export abstract class ContentProvider {
   abstract readonly config: ContentProviderConfig;
 
   /**
-   * Get the root-level content items (folders and/or files).
+   * Browse the content hierarchy. If folder is null/undefined, returns root-level items.
+   * If folder is provided, returns items within that folder.
+   * @param folder - Optional folder to browse into (null/undefined for root)
    * @param auth - Optional authentication data
-   * @returns Array of content items at the root level
+   * @returns Array of content items (folders and/or files)
    */
-  abstract getRootContents(auth?: ContentProviderAuthData | null): Promise<ContentItem[]>;
-
-  /**
-   * Get the contents of a folder.
-   * @param folder - The folder to get contents of
-   * @param auth - Optional authentication data
-   * @returns Array of content items within the folder
-   */
-  abstract getFolderContents(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<ContentItem[]>;
+  abstract browse(folder?: ContentFolder | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]>;
 
   /**
    * Get a structured plan with sections and presentations for a folder.

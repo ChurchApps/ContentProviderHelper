@@ -35,56 +35,56 @@ export class APlayProvider extends ContentProvider {
     };
   }
 
-  async getRootContents(auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
-    const response = await this.apiRequest<Record<string, unknown>>(this.config.endpoints.modules as string, auth);
-    if (!response) return [];
+  async browse(folder?: ContentFolder | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
+    if (!folder) {
+      const response = await this.apiRequest<Record<string, unknown>>(this.config.endpoints.modules as string, auth);
+      if (!response) return [];
 
-    const modules = (response.data || response.modules || response) as Record<string, unknown>[];
-    if (!Array.isArray(modules)) return [];
+      const modules = (response.data || response.modules || response) as Record<string, unknown>[];
+      if (!Array.isArray(modules)) return [];
 
-    const items: ContentItem[] = [];
+      const items: ContentItem[] = [];
 
-    for (const m of modules) {
-      if (m.isLocked) continue;
+      for (const m of modules) {
+        if (m.isLocked) continue;
 
-      const allProducts = (m.products as Record<string, unknown>[]) || [];
-      const products = allProducts.filter((p) => !p.isHidden);
+        const allProducts = (m.products as Record<string, unknown>[]) || [];
+        const products = allProducts.filter((p) => !p.isHidden);
 
-      if (products.length === 0) {
-        items.push({
-          type: 'folder',
-          id: (m.id || m.moduleId) as string,
-          title: (m.title || m.name) as string,
-          image: m.image as string | undefined,
-          providerData: { level: 'libraries', productId: m.id || m.moduleId }
-        });
-      } else if (products.length === 1) {
-        const product = products[0];
-        items.push({
-          type: 'folder',
-          id: (product.productId || product.id) as string,
-          title: (m.title || m.name) as string,
-          image: (m.image || product.image) as string | undefined,
-          providerData: { level: 'libraries', productId: product.productId || product.id }
-        });
-      } else {
-        items.push({
-          type: 'folder',
-          id: (m.id || m.moduleId) as string,
-          title: (m.title || m.name) as string,
-          image: m.image as string | undefined,
-          providerData: {
-            level: 'products',
-            products: products.map((p) => ({ id: p.productId || p.id, title: p.title || p.name, image: p.image }))
-          }
-        });
+        if (products.length === 0) {
+          items.push({
+            type: 'folder',
+            id: (m.id || m.moduleId) as string,
+            title: (m.title || m.name) as string,
+            image: m.image as string | undefined,
+            providerData: { level: 'libraries', productId: m.id || m.moduleId }
+          });
+        } else if (products.length === 1) {
+          const product = products[0];
+          items.push({
+            type: 'folder',
+            id: (product.productId || product.id) as string,
+            title: (m.title || m.name) as string,
+            image: (m.image || product.image) as string | undefined,
+            providerData: { level: 'libraries', productId: product.productId || product.id }
+          });
+        } else {
+          items.push({
+            type: 'folder',
+            id: (m.id || m.moduleId) as string,
+            title: (m.title || m.name) as string,
+            image: m.image as string | undefined,
+            providerData: {
+              level: 'products',
+              products: products.map((p) => ({ id: p.productId || p.id, title: p.title || p.name, image: p.image }))
+            }
+          });
+        }
       }
+
+      return items;
     }
 
-    return items;
-  }
-
-  async getFolderContents(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const level = folder.providerData?.level;
     switch (level) {
       case 'products': return this.getProductFolders(folder);

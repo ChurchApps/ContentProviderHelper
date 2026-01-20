@@ -115,26 +115,26 @@ export class PlanningCenterProvider extends ContentProvider {
     };
   }
 
-  async getRootContents(auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
-    const response = await this.apiRequest<{ data: PCOServiceType[] }>(
-      this.config.endpoints.serviceTypes as string,
-      auth
-    );
+  async browse(folder?: ContentFolder | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
+    if (!folder) {
+      const response = await this.apiRequest<{ data: PCOServiceType[] }>(
+        this.config.endpoints.serviceTypes as string,
+        auth
+      );
 
-    if (!response?.data) return [];
+      if (!response?.data) return [];
 
-    return response.data.map((serviceType) => ({
-      type: 'folder' as const,
-      id: serviceType.id,
-      title: serviceType.attributes.name,
-      providerData: {
-        level: 'serviceType',
-        serviceTypeId: serviceType.id
-      }
-    }));
-  }
+      return response.data.map((serviceType) => ({
+        type: 'folder' as const,
+        id: serviceType.id,
+        title: serviceType.attributes.name,
+        providerData: {
+          level: 'serviceType',
+          serviceTypeId: serviceType.id
+        }
+      }));
+    }
 
-  async getFolderContents(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const level = folder.providerData?.level;
 
     switch (level) {

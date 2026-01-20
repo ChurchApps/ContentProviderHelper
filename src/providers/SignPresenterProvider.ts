@@ -36,27 +36,27 @@ export class SignPresenterProvider extends ContentProvider {
     };
   }
 
-  async getRootContents(auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
-    const path = this.config.endpoints.playlists as string;
-    const response = await this.apiRequest<unknown>(path, auth);
-    if (!response) return [];
+  async browse(folder?: ContentFolder | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
+    if (!folder) {
+      const path = this.config.endpoints.playlists as string;
+      const response = await this.apiRequest<unknown>(path, auth);
+      if (!response) return [];
 
-    const playlists = Array.isArray(response)
-      ? response
-      : ((response as Record<string, unknown>).data || (response as Record<string, unknown>).playlists || []) as Record<string, unknown>[];
+      const playlists = Array.isArray(response)
+        ? response
+        : ((response as Record<string, unknown>).data || (response as Record<string, unknown>).playlists || []) as Record<string, unknown>[];
 
-    if (!Array.isArray(playlists)) return [];
+      if (!Array.isArray(playlists)) return [];
 
-    return playlists.map((p) => ({
-      type: 'folder' as const,
-      id: p.id as string,
-      title: p.name as string,
-      image: p.image as string | undefined,
-      providerData: { level: 'messages', playlistId: p.id }
-    }));
-  }
+      return playlists.map((p) => ({
+        type: 'folder' as const,
+        id: p.id as string,
+        title: p.name as string,
+        image: p.image as string | undefined,
+        providerData: { level: 'messages', playlistId: p.id }
+      }));
+    }
 
-  async getFolderContents(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const level = folder.providerData?.level;
     if (level === 'messages') return this.getMessages(folder, auth);
     return [];
