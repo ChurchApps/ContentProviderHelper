@@ -1,5 +1,6 @@
 import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, FeedVenueInterface, Instructions, InstructionItem, VenueActionsResponseInterface, ProviderCapabilities } from '../interfaces';
 import { ContentProvider } from '../ContentProvider';
+import { detectMediaType } from '../utils';
 
 export class LessonsChurchProvider extends ContentProvider {
   readonly id = 'lessonschurch';
@@ -150,13 +151,12 @@ export class LessonsChurchProvider extends ContentProvider {
         if (!f.url) continue;
 
         const url = f.url as string;
-        const isVideo = f.fileType === 'video' || url.includes('.mp4') || url.includes('.webm') || url.includes('.m3u8');
 
         files.push({
           type: 'file',
           id: f.id as string,
           title: (f.name || msg.name) as string,
-          mediaType: isVideo ? 'video' : 'image',
+          mediaType: detectMediaType(url, f.fileType as string | undefined),
           thumbnail: response.lessonImage as string | undefined,
           url,
           providerData: { seconds: f.seconds, loop: f.loop, loopVideo: f.loopVideo }
@@ -304,13 +304,11 @@ export class LessonsChurchProvider extends ContentProvider {
         for (const file of action.files || []) {
           if (!file.url) continue;
 
-          const isVideo = file.fileType === 'video' || file.url.includes('.mp4') || file.url.includes('.webm') || file.url.includes('.m3u8') || file.url.includes('stream.mux.com');
-
           const contentFile: ContentFile = {
             type: 'file',
             id: file.id || '',
             title: file.name || '',
-            mediaType: isVideo ? 'video' : 'image',
+            mediaType: detectMediaType(file.url, file.fileType),
             thumbnail: venue.lessonImage,
             url: file.url,
             providerData: { seconds: file.seconds, streamUrl: file.streamUrl }

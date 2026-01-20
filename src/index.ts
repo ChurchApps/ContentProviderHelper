@@ -8,6 +8,9 @@ export const VERSION = "0.0.1";
 // Interfaces
 export * from './interfaces';
 
+// Utilities
+export { detectMediaType } from './utils';
+
 // Base class (for extending with custom providers)
 export { ContentProvider } from './ContentProvider';
 

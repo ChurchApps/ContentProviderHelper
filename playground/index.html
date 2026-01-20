@@ -19,10 +19,321 @@
         <span id="breadcrumb-path"></span>
       </nav>
 
+      <!-- Tab navigation -->
+      <nav id="main-tabs" class="main-tabs">
+        <button class="tab-btn active" data-tab="providers">Providers</button>
+        <button class="tab-btn" data-tab="docs">API Documentation</button>
+      </nav>
+
       <!-- Provider grid view -->
       <section id="providers-view">
         <h2>Available Providers</h2>
         <div id="providers-grid" class="grid"></div>
+      </section>
+
+      <!-- API Documentation view -->
+      <section id="docs-view" class="hidden">
+        <div class="docs-container">
+          <h2>API Documentation</h2>
+
+          <div class="docs-section">
+            <h3>Main Methods</h3>
+
+            <div class="docs-method">
+              <h4><code>getRootContents(auth?)</code></h4>
+              <p class="docs-desc">Get the root-level content items (folders and/or files).</p>
+              <div class="docs-returns">
+                <strong>Returns:</strong> <code>Promise&lt;ContentItem[]&gt;</code>
+              </div>
+            </div>
+
+            <div class="docs-method">
+              <h4><code>getFolderContents(folder, auth?)</code></h4>
+              <p class="docs-desc">Get the contents of a folder.</p>
+              <div class="docs-returns">
+                <strong>Returns:</strong> <code>Promise&lt;ContentItem[]&gt;</code>
+              </div>
+            </div>
+
+            <div class="docs-method">
+              <h4><code>getPresentations(folder, auth?)</code></h4>
+              <p class="docs-desc">Get a structured plan with sections and presentations for a folder.</p>
+              <div class="docs-returns">
+                <strong>Returns:</strong> <code>Promise&lt;Plan | null&gt;</code>
+              </div>
+            </div>
+
+            <div class="docs-method">
+              <h4><code>getInstructions(folder, auth?)</code></h4>
+              <p class="docs-desc">Get instruction/run sheet data for a folder.</p>
+              <div class="docs-returns">
+                <strong>Returns:</strong> <code>Promise&lt;Instructions | null&gt;</code>
+              </div>
+            </div>
+
+            <div class="docs-method">
+              <h4><code>getExpandedInstructions(folder, auth?)</code></h4>
+              <p class="docs-desc">Get expanded instruction data with actions for a folder.</p>
+              <div class="docs-returns">
+                <strong>Returns:</strong> <code>Promise&lt;Instructions | null&gt;</code>
+              </div>
+            </div>
+          </div>
+
+          <div class="docs-section">
+            <h3>Provider Info Methods</h3>
+
+            <div class="docs-method">
+              <h4><code>requiresAuth()</code></h4>
+              <p class="docs-desc">Check if this provider requires authentication.</p>
+              <div class="docs-returns">
+                <strong>Returns:</strong> <code>boolean</code>
+              </div>
+            </div>
+
+            <div class="docs-method">
+              <h4><code>getCapabilities()</code></h4>
+              <p class="docs-desc">Get the capabilities supported by this provider.</p>
+              <div class="docs-returns">
+                <strong>Returns:</strong> <code>ProviderCapabilities</code>
+              </div>
+            </div>
+
+            <div class="docs-method">
+              <h4><code>getAuthTypes()</code></h4>
+              <p class="docs-desc">Get the authentication types supported by this provider.</p>
+              <div class="docs-returns">
+                <strong>Returns:</strong> <code>AuthType[]</code> — <code>'none' | 'oauth_pkce' | 'device_flow'</code>
+              </div>
+            </div>
+          </div>
+
+          <div class="docs-section">
+            <h3>Data Structures</h3>
+
+            <div class="docs-type">
+              <h4>ContentItem</h4>
+              <p class="docs-desc">A content item - either a folder or a file.</p>
+              <pre class="docs-code">type ContentItem = ContentFolder | ContentFile</pre>
+            </div>
+
+            <div class="docs-type">
+              <h4>ContentFolder</h4>
+              <p class="docs-desc">A folder in the content hierarchy. Can be navigated into.</p>
+              <pre class="docs-code">{
+  type: 'folder',        // Discriminator (always 'folder')
+  id: string,            // Unique identifier
+  title: string,         // Display title
+  image?: string,        // Optional thumbnail URL
+  providerData?: object  // Provider-specific navigation data
+}</pre>
+            </div>
+
+            <div class="docs-type">
+              <h4>ContentFile</h4>
+              <p class="docs-desc">A playable media file (video or image).</p>
+              <pre class="docs-code">{
+  type: 'file',                    // Discriminator (always 'file')
+  id: string,                      // Unique identifier
+  title: string,                   // Display title
+  mediaType: 'video' | 'image',    // Media type
+  thumbnail?: string,              // Optional thumbnail URL
+  url: string,                     // Media file URL
+  muxPlaybackId?: string,          // Mux playback ID (if applicable)
+  providerData?: object            // Provider-specific data
+}</pre>
+            </div>
+
+            <div class="docs-type">
+              <h4>Plan</h4>
+              <p class="docs-desc">A complete plan/service with sections and presentations. Returned by <code>getPresentations()</code>.</p>
+              <pre class="docs-code">{
+  id: string,
+  name: string,
+  description?: string,
+  image?: string,
+  sections: PlanSection[],
+  allFiles: ContentFile[]
+}</pre>
+            </div>
+
+            <div class="docs-type">
+              <h4>PlanSection</h4>
+              <p class="docs-desc">A section within a plan containing presentations.</p>
+              <pre class="docs-code">{
+  id: string,
+  name: string,                    // e.g., "Worship", "Message"
+  presentations: PlanPresentation[]
+}</pre>
+            </div>
+
+            <div class="docs-type">
+              <h4>PlanPresentation</h4>
+              <p class="docs-desc">A presentation within a section (e.g., a song, video, or activity).</p>
+              <pre class="docs-code">{
+  id: string,
+  name: string,
+  actionType: 'play' | 'add-on' | 'other',
+  files: ContentFile[]
+}</pre>
+              <div class="docs-values">
+                <strong>actionType values:</strong>
+                <ul>
+                  <li><code>'play'</code> — Main playable content</li>
+                  <li><code>'add-on'</code> — Supplementary content</li>
+                  <li><code>'other'</code> — Non-playable item (lyrics, notes, etc.)</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="docs-type">
+              <h4>Instructions</h4>
+              <p class="docs-desc">Instructions/run sheet for a venue. Returned by <code>getInstructions()</code> and <code>getExpandedInstructions()</code>.</p>
+              <pre class="docs-code">{
+  venueName?: string,
+  items: InstructionItem[]
+}</pre>
+            </div>
+
+            <div class="docs-type">
+              <h4>InstructionItem</h4>
+              <p class="docs-desc">An item in the instruction hierarchy.</p>
+              <pre class="docs-code">{
+  id?: string,
+  itemType?: string,       // e.g., 'header', 'lessonSection', 'lessonAction'
+  relatedId?: string,
+  label?: string,
+  description?: string,
+  seconds?: number,
+  children?: InstructionItem[],
+  embedUrl?: string
+}</pre>
+            </div>
+
+            <div class="docs-type">
+              <h4>ProviderCapabilities</h4>
+              <p class="docs-desc">Capabilities supported by a content provider.</p>
+              <pre class="docs-code">{
+  browse: boolean,              // Supports browsing content hierarchy
+  presentations: boolean,       // getPresentations() returns data
+  instructions: boolean,        // getInstructions() returns data
+  expandedInstructions: boolean // getExpandedInstructions() returns data
+}</pre>
+            </div>
+
+            <div class="docs-type">
+              <h4>ProviderInfo</h4>
+              <p class="docs-desc">Information about a content provider.</p>
+              <pre class="docs-code">{
+  id: string,
+  name: string,
+  logos: { light: string, dark: string },
+  implemented: boolean,
+  requiresAuth: boolean,
+  authTypes: AuthType[],
+  capabilities: ProviderCapabilities
+}</pre>
+            </div>
+          </div>
+
+          <div class="docs-section">
+            <h3>Authentication</h3>
+
+            <div class="docs-type">
+              <h4>AuthType</h4>
+              <p class="docs-desc">Authentication type supported by a provider.</p>
+              <pre class="docs-code">type AuthType = 'none' | 'oauth_pkce' | 'device_flow'</pre>
+              <div class="docs-values">
+                <ul>
+                  <li><code>'none'</code> — No authentication required (public API)</li>
+                  <li><code>'oauth_pkce'</code> — OAuth 2.0 with PKCE</li>
+                  <li><code>'device_flow'</code> — OAuth 2.0 Device Authorization Flow (RFC 8628)</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="docs-type">
+              <h4>ContentProviderAuthData</h4>
+              <p class="docs-desc">OAuth token data returned after successful authentication.</p>
+              <pre class="docs-code">{
+  access_token: string,
+  refresh_token: string,
+  token_type: string,      // Typically "Bearer"
+  created_at: number,      // Unix timestamp (seconds)
+  expires_in: number,      // Token lifetime in seconds
+  scope: string
+}</pre>
+            </div>
+          </div>
+
+          <div class="docs-section">
+            <h3>Utility Functions</h3>
+
+            <div class="docs-method">
+              <h4><code>detectMediaType(url, explicitType?)</code></h4>
+              <p class="docs-desc">Detects whether a URL points to a video or image file.</p>
+              <div class="docs-returns">
+                <strong>Returns:</strong> <code>'video' | 'image'</code>
+              </div>
+              <div class="docs-values">
+                <strong>Video patterns detected:</strong> <code>.mp4</code>, <code>.webm</code>, <code>.m3u8</code>, <code>.mov</code>, <code>stream.mux.com</code>
+              </div>
+            </div>
+
+            <div class="docs-method">
+              <h4><code>isContentFolder(item)</code></h4>
+              <p class="docs-desc">Type guard to check if a ContentItem is a ContentFolder.</p>
+              <div class="docs-returns">
+                <strong>Returns:</strong> <code>item is ContentFolder</code>
+              </div>
+            </div>
+
+            <div class="docs-method">
+              <h4><code>isContentFile(item)</code></h4>
+              <p class="docs-desc">Type guard to check if a ContentItem is a ContentFile.</p>
+              <div class="docs-returns">
+                <strong>Returns:</strong> <code>item is ContentFile</code>
+              </div>
+            </div>
+          </div>
+
+          <div class="docs-section">
+            <h3>Registry Functions</h3>
+
+            <div class="docs-method">
+              <h4><code>getProvider(providerId)</code></h4>
+              <p class="docs-desc">Get a provider instance by ID.</p>
+              <div class="docs-returns">
+                <strong>Returns:</strong> <code>ContentProvider | null</code>
+              </div>
+            </div>
+
+            <div class="docs-method">
+              <h4><code>getAllProviders()</code></h4>
+              <p class="docs-desc">Get all registered provider instances.</p>
+              <div class="docs-returns">
+                <strong>Returns:</strong> <code>ContentProvider[]</code>
+              </div>
+            </div>
+
+            <div class="docs-method">
+              <h4><code>getAvailableProviders()</code></h4>
+              <p class="docs-desc">Get list of all providers (implemented and coming soon) with their info.</p>
+              <div class="docs-returns">
+                <strong>Returns:</strong> <code>ProviderInfo[]</code>
+              </div>
+            </div>
+
+            <div class="docs-method">
+              <h4><code>registerProvider(provider)</code></h4>
+              <p class="docs-desc">Register a custom provider.</p>
+              <div class="docs-returns">
+                <strong>Returns:</strong> <code>void</code>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </section>
 
       <!-- Content browser view -->

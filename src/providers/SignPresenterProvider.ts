@@ -1,5 +1,6 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanPresentation, Instructions, ProviderCapabilities } from '../interfaces';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities } from '../interfaces';
 import { ContentProvider } from '../ContentProvider';
+import { detectMediaType } from '../utils';
 
 export class SignPresenterProvider extends ContentProvider {
   readonly id = 'signpresenter';
@@ -80,13 +81,12 @@ export class SignPresenterProvider extends ContentProvider {
       if (!msg.url) continue;
 
       const url = msg.url as string;
-      const isVideo = msg.mediaType === 'video' || url.includes('.mp4') || url.includes('.webm') || url.includes('.m3u8');
 
       files.push({
         type: 'file',
         id: msg.id as string,
         title: msg.name as string,
-        mediaType: isVideo ? 'video' : 'image',
+        mediaType: detectMediaType(url, msg.mediaType as string | undefined),
         thumbnail: (msg.thumbnail || msg.image) as string | undefined,
         url
       });
@@ -122,11 +122,4 @@ export class SignPresenterProvider extends ContentProvider {
     };
   }
 
-  async getInstructions(_folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
-    return null;
-  }
-
-  async getExpandedInstructions(_folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
-    return null;
-  }
 }

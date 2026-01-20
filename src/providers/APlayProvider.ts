@@ -1,5 +1,6 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanPresentation, Instructions, ProviderCapabilities } from '../interfaces';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities } from '../interfaces';
 import { ContentProvider } from '../ContentProvider';
+import { detectMediaType } from '../utils';
 
 export class APlayProvider extends ContentProvider {
   readonly id = 'aplay';
@@ -163,13 +164,13 @@ export class APlayProvider extends ContentProvider {
 
       if (!url) continue;
 
-      const isVideo = mediaType === 'video' || url.includes('.mp4') || url.includes('.m3u8') || url.includes('stream.mux.com');
+      const detectedMediaType = detectMediaType(url, mediaType);
 
       files.push({
         type: 'file',
         id: (item.mediaId || item.id) as string,
         title: (item.title || item.name || item.fileName || '') as string,
-        mediaType: isVideo ? 'video' : 'image',
+        mediaType: detectedMediaType,
         thumbnail,
         url,
         muxPlaybackId
@@ -206,11 +207,4 @@ export class APlayProvider extends ContentProvider {
     };
   }
 
-  async getInstructions(_folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
-    return null;
-  }
-
-  async getExpandedInstructions(_folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
-    return null;
-  }
 }

@@ -55,8 +55,10 @@ const state: AppState = {
 };
 
 const providersView = document.getElementById('providers-view')!;
+const docsView = document.getElementById('docs-view')!;
 const browserView = document.getElementById('browser-view')!;
 const providersGrid = document.getElementById('providers-grid')!;
+const mainTabs = document.getElementById('main-tabs')!;
 const contentGrid = document.getElementById('content-grid')!;
 const breadcrumb = document.getElementById('breadcrumb')!;
 const breadcrumbPath = document.getElementById('breadcrumb-path')!;
@@ -102,6 +104,31 @@ function setupEventListeners() {
       closeModal();
     }
   });
+
+  // Tab switching
+  mainTabs.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.getAttribute('data-tab')!;
+      switchTab(tab);
+    });
+  });
+}
+
+function switchTab(tab: string) {
+  // Update tab buttons
+  mainTabs.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
+  });
+
+  // Show/hide views
+  providersView.classList.toggle('hidden', tab !== 'providers');
+  docsView.classList.toggle('hidden', tab !== 'docs');
+
+  // Hide browser view when switching tabs (user needs to select a provider again)
+  if (tab !== 'providers') {
+    browserView.classList.add('hidden');
+    breadcrumb.classList.add('hidden');
+  }
 }
 
 function renderProviders() {

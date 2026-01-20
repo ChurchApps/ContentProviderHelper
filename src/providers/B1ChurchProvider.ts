@@ -1,5 +1,6 @@
 import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, Instructions, InstructionItem, ProviderCapabilities, FeedVenueInterface } from '../interfaces';
 import { ContentProvider } from '../ContentProvider';
+import { detectMediaType } from '../utils';
 
 interface B1Plan {
   id: string;
@@ -442,18 +443,15 @@ export class B1ChurchProvider extends ContentProvider {
   private convertFeedFiles(feedFiles: Array<{ id?: string; name?: string; url?: string; streamUrl?: string; seconds?: number; fileType?: string }>, thumbnail?: string): ContentFile[] {
     return feedFiles
       .filter(f => f.url)
-      .map(f => {
-        const isVideo = f.fileType === 'video' || f.url?.includes('.mp4') || f.url?.includes('.webm') || f.url?.includes('.m3u8');
-        return {
-          type: 'file' as const,
-          id: f.id || '',
-          title: f.name || '',
-          mediaType: isVideo ? 'video' as const : 'image' as const,
-          thumbnail,
-          url: f.url || '',
-          providerData: { seconds: f.seconds, streamUrl: f.streamUrl }
-        };
-      });
+      .map(f => ({
+        type: 'file' as const,
+        id: f.id || '',
+        title: f.name || '',
+        mediaType: detectMediaType(f.url || '', f.fileType),
+        thumbnail,
+        url: f.url || '',
+        providerData: { seconds: f.seconds, streamUrl: f.streamUrl }
+      }));
   }
 
   private async fetchVenueFeed(venueId: string): Promise<FeedVenueInterface | null> {
@@ -507,7 +505,4 @@ export class B1ChurchProvider extends ContentProvider {
     };
   }
 
-  async getExpandedInstructions(_folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
-    return null;
-  }
 }

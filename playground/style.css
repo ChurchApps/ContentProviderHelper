@@ -1044,3 +1044,154 @@ h2 {
   max-height: 400px;
   white-space: pre;
 }
+
+/* ============= MAIN TABS ============= */
+.main-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding: 0.25rem;
+  background: #16213e;
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  padding: 0.6rem 1.25rem;
+  border-radius: 6px;
+  color: #888;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn.active {
+  background: #e94560;
+  color: #fff;
+}
+
+/* ============= DOCS VIEW ============= */
+.docs-container {
+  max-width: 900px;
+}
+
+.docs-container h2 {
+  margin: 0 0 1.5rem;
+  color: #fff;
+  font-size: 1.5rem;
+}
+
+.docs-section {
+  background: #16213e;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #2a2a4a;
+}
+
+.docs-section h3 {
+  margin: 0 0 1rem;
+  color: #e94560;
+  font-size: 1.1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #2a2a4a;
+}
+
+.docs-method,
+.docs-type {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid #1a1a2e;
+}
+
+.docs-method:last-child,
+.docs-type:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.docs-method h4,
+.docs-type h4 {
+  margin: 0 0 0.5rem;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.docs-method h4 code,
+.docs-type h4 code {
+  color: #4ecdc4;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.95rem;
+}
+
+.docs-desc {
+  color: #aaa;
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.docs-returns {
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.docs-returns code {
+  color: #7ee8e0;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  background: #0f0f23;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+
+.docs-code {
+  margin: 0.75rem 0 0;
+  padding: 1rem;
+  background: #0f0f23;
+  border-radius: 8px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: #4ecdc4;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.docs-values {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.docs-values strong {
+  color: #aaa;
+}
+
+.docs-values ul {
+  margin: 0.5rem 0 0 1.5rem;
+  padding: 0;
+}
+
+.docs-values li {
+  margin-bottom: 0.35rem;
+  line-height: 1.5;
+}
+
+.docs-values code {
+  color: #7ee8e0;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  background: #0f0f23;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  font-size: 0.8rem;
+}

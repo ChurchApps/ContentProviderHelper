@@ -1,5 +1,6 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, Instructions, ProviderCapabilities } from '../interfaces';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, ProviderCapabilities } from '../interfaces';
 import { ContentProvider } from '../ContentProvider';
+import { detectMediaType } from '../utils';
 
 interface PCOServiceType {
   id: string;
@@ -386,16 +387,14 @@ export class PlanningCenterProvider extends ContentProvider {
         const url = attachment.attributes.url;
         if (!url) continue;
 
-        const isVideo = attachment.attributes.content_type?.startsWith('video/') ||
-          url.includes('.mp4') ||
-          url.includes('.mov') ||
-          url.includes('.webm');
+        const contentType = attachment.attributes.content_type;
+        const explicitType = contentType?.startsWith('video/') ? 'video' : undefined;
 
         files.push({
           type: 'file',
           id: attachment.id,
           title: attachment.attributes.filename,
-          mediaType: isVideo ? 'video' : 'image',
+          mediaType: detectMediaType(url, explicitType),
           url
         });
       }
@@ -411,14 +410,6 @@ export class PlanningCenterProvider extends ContentProvider {
         length: item.attributes.length
       }
     } as PlanPresentation;
-  }
-
-  async getInstructions(_folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
-    return null;
-  }
-
-  async getExpandedInstructions(_folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
-    return null;
   }
 
   private formatDate(dateString: string): string {
