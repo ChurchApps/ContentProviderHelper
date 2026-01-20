@@ -36,9 +36,45 @@ export class LessonsChurchProvider extends ContentProvider {
     return {
       browse: true,
       presentations: true,
+      playlist: true,
       instructions: true,
       expandedInstructions: true
     };
+  }
+
+  override async getPlaylist(folder: ContentFolder, _auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null> {
+    const venueId = folder.providerData?.venueId as string | undefined;
+    if (!venueId) return null;
+
+    let path = `/venues/playlist/${venueId}`;
+    if (resolution) path += `?resolution=${resolution}`;
+
+    const response = await this.apiRequest<Record<string, unknown>>(path);
+    if (!response) return null;
+
+    const files: ContentFile[] = [];
+    const messages = (response.messages || []) as Record<string, unknown>[];
+
+    for (const msg of messages) {
+      const msgFiles = (msg.files || []) as Record<string, unknown>[];
+      for (const f of msgFiles) {
+        if (!f.url) continue;
+
+        const url = f.url as string;
+
+        files.push({
+          type: 'file',
+          id: f.id as string,
+          title: (f.name || msg.name) as string,
+          mediaType: detectMediaType(url, f.fileType as string | undefined),
+          thumbnail: response.lessonImage as string | undefined,
+          url,
+          providerData: { seconds: f.seconds, loop: f.loop, loopVideo: f.loopVideo }
+        });
+      }
+    }
+
+    return files;
   }
 
   protected override async apiRequest<T>(path: string): Promise<T | null> {
@@ -133,38 +169,8 @@ export class LessonsChurchProvider extends ContentProvider {
   }
 
   private async getPlaylistFiles(folder: ContentFolder, resolution?: number): Promise<ContentItem[]> {
-    const venueId = folder.providerData?.venueId as string | undefined;
-    if (!venueId) return [];
-
-    let path = `/venues/playlist/${venueId}`;
-    if (resolution) path += `?resolution=${resolution}`;
-
-    const response = await this.apiRequest<Record<string, unknown>>(path);
-    if (!response) return [];
-
-    const files: ContentFile[] = [];
-    const messages = (response.messages || []) as Record<string, unknown>[];
-
-    for (const msg of messages) {
-      const msgFiles = (msg.files || []) as Record<string, unknown>[];
-      for (const f of msgFiles) {
-        if (!f.url) continue;
-
-        const url = f.url as string;
-
-        files.push({
-          type: 'file',
-          id: f.id as string,
-          title: (f.name || msg.name) as string,
-          mediaType: detectMediaType(url, f.fileType as string | undefined),
-          thumbnail: response.lessonImage as string | undefined,
-          url,
-          providerData: { seconds: f.seconds, loop: f.loop, loopVideo: f.loopVideo }
-        });
-      }
-    }
-
-    return files;
+    const files = await this.getPlaylist(folder, null, resolution);
+    return files || [];
   }
 
   async getPresentations(folder: ContentFolder, _auth?: ContentProviderAuthData | null, resolution?: number): Promise<Plan | null> {

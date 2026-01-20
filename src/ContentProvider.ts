@@ -66,6 +66,18 @@ export abstract class ContentProvider {
   abstract getPresentations(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Plan | null>;
 
   /**
+   * Get a flat list of media files (playlist) for a folder.
+   * Override in subclass if the provider supports playlists.
+   * @param _folder - The folder to get playlist for (typically a venue or playlist folder)
+   * @param _auth - Optional authentication data
+   * @param _resolution - Optional resolution hint for video quality
+   * @returns Array of ContentFile objects, or null if not supported
+   */
+  getPlaylist(_folder: ContentFolder, _auth?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
+    return Promise.resolve(null);
+  }
+
+  /**
    * Get instruction/run sheet data for a folder.
    * Override in subclass if the provider supports instructions.
    * @param _folder - The folder to get instructions for
@@ -104,6 +116,7 @@ export abstract class ContentProvider {
     return {
       browse: true,
       presentations: false,
+      playlist: false,
       instructions: false,
       expandedInstructions: false
     };

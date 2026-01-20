@@ -29,6 +29,7 @@ export class APlayProvider extends ContentProvider {
     return {
       browse: true,
       presentations: true,
+      playlist: false,
       instructions: false,
       expandedInstructions: false
     };

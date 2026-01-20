@@ -64,6 +64,14 @@
             </div>
 
             <div class="docs-method">
+              <h4><code>getPlaylist(folder, auth?, resolution?)</code></h4>
+              <p class="docs-desc">Get a flat list of media files (playlist) for a folder.</p>
+              <div class="docs-returns">
+                <strong>Returns:</strong> <code>Promise&lt;ContentFile[] | null&gt;</code>
+              </div>
+            </div>
+
+            <div class="docs-method">
               <h4><code>getInstructions(folder, auth?)</code></h4>
               <p class="docs-desc">Get instruction/run sheet data for a folder.</p>
               <div class="docs-returns">
@@ -216,6 +224,7 @@
               <pre class="docs-code">{
   browse: boolean,              // Supports browsing content hierarchy
   presentations: boolean,       // getPresentations() returns data
+  playlist: boolean,            // getPlaylist() returns data
   instructions: boolean,        // getInstructions() returns data
   expandedInstructions: boolean // getExpandedInstructions() returns data
 }</pre>

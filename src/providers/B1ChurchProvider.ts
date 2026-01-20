@@ -178,6 +178,7 @@ export class B1ChurchProvider extends ContentProvider {
     return {
       browse: true,
       presentations: true,
+      playlist: false,
       instructions: true,
       expandedInstructions: false
     };

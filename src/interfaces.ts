@@ -352,6 +352,8 @@ export interface ProviderCapabilities {
   browse: boolean;
   /** Whether `getPresentations()` returns structured plan data */
   presentations: boolean;
+  /** Whether `getPlaylist()` returns a flat list of media files */
+  playlist: boolean;
   /** Whether `getInstructions()` returns instruction data */
   instructions: boolean;
   /** Whether `getExpandedInstructions()` returns expanded instruction data */
