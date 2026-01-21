@@ -24,7 +24,9 @@ export class LessonsChurchProvider extends ContentProvider {
       lessons: (studyId: string) => `/lessons/public/study/${studyId}`,
       venues: (lessonId: string) => `/venues/public/lesson/${lessonId}`,
       playlist: (venueId: string) => `/venues/playlist/${venueId}`,
-      feed: (venueId: string) => `/venues/public/feed/${venueId}`
+      feed: (venueId: string) => `/venues/public/feed/${venueId}`,
+      addOns: '/addOns/public',
+      addOnDetail: (id: string) => `/addOns/public/${id}`
     }
   };
 
@@ -55,16 +57,20 @@ export class LessonsChurchProvider extends ContentProvider {
     const files: ContentFile[] = [];
     const messages = (response.messages || []) as Record<string, unknown>[];
 
+    let fileIndex = 0;
     for (const msg of messages) {
       const msgFiles = (msg.files || []) as Record<string, unknown>[];
-      for (const f of msgFiles) {
+      for (let i = 0; i < msgFiles.length; i++) {
+        const f = msgFiles[i];
         if (!f.url) continue;
 
         const url = f.url as string;
+        // Generate a unique id if not provided by API
+        const fileId = (f.id as string) || `playlist-${fileIndex++}`;
 
         files.push({
           type: 'file',
-          id: f.id as string,
+          id: fileId,
           title: (f.name || msg.name) as string,
           mediaType: detectMediaType(url, f.fileType as string | undefined),
           thumbnail: response.lessonImage as string | undefined,
@@ -90,28 +96,51 @@ export class LessonsChurchProvider extends ContentProvider {
 
   async browse(folder?: ContentFolder | null, _auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentItem[]> {
     if (!folder) {
-      const path = this.config.endpoints.programs as string;
-      const response = await this.apiRequest<Record<string, unknown>[]>(path);
-      if (!response) return [];
-
-      const programs = Array.isArray(response) ? response : [];
-      return programs.map((p) => ({
-        type: 'folder' as const,
-        id: p.id as string,
-        title: p.name as string,
-        image: p.image as string | undefined,
-        providerData: { level: 'studies', programId: p.id }
-      }));
+      // Return top-level folders: Lessons and Add-Ons
+      return [
+        {
+          type: 'folder' as const,
+          id: 'lessons-root',
+          title: 'Lessons',
+          providerData: { level: 'programs' }
+        },
+        {
+          type: 'folder' as const,
+          id: 'addons-root',
+          title: 'Add-Ons',
+          providerData: { level: 'addOnCategories' }
+        }
+      ];
     }
 
     const level = folder.providerData?.level;
     switch (level) {
+      // Lessons hierarchy
+      case 'programs': return this.getPrograms();
       case 'studies': return this.getStudies(folder);
       case 'lessons': return this.getLessons(folder);
       case 'venues': return this.getVenues(folder);
       case 'playlist': return this.getPlaylistFiles(folder, resolution);
+      // Add-ons hierarchy
+      case 'addOnCategories': return this.getAddOnCategories();
+      case 'addOns': return this.getAddOnsByCategory(folder);
       default: return [];
     }
+  }
+
+  private async getPrograms(): Promise<ContentItem[]> {
+    const path = this.config.endpoints.programs as string;
+    const response = await this.apiRequest<Record<string, unknown>[]>(path);
+    if (!response) return [];
+
+    const programs = Array.isArray(response) ? response : [];
+    return programs.map((p) => ({
+      type: 'folder' as const,
+      id: p.id as string,
+      title: p.name as string,
+      image: p.image as string | undefined,
+      providerData: { level: 'studies', programId: p.id }
+    }));
   }
 
   private async getStudies(folder: ContentFolder): Promise<ContentItem[]> {
@@ -171,6 +200,83 @@ export class LessonsChurchProvider extends ContentProvider {
   private async getPlaylistFiles(folder: ContentFolder, resolution?: number): Promise<ContentItem[]> {
     const files = await this.getPlaylist(folder, null, resolution);
     return files || [];
+  }
+
+  private async getAddOnCategories(): Promise<ContentItem[]> {
+    const path = this.config.endpoints.addOns as string;
+    const response = await this.apiRequest<Record<string, unknown>[]>(path);
+    if (!response) return [];
+
+    const addOns = Array.isArray(response) ? response : [];
+
+    // Extract unique categories
+    const categories = Array.from(new Set(addOns.map((a) => a.category as string).filter(Boolean)));
+
+    return categories.sort().map((category) => ({
+      type: 'folder' as const,
+      id: `category-${category}`,
+      title: category,
+      providerData: {
+        level: 'addOns',
+        category: category,
+        allAddOns: addOns
+      }
+    }));
+  }
+
+  private async getAddOnsByCategory(folder: ContentFolder): Promise<ContentItem[]> {
+    const category = folder.providerData?.category as string | undefined;
+    const allAddOns = (folder.providerData?.allAddOns || []) as Record<string, unknown>[];
+
+    const filtered = allAddOns.filter((a) => a.category === category);
+
+    // Convert to playable files
+    const files: ContentFile[] = [];
+    for (const addOn of filtered) {
+      const file = await this.convertAddOnToFile(addOn);
+      if (file) files.push(file);
+    }
+    return files;
+  }
+
+  private async convertAddOnToFile(addOn: Record<string, unknown>): Promise<ContentFile | null> {
+    const pathFn = this.config.endpoints.addOnDetail as (id: string) => string;
+    const path = pathFn(addOn.id as string);
+    const detail = await this.apiRequest<Record<string, unknown>>(path);
+    if (!detail) return null;
+
+    let url = '';
+    let mediaType: 'video' | 'image' = 'video';
+    let seconds = (addOn.seconds as number) || 10;
+
+    const video = detail.video as Record<string, unknown> | undefined;
+    const file = detail.file as Record<string, unknown> | undefined;
+
+    if (video) {
+      // External video (Vimeo) - use download endpoint
+      url = `${this.config.apiBase}/externalVideos/download/${video.id}`;
+      seconds = (video.seconds as number) || seconds;
+    } else if (file) {
+      // File-based add-on
+      url = file.contentPath as string;
+      const fileType = file.fileType as string | undefined;
+      mediaType = fileType?.startsWith('video/') ? 'video' : 'image';
+    } else {
+      return null;
+    }
+
+    return {
+      type: 'file',
+      id: addOn.id as string,
+      title: addOn.name as string,
+      mediaType,
+      thumbnail: addOn.image as string | undefined,
+      url,
+      providerData: {
+        seconds,
+        loopVideo: (video as Record<string, unknown> | undefined)?.loopVideo || false
+      }
+    };
   }
 
   async getPresentations(folder: ContentFolder, _auth?: ContentProviderAuthData | null, resolution?: number): Promise<Plan | null> {
