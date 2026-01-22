@@ -172,7 +172,7 @@ export class APlayProvider extends ContentProvider {
         id: (item.mediaId || item.id) as string,
         title: (item.title || item.name || item.fileName || '') as string,
         mediaType: detectedMediaType,
-        thumbnail,
+        image: thumbnail,
         url,
         muxPlaybackId
       });

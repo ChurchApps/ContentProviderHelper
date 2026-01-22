@@ -441,7 +441,7 @@ export class B1ChurchProvider extends ContentProvider {
     return files;
   }
 
-  private convertFeedFiles(feedFiles: Array<{ id?: string; name?: string; url?: string; streamUrl?: string; seconds?: number; fileType?: string }>, thumbnail?: string): ContentFile[] {
+  private convertFeedFiles(feedFiles: Array<{ id?: string; name?: string; url?: string; streamUrl?: string; seconds?: number; fileType?: string }>, thumbnailImage?: string): ContentFile[] {
     return feedFiles
       .filter(f => f.url)
       .map(f => ({
@@ -449,7 +449,7 @@ export class B1ChurchProvider extends ContentProvider {
         id: f.id || '',
         title: f.name || '',
         mediaType: detectMediaType(f.url || '', f.fileType),
-        thumbnail,
+        image: thumbnailImage,
         url: f.url || '',
         providerData: { seconds: f.seconds, streamUrl: f.streamUrl }
       }));

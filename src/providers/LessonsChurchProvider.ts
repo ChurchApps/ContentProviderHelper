@@ -73,7 +73,7 @@ export class LessonsChurchProvider extends ContentProvider {
           id: fileId,
           title: (f.name || msg.name) as string,
           mediaType: detectMediaType(url, f.fileType as string | undefined),
-          thumbnail: response.lessonImage as string | undefined,
+          image: response.lessonImage as string | undefined,
           url,
           providerData: { seconds: f.seconds, loop: f.loop, loopVideo: f.loopVideo }
         });
@@ -270,7 +270,7 @@ export class LessonsChurchProvider extends ContentProvider {
       id: addOn.id as string,
       title: addOn.name as string,
       mediaType,
-      thumbnail: addOn.image as string | undefined,
+      image: addOn.image as string | undefined,
       url,
       providerData: {
         seconds,
@@ -421,7 +421,7 @@ export class LessonsChurchProvider extends ContentProvider {
             id: file.id || '',
             title: file.name || '',
             mediaType: detectMediaType(file.url, file.fileType),
-            thumbnail: venue.lessonImage,
+            image: venue.lessonImage,
             url: file.url,
             providerData: { seconds: file.seconds, streamUrl: file.streamUrl }
           };

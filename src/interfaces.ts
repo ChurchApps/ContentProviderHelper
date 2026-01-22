@@ -150,8 +150,8 @@ export interface ContentFile {
    * - `image`: Image content (.jpg, .png, etc.)
    */
   mediaType: 'video' | 'image';
-  /** Optional thumbnail image URL */
-  thumbnail?: string;
+  /** Optional preview/cover image URL */
+  image?: string;
   /** URL to the media file */
   url: string;
   /** Mux playback ID for Mux-hosted videos */

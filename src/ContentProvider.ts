@@ -394,12 +394,12 @@ export abstract class ContentProvider {
    * @param id - Unique identifier
    * @param title - Display title
    * @param url - Media URL
-   * @param options - Optional properties (mediaType, thumbnail, muxPlaybackId, providerData)
+   * @param options - Optional properties (mediaType, image, muxPlaybackId, providerData)
    * @returns ContentFile object
    */
   protected createFile(id: string, title: string, url: string, options?: {
     mediaType?: 'video' | 'image';
-    thumbnail?: string;
+    image?: string;
     muxPlaybackId?: string;
     providerData?: Record<string, unknown>;
   }): ContentFile {
@@ -409,7 +409,7 @@ export abstract class ContentProvider {
       title,
       url,
       mediaType: options?.mediaType ?? detectMediaType(url),
-      thumbnail: options?.thumbnail,
+      image: options?.image,
       muxPlaybackId: options?.muxPlaybackId,
       providerData: options?.providerData
     };

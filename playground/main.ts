@@ -614,8 +614,8 @@ function renderFolder(folder: ContentFolder): string {
 }
 
 function renderFile(file: ContentItem & { type: 'file' }): string {
-  const imageHtml = file.thumbnail
-    ? `<img class="card-image" src="${file.thumbnail}" alt="${file.title}" onerror="this.outerHTML='<div class=\\'card-image placeholder\\'>${file.mediaType === 'video' ? '🎬' : '🖼️'}</div>'">`
+  const imageHtml = file.image
+    ? `<img class="card-image" src="${file.image}" alt="${file.title}" onerror="this.outerHTML='<div class=\\'card-image placeholder\\'>${file.mediaType === 'video' ? '🎬' : '🖼️'}</div>'">`
     : `<div class="card-image placeholder">${file.mediaType === 'video' ? '🎬' : '🖼️'}</div>`;
 
   return `

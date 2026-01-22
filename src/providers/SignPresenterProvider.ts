@@ -88,7 +88,7 @@ export class SignPresenterProvider extends ContentProvider {
         id: msg.id as string,
         title: msg.name as string,
         mediaType: detectMediaType(url, msg.mediaType as string | undefined),
-        thumbnail: (msg.thumbnail || msg.image) as string | undefined,
+        image: (msg.thumbnail || msg.image) as string | undefined,
         url
       });
     }
