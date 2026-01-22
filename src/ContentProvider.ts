@@ -1,4 +1,4 @@
-import { ContentProviderAuthData, ContentProviderConfig, ContentItem, ContentFolder, ContentFile, DeviceAuthorizationResponse, DeviceFlowPollResult, ProviderLogos, AuthType, Plan, Instructions, ProviderCapabilities } from './interfaces';
+import { ContentProviderAuthData, ContentProviderConfig, ContentItem, ContentFolder, ContentFile, DeviceAuthorizationResponse, DeviceFlowPollResult, ProviderLogos, AuthType, Plan, Instructions, ProviderCapabilities, MediaLicenseResult } from './interfaces';
 import { detectMediaType } from './utils';
 
 /**
@@ -111,8 +111,20 @@ export abstract class ContentProvider {
       presentations: false,
       playlist: false,
       instructions: false,
-      expandedInstructions: false
+      expandedInstructions: false,
+      mediaLicensing: false
     };
+  }
+
+  /**
+   * Check the license status for a specific media item.
+   * Override in subclass if the provider requires license validation.
+   * @param _mediaId - The media ID to check
+   * @param _auth - Optional authentication data
+   * @returns MediaLicenseResult object, or null if not supported
+   */
+  checkMediaLicense(_mediaId: string, _auth?: ContentProviderAuthData | null): Promise<MediaLicenseResult | null> {
+    return Promise.resolve(null);
   }
 
   /**

@@ -162,6 +162,12 @@ export interface ContentFile {
   embedUrl?: string;
   /** Mux playback ID for Mux-hosted videos */
   muxPlaybackId?: string;
+  /** Decryption key for encrypted media (provider-specific) */
+  decryptionKey?: string;
+  /** Provider-specific media ID for tracking/licensing */
+  mediaId?: string;
+  /** URL to ping after 30+ seconds of playback (licensing requirement) */
+  pingbackUrl?: string;
   /** Provider-specific data (e.g., duration, loop settings) */
   providerData?: Record<string, unknown>;
 }
@@ -364,4 +370,25 @@ export interface ProviderCapabilities {
   instructions: boolean;
   /** Whether `getExpandedInstructions()` returns expanded instruction data */
   expandedInstructions: boolean;
+  /** Whether `checkMediaLicense()` returns license information */
+  mediaLicensing: boolean;
+}
+
+/**
+ * License status for media content.
+ */
+export type MediaLicenseStatus = 'valid' | 'expired' | 'not_licensed' | 'unknown';
+
+/**
+ * Response from `checkMediaLicense()`.
+ */
+export interface MediaLicenseResult {
+  /** The media ID that was checked */
+  mediaId: string;
+  /** Current license status */
+  status: MediaLicenseStatus;
+  /** Human-readable message about the license */
+  message?: string;
+  /** When the license expires (ISO 8601 string or Unix timestamp) */
+  expiresAt?: string | number;
 }

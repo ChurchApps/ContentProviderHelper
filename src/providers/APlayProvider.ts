@@ -1,4 +1,4 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities } from '../interfaces';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities, MediaLicenseResult } from '../interfaces';
 import { ContentProvider } from '../ContentProvider';
 import { detectMediaType } from '../utils';
 
@@ -31,7 +31,8 @@ export class APlayProvider extends ContentProvider {
       presentations: true,
       playlist: false,
       instructions: false,
-      expandedInstructions: false
+      expandedInstructions: false,
+      mediaLicensing: true
     };
   }
 
@@ -167,14 +168,16 @@ export class APlayProvider extends ContentProvider {
 
       const detectedMediaType = detectMediaType(url, mediaType);
 
+      const fileId = (item.mediaId || item.id) as string;
       files.push({
         type: 'file',
-        id: (item.mediaId || item.id) as string,
+        id: fileId,
         title: (item.title || item.name || item.fileName || '') as string,
         mediaType: detectedMediaType,
         image: thumbnail,
         url,
-        muxPlaybackId
+        muxPlaybackId,
+        mediaId: fileId
       });
     }
 
@@ -206,6 +209,55 @@ export class APlayProvider extends ContentProvider {
       }],
       allFiles: files
     };
+  }
+
+  /**
+   * Check the license status for a specific media item.
+   * Returns license information including pingback URL if licensed.
+   */
+  override async checkMediaLicense(mediaId: string, auth?: ContentProviderAuthData | null): Promise<MediaLicenseResult | null> {
+    if (!auth) return null;
+
+    try {
+      const url = `${this.config.apiBase}/prod/reports/media/license-check`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${auth.access_token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ mediaIds: [mediaId] })
+      });
+
+      if (!response.ok) return null;
+
+      const data = await response.json();
+      const licenseData = Array.isArray(data) ? data : data.data || [];
+      const result = licenseData.find((item: Record<string, unknown>) => item.mediaId === mediaId);
+
+      if (result?.isLicensed) {
+        const pingbackUrl = `${this.config.apiBase}/prod/reports/media/${mediaId}/stream-count?source=aplay-pro`;
+        return {
+          mediaId,
+          status: 'valid',
+          message: 'Media is licensed for playback',
+          expiresAt: result.expiresAt as string | number | undefined
+        };
+      }
+
+      return {
+        mediaId,
+        status: 'not_licensed',
+        message: 'Media is not licensed'
+      };
+    } catch {
+      return {
+        mediaId,
+        status: 'unknown',
+        message: 'Unable to verify license status'
+      };
+    }
   }
 
 }

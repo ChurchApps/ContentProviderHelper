@@ -144,7 +144,7 @@ export function getAvailableProviders(): ProviderInfo[] {
     implemented: false,
     requiresAuth: false,
     authTypes: [],
-    capabilities: { browse: false, presentations: false, playlist: false, instructions: false, expandedInstructions: false },
+    capabilities: { browse: false, presentations: false, playlist: false, instructions: false, expandedInstructions: false, mediaLicensing: false },
   }));
 
   return [...implemented, ...comingSoon];

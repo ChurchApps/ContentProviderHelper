@@ -40,7 +40,8 @@ export class LessonsChurchProvider extends ContentProvider {
       presentations: true,
       playlist: true,
       instructions: true,
-      expandedInstructions: true
+      expandedInstructions: true,
+      mediaLicensing: false
     };
   }
 

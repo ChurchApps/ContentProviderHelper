@@ -111,7 +111,8 @@ export class PlanningCenterProvider extends ContentProvider {
       presentations: true,
       playlist: false,
       instructions: false,
-      expandedInstructions: false
+      expandedInstructions: false,
+      mediaLicensing: false
     };
   }
 
