@@ -82,6 +82,7 @@ export class SignPresenterProvider extends ContentProvider {
       if (!msg.url) continue;
 
       const url = msg.url as string;
+      const seconds = msg.seconds as number | undefined;
 
       files.push({
         type: 'file',
@@ -91,7 +92,8 @@ export class SignPresenterProvider extends ContentProvider {
         image: (msg.thumbnail || msg.image) as string | undefined,
         url,
         // For direct media providers, embedUrl is the media URL itself
-        embedUrl: url
+        embedUrl: url,
+        providerData: seconds !== undefined ? { seconds } : undefined
       });
     }
 
