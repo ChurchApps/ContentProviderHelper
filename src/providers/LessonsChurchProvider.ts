@@ -272,6 +272,7 @@ export class LessonsChurchProvider extends ContentProvider {
       mediaType,
       image: addOn.image as string | undefined,
       url,
+      embedUrl: `https://lessons.church/embed/addon/${addOn.id}`,
       providerData: {
         seconds,
         loopVideo: (video as Record<string, unknown> | undefined)?.loopVideo || false
@@ -416,6 +417,9 @@ export class LessonsChurchProvider extends ContentProvider {
         for (const file of action.files || []) {
           if (!file.url) continue;
 
+          // Use action embed URL for preview (shows full action context)
+          const embedUrl = action.id ? `https://lessons.church/embed/action/${action.id}` : undefined;
+
           const contentFile: ContentFile = {
             type: 'file',
             id: file.id || '',
@@ -423,6 +427,7 @@ export class LessonsChurchProvider extends ContentProvider {
             mediaType: detectMediaType(file.url, file.fileType),
             image: venue.lessonImage,
             url: file.url,
+            embedUrl,
             providerData: { seconds: file.seconds, streamUrl: file.streamUrl }
           };
 

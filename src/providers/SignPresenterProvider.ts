@@ -89,7 +89,9 @@ export class SignPresenterProvider extends ContentProvider {
         title: msg.name as string,
         mediaType: detectMediaType(url, msg.mediaType as string | undefined),
         image: (msg.thumbnail || msg.image) as string | undefined,
-        url
+        url,
+        // For direct media providers, embedUrl is the media URL itself
+        embedUrl: url
       });
     }
 

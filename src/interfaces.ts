@@ -154,6 +154,12 @@ export interface ContentFile {
   image?: string;
   /** URL to the media file */
   url: string;
+  /**
+   * Optional URL for embedded preview/player.
+   * - For iframe-based providers (e.g., Lessons.church): an embed URL
+   * - For direct media providers: same as url, or omitted to use url directly
+   */
+  embedUrl?: string;
   /** Mux playback ID for Mux-hosted videos */
   muxPlaybackId?: string;
   /** Provider-specific data (e.g., duration, loop settings) */
