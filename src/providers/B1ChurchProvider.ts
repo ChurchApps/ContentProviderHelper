@@ -75,14 +75,21 @@ export class B1ChurchProvider extends ContentProvider {
   /**
    * Build the authorization URL for B1.Church OAuth flow.
    * Note: B1.Church uses standard OAuth with client_secret, not PKCE.
+   * @param _codeVerifier - Not used for B1.Church (non-PKCE flow)
+   * @param redirectUri - The redirect URI to return to after authorization
+   * @param state - Optional state parameter for CSRF protection
    */
-  override async buildAuthUrl(_codeVerifier: string, redirectUri: string): Promise<{ url: string; challengeMethod: string }> {
+  override async buildAuthUrl(_codeVerifier: string, redirectUri: string, state?: string): Promise<{ url: string; challengeMethod: string }> {
     const oauthParams = new URLSearchParams({
       client_id: this.config.clientId,
       redirect_uri: redirectUri,
       response_type: 'code',
       scope: this.config.scopes.join(' ')
     });
+    // Add state parameter if provided
+    if (state) {
+      oauthParams.set('state', state);
+    }
     const returnUrl = `/oauth?${oauthParams.toString()}`;
     const url = `${this.appBase}/login?returnUrl=${encodeURIComponent(returnUrl)}`;
     return { url, challengeMethod: 'none' };
@@ -98,23 +105,37 @@ export class B1ChurchProvider extends ContentProvider {
     clientSecret: string
   ): Promise<ContentProviderAuthData | null> {
     try {
-      const params = new URLSearchParams({
+      // ChurchApps expects JSON body, not form-urlencoded
+      const params = {
         grant_type: 'authorization_code',
         code,
         client_id: this.config.clientId,
         client_secret: clientSecret,
         redirect_uri: redirectUri
-      });
+      };
 
-      const response = await fetch(`${this.config.oauthBase}/token`, {
+      const tokenUrl = `${this.config.oauthBase}/token`;
+      console.log(`B1Church token exchange request to: ${tokenUrl}`);
+      console.log(`  - client_id: ${this.config.clientId}`);
+      console.log(`  - redirect_uri: ${redirectUri}`);
+      console.log(`  - code: ${code.substring(0, 10)}...`);
+
+      const response = await fetch(tokenUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params.toString()
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params)
       });
 
-      if (!response.ok) return null;
+      console.log(`B1Church token response status: ${response.status}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`B1Church token exchange failed: ${response.status} - ${errorText}`);
+        return null;
+      }
 
       const data = await response.json();
+      console.log(`B1Church token exchange successful, got access_token: ${!!data.access_token}`);
       return {
         access_token: data.access_token,
         refresh_token: data.refresh_token,
@@ -123,7 +144,8 @@ export class B1ChurchProvider extends ContentProvider {
         expires_in: data.expires_in,
         scope: data.scope || this.config.scopes.join(' ')
       };
-    } catch {
+    } catch (error) {
+      console.error('B1Church token exchange error:', error);
       return null;
     }
   }
@@ -138,17 +160,18 @@ export class B1ChurchProvider extends ContentProvider {
     if (!auth.refresh_token) return null;
 
     try {
-      const params = new URLSearchParams({
+      // ChurchApps expects JSON body, not form-urlencoded
+      const params = {
         grant_type: 'refresh_token',
         refresh_token: auth.refresh_token,
         client_id: this.config.clientId,
         client_secret: clientSecret
-      });
+      };
 
       const response = await fetch(`${this.config.oauthBase}/token`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params.toString()
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params)
       });
 
       if (!response.ok) return null;

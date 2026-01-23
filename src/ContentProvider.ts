@@ -198,9 +198,10 @@ export abstract class ContentProvider {
    * Build the OAuth authorization URL for PKCE flow.
    * @param codeVerifier - The code verifier (store this for token exchange)
    * @param redirectUri - The redirect URI to return to after authorization
+   * @param state - Optional state parameter for CSRF protection (defaults to provider ID)
    * @returns Object with authorization URL and challenge method
    */
-  async buildAuthUrl(codeVerifier: string, redirectUri: string): Promise<{ url: string; challengeMethod: string }> {
+  async buildAuthUrl(codeVerifier: string, redirectUri: string, state?: string): Promise<{ url: string; challengeMethod: string }> {
     const codeChallenge = await this.generateCodeChallenge(codeVerifier);
     const params = new URLSearchParams({
       response_type: 'code',
@@ -209,7 +210,7 @@ export abstract class ContentProvider {
       scope: this.config.scopes.join(' '),
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
-      state: this.id
+      state: state || this.id
     });
     return { url: `${this.config.oauthBase}/authorize?${params.toString()}`, challengeMethod: 'S256' };
   }
@@ -231,10 +232,24 @@ export abstract class ContentProvider {
         code_verifier: codeVerifier
       });
 
-      const response = await fetch(`${this.config.oauthBase}/token`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params.toString() });
-      if (!response.ok) return null;
+      const tokenUrl = `${this.config.oauthBase}/token`;
+      console.log(`${this.id} token exchange request to: ${tokenUrl}`);
+      console.log(`  - client_id: ${this.config.clientId}`);
+      console.log(`  - redirect_uri: ${redirectUri}`);
+      console.log(`  - code: ${code.substring(0, 10)}...`);
+
+      const response = await fetch(tokenUrl, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params.toString() });
+
+      console.log(`${this.id} token response status: ${response.status}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`${this.id} token exchange failed: ${response.status} - ${errorText}`);
+        return null;
+      }
 
       const data = await response.json();
+      console.log(`${this.id} token exchange successful, got access_token: ${!!data.access_token}`);
       return {
         access_token: data.access_token,
         refresh_token: data.refresh_token,
@@ -243,7 +258,8 @@ export abstract class ContentProvider {
         expires_in: data.expires_in,
         scope: data.scope || this.config.scopes.join(' ')
       };
-    } catch {
+    } catch (error) {
+      console.error(`${this.id} token exchange error:`, error);
       return null;
     }
   }
@@ -380,11 +396,22 @@ export abstract class ContentProvider {
       if (auth) headers['Authorization'] = `Bearer ${auth.access_token}`;
       if (body) headers['Content-Type'] = 'application/json';
 
+      console.log(`${this.id} API request: ${method} ${url}`);
+      console.log(`${this.id} API auth present: ${!!auth}`);
+
       const options: RequestInit = { method, headers, ...(body ? { body: JSON.stringify(body) } : {}) };
       const response = await fetch(url, options);
-      if (!response.ok) return null;
+
+      console.log(`${this.id} API response status: ${response.status}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`${this.id} API request failed: ${response.status} - ${errorText}`);
+        return null;
+      }
       return await response.json();
-    } catch {
+    } catch (error) {
+      console.error(`${this.id} API request error:`, error);
       return null;
     }
   }
