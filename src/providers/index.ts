@@ -51,8 +51,8 @@ const unimplementedProviders: UnimplementedProvider[] = [
     id: 'awana',
     name: 'Awana',
     logos: {
-      light: 'https://cdn.freebiesupply.com/logos/large/2x/awana-1-logo-png-transparent.png',
-      dark: 'https://cdn.freebiesupply.com/logos/large/2x/awana-1-logo-png-transparent.png',
+      light: 'https://www.awana.org/wp-content/uploads/2025/04/awana-logo-black.svg',
+      dark: 'https://www.awana.org/wp-content/uploads/2025/04/awana-logo-white.svg',
     },
   },
   {
@@ -69,6 +69,14 @@ const unimplementedProviders: UnimplementedProvider[] = [
     logos: {
       light: '',
       dark: '',
+    },
+  },
+  {
+    id: 'highvoltagekids',
+    name: 'High Voltage Kids',
+    logos: {
+      light: 'https://highvoltagekids.com/wp-content/uploads/2023/10/logo-300x300-1.webp',
+      dark: 'https://highvoltagekids.com/wp-content/uploads/2023/10/logo-300x300-1.webp',
     },
   },
 ];
