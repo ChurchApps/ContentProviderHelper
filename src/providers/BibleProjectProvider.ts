@@ -19,8 +19,8 @@ export class BibleProjectProvider extends ContentProvider {
   readonly name = 'The Bible Project';
 
   readonly logos: ProviderLogos = {
-    light: 'https://cdn.brandfetch.io/idbRrY_Bqf/w/400/h/400/theme/dark/icon.jpeg',
-    dark: 'https://cdn.brandfetch.io/idbRrY_Bqf/w/400/h/400/theme/dark/icon.jpeg'
+    light: 'https://static.bibleproject.com/bp-web-components/v0.25.0/bibleproject-logo-mark.svg',
+    dark: 'https://static.bibleproject.com/bp-web-components/v0.25.0/bibleproject-logo-mark.svg'
   };
 
   readonly config: ContentProviderConfig = {
@@ -88,8 +88,20 @@ export class BibleProjectProvider extends ContentProvider {
           })
         ];
       }
-      // Return videos for this collection
+
+      // For OT/NT Overviews, group by book
+      if (collectionName === 'Old Testament Overviews' || collectionName === 'New Testament Overviews') {
+        return this.getBookFolders(collections, collectionName);
+      }
+
+      // Return videos for other collections
       return this.getVideosForCollection(collections, collectionName);
+    }
+
+    if (level === 'book') {
+      // Return videos for a specific book
+      const bookName = folder.providerData?.bookName as string;
+      return this.getVideosForBook(collections, collectionName, bookName);
     }
 
     if (level === 'videos') {
@@ -368,6 +380,125 @@ export class BibleProjectProvider extends ContentProvider {
         muxPlaybackId: video.muxPlaybackId
       }
     ));
+  }
+
+  private getBookFolders(
+    collections: Map<string, BibleProjectVideo[]>,
+    collectionName: string
+  ): ContentItem[] {
+    const videos = collections.get(collectionName) || [];
+
+    // Group videos by book name
+    const bookGroups = new Map<string, BibleProjectVideo[]>();
+
+    for (const video of videos) {
+      const bookName = this.extractBookName(video.title);
+      const existing = bookGroups.get(bookName) || [];
+      existing.push(video);
+      bookGroups.set(bookName, existing);
+    }
+
+    // Sort book names in biblical order
+    const bookOrder = collectionName === 'Old Testament Overviews'
+      ? this.getOldTestamentBookOrder()
+      : this.getNewTestamentBookOrder();
+
+    const sortedBooks = Array.from(bookGroups.keys()).sort((a, b) => {
+      const indexA = bookOrder.indexOf(a);
+      const indexB = bookOrder.indexOf(b);
+      // Put unknown books at the end
+      const orderA = indexA >= 0 ? indexA : 999;
+      const orderB = indexB >= 0 ? indexB : 999;
+      return orderA - orderB;
+    });
+
+    // Get the first video's thumbnail for each book folder
+    return sortedBooks.map(bookName => {
+      const bookVideos = bookGroups.get(bookName) || [];
+      const firstVideo = bookVideos[0];
+      return this.createFolder(
+        this.slugify(bookName),
+        bookName,
+        firstVideo?.thumbnailUrl,
+        {
+          level: 'book',
+          collectionName,
+          bookName
+        }
+      );
+    });
+  }
+
+  private getVideosForBook(
+    collections: Map<string, BibleProjectVideo[]>,
+    collectionName: string,
+    bookName: string
+  ): ContentItem[] {
+    const videos = collections.get(collectionName) || [];
+
+    // Filter to only videos matching this book
+    const bookVideos = videos.filter(video => {
+      const videoBookName = this.extractBookName(video.title);
+      return videoBookName === bookName;
+    });
+
+    return bookVideos.map(video => this.createFile(
+      video.id,
+      video.title,
+      video.videoUrl,
+      {
+        mediaType: 'video',
+        image: video.thumbnailUrl,
+        muxPlaybackId: video.muxPlaybackId
+      }
+    ));
+  }
+
+  private extractBookName(title: string): string {
+    // Extract the book name from titles like "Genesis 1-11", "1 Samuel", "Song Of Solomon"
+    // Handle numbered books (1 Samuel, 2 Kings, etc.)
+    const numberedBookMatch = title.match(/^([123]\s+[A-Za-z]+)/i);
+    if (numberedBookMatch) {
+      return numberedBookMatch[1];
+    }
+
+    // Handle "Song Of Solomon" or similar multi-word book names
+    if (title.toLowerCase().startsWith('song of')) {
+      return 'Song Of Solomon';
+    }
+
+    // Extract first word as the book name
+    const parts = title.split(/\s+/);
+    if (parts.length > 0) {
+      return parts[0];
+    }
+
+    return title;
+  }
+
+  private getOldTestamentBookOrder(): string[] {
+    return [
+      'Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy',
+      'Joshua', 'Judges', 'Ruth', '1 Samuel', '2 Samuel',
+      '1 Kings', '2 Kings', '1 Chronicles', '2 Chronicles',
+      'Ezra', 'Nehemiah', 'Esther', 'Job', 'Psalms', 'Proverbs',
+      'Ecclesiastes', 'Song Of Solomon', 'Isaiah', 'Jeremiah',
+      'Lamentations', 'Ezekiel', 'Daniel', 'Hosea', 'Joel',
+      'Amos', 'Obadiah', 'Jonah', 'Micah', 'Nahum', 'Habakkuk',
+      'Zephaniah', 'Haggai', 'Zechariah', 'Malachi'
+    ];
+  }
+
+  private getNewTestamentBookOrder(): string[] {
+    return [
+      'Matthew', 'Mark', 'Luke', 'John', 'Acts',
+      'Romans', '1 Corinthians', '2 Corinthians', 'Galatians',
+      'Ephesians', 'Philippians', 'Colossians',
+      '1 Thessalonians', '2 Thessalonians', '1 Timothy', '2 Timothy',
+      'Titus', 'Philemon', 'Hebrews', 'James',
+      '1 Peter', '2 Peter', '1 John', '2 John', '3 John',
+      'Jude', 'Revelation'
+    ];
   }
 
   private slugify(text: string): string {
