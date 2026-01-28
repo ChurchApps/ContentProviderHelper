@@ -5,7 +5,7 @@ import { SignPresenterProvider } from './SignPresenterProvider';
 import { LessonsChurchProvider } from './LessonsChurchProvider';
 import { B1ChurchProvider } from './B1ChurchProvider';
 import { PlanningCenterProvider } from './PlanningCenterProvider';
-import { BibleProjectProvider } from './BibleProjectProvider';
+import { BibleProjectProvider } from './bibleproject';
 import { HighVoltageKidsProvider } from './HighVoltageKidsProvider';
 
 export { APlayProvider } from './APlayProvider';
@@ -13,7 +13,7 @@ export { SignPresenterProvider } from './SignPresenterProvider';
 export { LessonsChurchProvider } from './LessonsChurchProvider';
 export { B1ChurchProvider } from './B1ChurchProvider';
 export { PlanningCenterProvider } from './PlanningCenterProvider';
-export { BibleProjectProvider } from './BibleProjectProvider';
+export { BibleProjectProvider } from './bibleproject';
 export { HighVoltageKidsProvider } from './HighVoltageKidsProvider';
 
 // Provider registry - singleton instances

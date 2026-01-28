@@ -20,7 +20,7 @@ export { SignPresenterProvider } from './providers/SignPresenterProvider';
 export { LessonsChurchProvider } from './providers/LessonsChurchProvider';
 export { B1ChurchProvider } from './providers/B1ChurchProvider';
 export { PlanningCenterProvider } from './providers/PlanningCenterProvider';
-export { BibleProjectProvider } from './providers/BibleProjectProvider';
+export { BibleProjectProvider } from './providers/bibleproject';
 
 // Registry functions
 export {
