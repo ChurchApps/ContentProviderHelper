@@ -2,11 +2,19 @@ import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFol
 import { ContentProvider } from '../ContentProvider';
 import highVoltageData from './highvoltage/data.json';
 
+interface LessonFileJson {
+  type: string;
+  id: string;
+  title: string;
+  mediaType: string;
+  url: string;
+}
+
 interface LessonFolder {
   id: string;
   name: string;
   image: string;
-  files: unknown[];
+  files: LessonFileJson[];
 }
 
 interface StudyFolder {
@@ -97,7 +105,15 @@ export class HighVoltageKidsProvider extends ContentProvider {
     }
 
     if (level === 'lesson') {
-      // Return files for this lesson (empty for now)
+      const lessonData = folder.providerData?.lessonData as LessonFolder;
+      if (lessonData?.files) {
+        return lessonData.files.map(file => this.createFile(
+          file.id,
+          file.title,
+          file.url,
+          { mediaType: file.mediaType as 'video' | 'image' }
+        ));
+      }
       return [];
     }
 

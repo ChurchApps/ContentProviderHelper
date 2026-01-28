@@ -55,11 +55,301 @@
           "image": "https://highvoltagekids.com/wp-content/uploads/2025/11/Hey-God-Elementary.png",
           "description": "6 Elementary Questions From The Life Of Moses",
           "url": "https://highvoltagekids.com/downloads/hey-god-elementary/",
-          "lessonCount": 1,
+          "lessonCount": 6,
           "lessons": [
             {
               "id": "hey-god-elementary-lesson-1",
               "name": "Lesson 1",
+              "image": "https://highvoltagekids.com/wp-content/uploads/2025/11/Hey-God-Elementary.png",
+              "files": [
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-intro",
+                  "title": "Intro Video",
+                  "mediaType": "video",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20Videos/Hey%20God%20-%20Lesson%201%20-%20Intro%20Video%20%28EL%29.mp4"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-wgk-teaching",
+                  "title": "WGK - Teaching",
+                  "mediaType": "video",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20Videos/Hey%20God%20-%20Lesson%201%20-%20WGK%20-%20Teaching%20%28EL%29.mp4"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-whatchagaddaknow",
+                  "title": "Whatchagaddaknow",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/Hey%20God%20-%20Lesson%201%20-%20Whatchagaddaknow%20%28EL%29.jpg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-wgk-trigger",
+                  "title": "WGK - Trigger",
+                  "mediaType": "video",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20Videos/Hey%20God%20-%20Lesson%201%20-%20WGK%20-%20Trigger%20%28EL%29.mp4"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-game",
+                  "title": "Game - M&M Mix-Up",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/Game%20-%20M%26M%20Mix-Up.png"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-bible-story-1",
+                  "title": "Bible Story 1",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/Bible%20Story/Hey%20God%20-%20Lesson%201%20-%20Bible%20Story%201%20%28EL%29.jpg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-bible-story-2",
+                  "title": "Bible Story 2",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/Bible%20Story/Hey%20God%20-%20Lesson%201%20-%20Bible%20Story%202%20%28EL%29.jpg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-bible-story-3",
+                  "title": "Bible Story 3",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/Bible%20Story/Hey%20God%20-%20Lesson%201%20-%20Bible%20Story%203%20%28EL%29.jpg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-bible-story-4",
+                  "title": "Bible Story 4",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/Bible%20Story/Hey%20God%20-%20Lesson%201%20-%20Bible%20Story%204%20%28EL%29.jpg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-bible-story-5",
+                  "title": "Bible Story 5",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/Bible%20Story/Hey%20God%20-%20Lesson%201%20-%20Bible%20Story%205%20%28EL%29.jpg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-power-verse-video",
+                  "title": "Power Verse Video",
+                  "mediaType": "video",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20Videos/Hey%20God%20-%20Lesson%201%20-%20Power%20Verse%20%28EL%29.mp4"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-power-verse-image",
+                  "title": "Power Verse Image",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/Hey%20God%20-%20Lesson%201%20-%20Power%20Verse%20%28EL%29.jpg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-cta-title",
+                  "title": "Call To Action - Title",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/Call%20To%20Action/Hey%20God%20-%20Lesson%201%20-%20CTA%20-%20Title%20%28EL%29.jpg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-cta-point-1",
+                  "title": "Call To Action - Point 1",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/Call%20To%20Action/Hey%20God%20-%20Lesson%201%20-%20CTA%20-%20Point%201%20%28EL%29.jpg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-cta-point-2",
+                  "title": "Call To Action - Point 2",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/Call%20To%20Action/Hey%20God%20-%20Lesson%201%20-%20CTA%20-%20Point%202%20%28EL%29.jpg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-cta-point-3",
+                  "title": "Call To Action - Point 3",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/Call%20To%20Action/Hey%20God%20-%20Lesson%201%20-%20CTA%20-%20Point%203%20%28EL%29.jpg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-rewind-title",
+                  "title": "REWIND - Title",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/REWIND/Title.jpeg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-rewind-q1",
+                  "title": "REWIND - Question 1",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/REWIND/1.jpeg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-rewind-a1",
+                  "title": "REWIND - Answer 1",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/REWIND/1a.jpeg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-rewind-q2",
+                  "title": "REWIND - Question 2",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/REWIND/2.jpeg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-rewind-a2",
+                  "title": "REWIND - Answer 2",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/REWIND/2a.jpeg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-rewind-q3",
+                  "title": "REWIND - Question 3",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/REWIND/3.jpeg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-rewind-a3",
+                  "title": "REWIND - Answer 3",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/REWIND/3a.jpeg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-rewind-q4",
+                  "title": "REWIND - Question 4",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/REWIND/4.jpeg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-rewind-a4",
+                  "title": "REWIND - Answer 4",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/REWIND/4a.jpeg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-rewind-q5",
+                  "title": "REWIND - Question 5",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/REWIND/5.jpeg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-rewind-a5",
+                  "title": "REWIND - Answer 5",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/REWIND/5a.jpeg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-rewind-q6",
+                  "title": "REWIND - Question 6",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/REWIND/6.jpeg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-rewind-a6",
+                  "title": "REWIND - Answer 6",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/REWIND/6a.jpeg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-rewind-q7",
+                  "title": "REWIND - Question 7",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/REWIND/7.jpeg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-rewind-a7",
+                  "title": "REWIND - Answer 7",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/REWIND/7a.jpeg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-rewind-q8",
+                  "title": "REWIND - Question 8",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/REWIND/8.jpeg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-rewind-a8",
+                  "title": "REWIND - Answer 8",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/REWIND/8a.jpeg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-rewind-q9",
+                  "title": "REWIND - Question 9",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/REWIND/9.jpeg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-rewind-a9",
+                  "title": "REWIND - Answer 9",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/REWIND/9a.jpeg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-rewind-q10",
+                  "title": "REWIND - Question 10",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/REWIND/10.jpeg"
+                },
+                {
+                  "type": "file",
+                  "id": "hey-god-el-1-rewind-a10",
+                  "title": "REWIND - Answer 10",
+                  "mediaType": "image",
+                  "url": "https://files.churchpdf.com/files/hv/Hey%2BGod%2B-%2BLessons%2B1-3%2B%28EL%29/Lesson%201/Lesson%201%20JPGs/REWIND/10a.jpeg"
+                }
+              ]
+            },
+            {
+              "id": "hey-god-elementary-lesson-2",
+              "name": "Lesson 2",
+              "image": "https://highvoltagekids.com/wp-content/uploads/2025/11/Hey-God-Elementary.png",
+              "files": []
+            },
+            {
+              "id": "hey-god-elementary-lesson-3",
+              "name": "Lesson 3",
+              "image": "https://highvoltagekids.com/wp-content/uploads/2025/11/Hey-God-Elementary.png",
+              "files": []
+            },
+            {
+              "id": "hey-god-elementary-lesson-4",
+              "name": "Lesson 4",
+              "image": "https://highvoltagekids.com/wp-content/uploads/2025/11/Hey-God-Elementary.png",
+              "files": []
+            },
+            {
+              "id": "hey-god-elementary-lesson-5",
+              "name": "Lesson 5",
+              "image": "https://highvoltagekids.com/wp-content/uploads/2025/11/Hey-God-Elementary.png",
+              "files": []
+            },
+            {
+              "id": "hey-god-elementary-lesson-6",
+              "name": "Lesson 6",
               "image": "https://highvoltagekids.com/wp-content/uploads/2025/11/Hey-God-Elementary.png",
               "files": []
             }
