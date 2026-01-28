@@ -19,8 +19,8 @@ export class BibleProjectProvider extends ContentProvider {
   readonly name = 'The Bible Project';
 
   readonly logos: ProviderLogos = {
-    light: 'https://bibleproject.com/favicon.ico',
-    dark: 'https://bibleproject.com/favicon.ico'
+    light: 'https://cdn.brandfetch.io/idbRrY_Bqf/w/400/h/400/theme/dark/icon.jpeg',
+    dark: 'https://cdn.brandfetch.io/idbRrY_Bqf/w/400/h/400/theme/dark/icon.jpeg'
   };
 
   readonly config: ContentProviderConfig = {
