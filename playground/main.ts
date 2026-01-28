@@ -86,6 +86,13 @@ const oauthSection = document.getElementById('oauth-flow-section')!;
 const oauthSigninBtn = document.getElementById('oauth-signin-btn')!;
 const oauthProcessing = document.getElementById('oauth-processing')!;
 
+// Form login elements
+const formLoginSection = document.getElementById('form-login-section')!;
+const loginEmail = document.getElementById('login-email')! as HTMLInputElement;
+const loginPassword = document.getElementById('login-password')! as HTMLInputElement;
+const formLoginBtn = document.getElementById('form-login-btn')!;
+const formLoginError = document.getElementById('form-login-error')!;
+
 function init() {
   handleOAuthCallback();
   renderProviders();
@@ -98,6 +105,15 @@ function setupEventListeners() {
   copyCodeBtn.addEventListener('click', copyUserCode);
   retryBtn.addEventListener('click', retryAuth);
   oauthSigninBtn.addEventListener('click', startOAuthRedirect);
+  formLoginBtn.addEventListener('click', handleFormLoginSubmit);
+
+  // Handle Enter key in form login fields
+  loginEmail.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') loginPassword.focus();
+  });
+  loginPassword.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleFormLoginSubmit();
+  });
 
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
@@ -150,6 +166,9 @@ function renderProviders() {
       }
       if (provider.authTypes.includes('oauth_pkce')) {
         authBadges += '<span class="provider-badge badge-auth">OAuth</span>';
+      }
+      if (provider.authTypes.includes('form_login')) {
+        authBadges += '<span class="provider-badge badge-form">Login</span>';
       }
     }
 
@@ -223,6 +242,8 @@ async function handleProviderClick(providerId: string) {
   if (provider.requiresAuth()) {
     if (provider.supportsDeviceFlow()) {
       await startDeviceFlow();
+    } else if (provider.getAuthTypes().includes('form_login')) {
+      showFormLoginModal();
     } else {
       showOAuthModal();
     }
@@ -238,6 +259,62 @@ function showOAuthModal() {
   if (!state.currentProvider) return;
   modalTitle.textContent = `Connect to ${state.currentProvider.name}`;
   showModal('oauth');
+}
+
+function showFormLoginModal() {
+  if (!state.currentProvider) return;
+  modalTitle.textContent = `Login to ${state.currentProvider.name}`;
+  loginEmail.value = '';
+  loginPassword.value = '';
+  formLoginError.classList.add('hidden');
+  showModal('form_login');
+  // Focus email field after modal opens
+  setTimeout(() => loginEmail.focus(), 100);
+}
+
+async function handleFormLoginSubmit() {
+  if (!state.currentProvider) return;
+
+  const email = loginEmail.value.trim();
+  const pwd = loginPassword.value;
+
+  if (!email || !pwd) {
+    formLoginError.textContent = 'Please enter email and password';
+    formLoginError.classList.remove('hidden');
+    return;
+  }
+
+  showModal('processing');
+
+  try {
+    const providerAny = state.currentProvider as any;
+    if (typeof providerAny.performLogin !== 'function') {
+      showModal('error');
+      errorMessage.textContent = 'This provider does not support form login';
+      return;
+    }
+
+    const auth = await providerAny.performLogin(email, pwd);
+
+    if (auth) {
+      state.currentAuth = auth;
+      state.connectedProviders.set(state.currentProvider.id, auth);
+      showModal('success');
+
+      setTimeout(() => {
+        closeModal();
+        navigateToBrowser();
+        renderProviders();
+      }, 1500);
+    } else {
+      showModal('form_login');
+      formLoginError.textContent = 'Login failed. Check your credentials.';
+      formLoginError.classList.remove('hidden');
+    }
+  } catch (error) {
+    showModal('error');
+    errorMessage.textContent = `Login error: ${error}`;
+  }
 }
 
 async function startOAuthRedirect() {
@@ -420,7 +497,7 @@ function startPolling(deviceAuth: DeviceAuthorizationResponse) {
   state.pollingInterval = window.setTimeout(poll, initialDelay);
 }
 
-function showModal(view: 'loading' | 'code' | 'success' | 'error' | 'oauth' | 'processing') {
+function showModal(view: 'loading' | 'code' | 'success' | 'error' | 'oauth' | 'processing' | 'form_login') {
   modal.classList.remove('hidden');
   modalLoading.classList.add('hidden');
   modalCode.classList.add('hidden');
@@ -428,6 +505,7 @@ function showModal(view: 'loading' | 'code' | 'success' | 'error' | 'oauth' | 'p
   modalError.classList.add('hidden');
   oauthSection.classList.add('hidden');
   oauthProcessing.classList.add('hidden');
+  formLoginSection.classList.add('hidden');
 
   switch (view) {
     case 'loading':
@@ -447,6 +525,9 @@ function showModal(view: 'loading' | 'code' | 'success' | 'error' | 'oauth' | 'p
       break;
     case 'processing':
       oauthProcessing.classList.remove('hidden');
+      break;
+    case 'form_login':
+      formLoginSection.classList.remove('hidden');
       break;
   }
 }

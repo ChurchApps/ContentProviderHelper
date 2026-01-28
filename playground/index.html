@@ -392,6 +392,21 @@
             <p class="oauth-note">You'll be redirected to the provider's login page.</p>
           </div>
 
+          <!-- Form Login section -->
+          <div id="form-login-section" class="form-login-section hidden">
+            <p>Enter your credentials to sign in:</p>
+            <div class="form-group">
+              <label for="login-email">Email</label>
+              <input type="email" id="login-email" class="form-input" placeholder="email@example.com" autocomplete="email">
+            </div>
+            <div class="form-group">
+              <label for="login-password">Password</label>
+              <input type="password" id="login-password" class="form-input" placeholder="Password" autocomplete="current-password">
+            </div>
+            <p id="form-login-error" class="form-error hidden"></p>
+            <button id="form-login-btn" class="form-login-btn">Sign In</button>
+          </div>
+
           <div id="oauth-processing" class="modal-loading hidden">
             <div class="spinner"></div>
             <p>Processing authorization...</p>

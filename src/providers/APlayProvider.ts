@@ -7,8 +7,8 @@ export class APlayProvider extends ContentProvider {
   readonly name = 'APlay';
 
   readonly logos: ProviderLogos = {
-    light: 'https://joinaplay.com/hs-fs/hubfs/APlay_Logo_Horizontal_Jungle%20Green.png?width=400&height=122&name=APlay_Logo_Horizontal_Jungle%20Green.png',
-    dark: 'https://joinaplay.com/hs-fs/hubfs/APlay_Logo_Horizontal_Jungle%20Green.png?width=400&height=122&name=APlay_Logo_Horizontal_Jungle%20Green.png'
+    light: 'https://www.joinamazing.com/_assets/v11/3ba846c5afd7e73d27bc4d87b63d423e7ae2dc73.svg',
+    dark: 'https://www.joinamazing.com/_assets/v11/3ba846c5afd7e73d27bc4d87b63d423e7ae2dc73.svg'
   };
 
   readonly config: ContentProviderConfig = {

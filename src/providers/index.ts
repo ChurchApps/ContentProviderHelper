@@ -6,6 +6,7 @@ import { LessonsChurchProvider } from './LessonsChurchProvider';
 import { B1ChurchProvider } from './B1ChurchProvider';
 import { PlanningCenterProvider } from './PlanningCenterProvider';
 import { BibleProjectProvider } from './BibleProjectProvider';
+import { HighVoltageKidsProvider } from './HighVoltageKidsProvider';
 
 export { APlayProvider } from './APlayProvider';
 export { SignPresenterProvider } from './SignPresenterProvider';
@@ -13,6 +14,7 @@ export { LessonsChurchProvider } from './LessonsChurchProvider';
 export { B1ChurchProvider } from './B1ChurchProvider';
 export { PlanningCenterProvider } from './PlanningCenterProvider';
 export { BibleProjectProvider } from './BibleProjectProvider';
+export { HighVoltageKidsProvider } from './HighVoltageKidsProvider';
 
 // Provider registry - singleton instances
 const providerRegistry: Map<string, ContentProvider> = new Map();
@@ -73,14 +75,6 @@ const unimplementedProviders: UnimplementedProvider[] = [
       dark: '',
     },
   },
-  {
-    id: 'highvoltagekids',
-    name: 'High Voltage Kids',
-    logos: {
-      light: 'https://highvoltagekids.com/wp-content/uploads/2023/10/logo-300x300-1.webp',
-      dark: 'https://highvoltagekids.com/wp-content/uploads/2023/10/logo-300x300-1.webp',
-    },
-  },
 ];
 
 // Register built-in providers
@@ -91,6 +85,7 @@ function initializeProviders() {
   const b1Church = new B1ChurchProvider();
   const planningCenter = new PlanningCenterProvider();
   const bibleProject = new BibleProjectProvider();
+  const highVoltageKids = new HighVoltageKidsProvider();
 
   providerRegistry.set(aplay.id, aplay);
   providerRegistry.set(signPresenter.id, signPresenter);
@@ -98,6 +93,7 @@ function initializeProviders() {
   providerRegistry.set(b1Church.id, b1Church);
   providerRegistry.set(planningCenter.id, planningCenter);
   providerRegistry.set(bibleProject.id, bibleProject);
+  providerRegistry.set(highVoltageKids.id, highVoltageKids);
 }
 
 // Initialize on module load

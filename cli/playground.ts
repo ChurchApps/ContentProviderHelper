@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { select, confirm } from '@inquirer/prompts';
+import { select, confirm, input, password } from '@inquirer/prompts';
 import chalk from 'chalk';
 import ora from 'ora';
 import {
@@ -46,12 +46,13 @@ const state: CliState = {
 };
 
 /**
- * Check if a provider can be used in CLI (public or device flow)
+ * Check if a provider can be used in CLI (public, device flow, or form login)
  */
 function canUseInCli(provider: ProviderInfo): boolean {
   if (!provider.implemented) return false;
   if (!provider.requiresAuth) return true;
   if (provider.authTypes.includes('device_flow')) return true;
+  if (provider.authTypes.includes('form_login')) return true;
   return false;
 }
 
@@ -165,6 +166,20 @@ async function handleProviderSelection(providerId: string): Promise<void> {
     return;
   }
 
+  // Form login auth
+  if (provider.getAuthTypes().includes('form_login')) {
+    const auth = await handleFormLogin(provider);
+    if (auth) {
+      state.currentProvider = provider;
+      state.currentAuth = auth;
+      state.connectedProviders.set(providerId, auth);
+      state.folderStack = [];
+      showSuccess(`Logged in to ${provider.name}`);
+      await browseContent();
+    }
+    return;
+  }
+
   // OAuth only - not supported in CLI
   showError(`${provider.name} requires OAuth authentication. Please use the web playground.`);
 }
@@ -222,6 +237,49 @@ async function handleDeviceFlow(provider: ContentProvider): Promise<ContentProvi
 
   pollSpinner.fail('Authorization expired');
   return null;
+}
+
+/**
+ * Handle form-based login authentication
+ */
+async function handleFormLogin(provider: ContentProvider): Promise<ContentProviderAuthData | null> {
+  console.log(chalk.cyan('\n' + '═'.repeat(50)));
+  console.log(chalk.bold(`  Login to ${provider.name}`));
+  console.log(chalk.cyan('═'.repeat(50)) + '\n');
+
+  const username = await input({
+    message: 'Email/Username:',
+    validate: (value) => value.length > 0 || 'Email is required',
+  });
+
+  const pwd = await password({
+    message: 'Password:',
+    validate: (value) => value.length > 0 || 'Password is required',
+  });
+
+  const spinner = ora('Logging in...').start();
+
+  try {
+    // Call provider's performLogin method
+    const providerAny = provider as any;
+    if (typeof providerAny.performLogin !== 'function') {
+      spinner.fail('This provider does not support form login');
+      return null;
+    }
+
+    const auth = await providerAny.performLogin(username, pwd);
+
+    if (auth) {
+      spinner.succeed('Login successful!');
+      return auth;
+    } else {
+      spinner.fail('Login failed. Check your credentials.');
+      return null;
+    }
+  } catch (error) {
+    spinner.fail(`Login error: ${error}`);
+    return null;
+  }
 }
 
 /**

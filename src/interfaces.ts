@@ -85,8 +85,9 @@ export interface DeviceFlowState {
  * - `none`: No authentication required (public API)
  * - `oauth_pkce`: OAuth 2.0 with PKCE
  * - `device_flow`: OAuth 2.0 Device Authorization Flow (RFC 8628)
+ * - `form_login`: Form-based login (username/password) with session cookies
  */
-export type AuthType = 'none' | 'oauth_pkce' | 'device_flow';
+export type AuthType = 'none' | 'oauth_pkce' | 'device_flow' | 'form_login';
 
 /**
  * Provider logo URLs for light and dark themes.
