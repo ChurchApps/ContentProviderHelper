@@ -58,9 +58,9 @@ export class BibleProjectProvider extends ContentProvider {
 
     if (!folder) {
       // Return top-level collection folders
-      // Filter out "Sermon on the Mount Visual Commentaries" - it will be a subfolder
+      // Filter out "Sermon on the Mount Visual Commentaries" (it's a subfolder) and empty collections
       const topLevelCollections = Array.from(collections.keys()).filter(
-        name => name !== 'Sermon on the Mount Visual Commentaries'
+        name => name !== 'Sermon on the Mount Visual Commentaries' && (collections.get(name)?.length ?? 0) > 0
       );
 
       return topLevelCollections.map(name => this.createFolder(
@@ -177,7 +177,23 @@ export class BibleProjectProvider extends ContentProvider {
       { name: 'New Testament Overviews', pattern: /New Testament Overviews/i },
       { name: 'Biblical Themes', pattern: /Biblical Themes/i },
       { name: 'Sermon on the Mount', pattern: /Sermon on the Mount(?! Visual)/i },
-      { name: 'Sermon on the Mount Visual Commentaries', pattern: /Sermon on the Mount Visual Commentaries/i }
+      { name: 'Sermon on the Mount Visual Commentaries', pattern: /Sermon on the Mount Visual Commentaries/i },
+      { name: 'How to Read the Bible', pattern: /How to Read the Bible/i },
+      { name: 'Insights', pattern: /Insights/i },
+      { name: 'Spiritual Beings', pattern: /Spiritual Beings/i },
+      { name: 'Royal Priesthood', pattern: /Royal Priesthood/i },
+      { name: 'Creation', pattern: /Creation/i },
+      { name: 'Character of God', pattern: /Character of God/i },
+      { name: 'Word Studies', pattern: /Word Studies/i },
+      { name: 'Advent', pattern: /Advent/i },
+      { name: 'Luke-Acts', pattern: /Luke-Acts/i },
+      { name: 'Wisdom', pattern: /Wisdom/i },
+      { name: 'The Shema', pattern: /The Shema|Shema/i },
+      { name: 'Torah', pattern: /Torah/i },
+      { name: 'Deuterocanon', pattern: /Deuterocanon|Apocrypha/i },
+      { name: 'Family of God', pattern: /Family of God/i },
+      { name: 'Heaven and Earth', pattern: /Heaven and Earth/i },
+      { name: 'Paradigm', pattern: /Paradigm/i }
     ];
 
     // Initialize collections
@@ -324,6 +340,97 @@ export class BibleProjectProvider extends ContentProvider {
   }
 
   private categorizeByFilename(filename: string): string {
+    // Sermon on the Mount (check first due to specificity)
+    if (filename.includes('sotm') || filename.includes('sermon-on-the-mount') || filename.includes('beatitudes')) {
+      if (filename.includes('visual') || filename.includes('vc-')) {
+        return 'Sermon on the Mount Visual Commentaries';
+      }
+      return 'Sermon on the Mount';
+    }
+
+    // How to Read the Bible
+    if (filename.includes('how-to-read') || filename.includes('httr') || filename.includes('literary-styles') ||
+        filename.includes('plot') || filename.includes('setting') || filename.includes('character-in-biblical') ||
+        filename.includes('design-patterns') || filename.includes('metaphor') || filename.includes('poetry')) {
+      return 'How to Read the Bible';
+    }
+
+    // Luke-Acts (check before NT to avoid conflicts)
+    if (filename.includes('luke-acts') || filename.includes('lukeacts')) {
+      return 'Luke-Acts';
+    }
+
+    // Spiritual Beings
+    if (filename.includes('spiritual-beings') || filename.includes('angels') || filename.includes('cherubim') ||
+        filename.includes('seraphim') || filename.includes('divine-council') || filename.includes('satan') ||
+        filename.includes('demons') || filename.includes('the-satan')) {
+      return 'Spiritual Beings';
+    }
+
+    // Royal Priesthood
+    if (filename.includes('royal-priesthood') || filename.includes('priest')) {
+      return 'Royal Priesthood';
+    }
+
+    // Creation
+    if (filename.includes('creation') && !filename.includes('new-creation')) {
+      return 'Creation';
+    }
+
+    // Character of God
+    if (filename.includes('character-of-god') || filename.includes('slow-to-anger') ||
+        filename.includes('compassionate') || filename.includes('gracious')) {
+      return 'Character of God';
+    }
+
+    // Word Studies
+    if (filename.includes('word-study') || filename.includes('word-studies')) {
+      return 'Word Studies';
+    }
+
+    // Advent
+    if (filename.includes('advent')) {
+      return 'Advent';
+    }
+
+    // Wisdom Series
+    if (filename.includes('wisdom-series') || (filename.includes('wisdom') && !filename.includes('proverbs'))) {
+      return 'Wisdom';
+    }
+
+    // The Shema
+    if (filename.includes('shema')) {
+      return 'The Shema';
+    }
+
+    // Torah Series
+    if (filename.includes('torah-series') || filename.includes('torah')) {
+      return 'Torah';
+    }
+
+    // Deuterocanon / Apocrypha
+    if (filename.includes('deuterocanon') || filename.includes('apocrypha') || filename.includes('tobit') ||
+        filename.includes('judith') || filename.includes('maccabees') || filename.includes('sirach') ||
+        filename.includes('baruch') || filename.includes('wisdom-of-solomon')) {
+      return 'Deuterocanon';
+    }
+
+    // Family of God
+    if (filename.includes('family-of-god') || filename.includes('son-of-god') || filename.includes('image-of-god')) {
+      return 'Family of God';
+    }
+
+    // Heaven and Earth
+    if (filename.includes('heaven-and-earth') || filename.includes('heaven-earth')) {
+      return 'Heaven and Earth';
+    }
+
+    // Paradigm
+    if (filename.includes('paradigm')) {
+      return 'Paradigm';
+    }
+
+    // Old Testament Overviews
     if (filename.includes('ot-') || filename.includes('genesis') || filename.includes('exodus') ||
         filename.includes('leviticus') || filename.includes('numbers') || filename.includes('deuteronomy') ||
         filename.includes('joshua') || filename.includes('judges') || filename.includes('ruth') ||
@@ -338,21 +445,20 @@ export class BibleProjectProvider extends ContentProvider {
         filename.includes('zephaniah') || filename.includes('haggai') || filename.includes('zechariah') ||
         filename.includes('malachi')) {
       return 'Old Testament Overviews';
-    } else if (filename.includes('nt-') || filename.includes('matthew') || filename.includes('mark') ||
-               filename.includes('luke') || filename.includes('john') || filename.includes('acts') ||
-               filename.includes('romans') || filename.includes('corinthians') || filename.includes('galatians') ||
-               filename.includes('ephesians') || filename.includes('philippians') || filename.includes('colossians') ||
-               filename.includes('thessalonians') || filename.includes('timothy') || filename.includes('titus') ||
-               filename.includes('philemon') || filename.includes('hebrews') || filename.includes('james') ||
-               filename.includes('peter') || filename.includes('jude') || filename.includes('revelation')) {
-      return 'New Testament Overviews';
-    } else if (filename.includes('sotm') || filename.includes('sermon-on-the-mount') || filename.includes('beatitudes')) {
-      if (filename.includes('visual') || filename.includes('vc-')) {
-        return 'Sermon on the Mount Visual Commentaries';
-      } else {
-        return 'Sermon on the Mount';
-      }
     }
+
+    // New Testament Overviews
+    if (filename.includes('nt-') || filename.includes('matthew') || filename.includes('mark') ||
+        filename.includes('luke') || filename.includes('john') || filename.includes('acts') ||
+        filename.includes('romans') || filename.includes('corinthians') || filename.includes('galatians') ||
+        filename.includes('ephesians') || filename.includes('philippians') || filename.includes('colossians') ||
+        filename.includes('thessalonians') || filename.includes('timothy') || filename.includes('titus') ||
+        filename.includes('philemon') || filename.includes('hebrews') || filename.includes('james') ||
+        filename.includes('peter') || filename.includes('jude') || filename.includes('revelation')) {
+      return 'New Testament Overviews';
+    }
+
+    // Default to Biblical Themes
     return 'Biblical Themes';
   }
 
@@ -396,7 +502,23 @@ export class BibleProjectProvider extends ContentProvider {
       'New Testament Overviews': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/new-testament-overviews/tr:q-65,w-300/nt-overviews_16.9.jpg',
       'Biblical Themes': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/themes/tr:q-65,w-300/themes_16.9.jpg',
       'Sermon on the Mount': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/sermon-on-the-mount/tr:q-65,w-300/sotm_16.9.jpg',
-      'Sermon on the Mount Visual Commentaries': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/sermon-on-the-mount-visual-commentaries/tr:q-65,w-300/sotm-vc_16.9.jpg'
+      'Sermon on the Mount Visual Commentaries': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/sermon-on-the-mount-visual-commentaries/tr:q-65,w-300/sotm-vc_16.9.jpg',
+      'How to Read the Bible': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/how-to-read-the-bible/tr:q-65,w-300/httr_16.9.jpg',
+      'Insights': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/insights/tr:q-65,w-300/insights_16.9.jpg',
+      'Spiritual Beings': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/spiritual-beings/tr:q-65,w-300/spiritual-beings_16.9.jpg',
+      'Royal Priesthood': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/royal-priesthood/tr:q-65,w-300/royal-priesthood_16.9.jpg',
+      'Creation': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/creation/tr:q-65,w-300/creation_16.9.jpg',
+      'Character of God': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/character-of-god/tr:q-65,w-300/character-of-god_16.9.jpg',
+      'Word Studies': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/word-studies/tr:q-65,w-300/word-studies_16.9.jpg',
+      'Advent': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/advent/tr:q-65,w-300/advent_16.9.jpg',
+      'Luke-Acts': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/luke-acts/tr:q-65,w-300/luke-acts_16.9.jpg',
+      'Wisdom': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/wisdom/tr:q-65,w-300/wisdom_16.9.jpg',
+      'The Shema': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/shema/tr:q-65,w-300/shema_16.9.jpg',
+      'Torah': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/torah/tr:q-65,w-300/torah_16.9.jpg',
+      'Deuterocanon': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/deuterocanon/tr:q-65,w-300/deuterocanon_16.9.jpg',
+      'Family of God': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/family-of-god/tr:q-65,w-300/family-of-god_16.9.jpg',
+      'Heaven and Earth': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/heaven-and-earth/tr:q-65,w-300/heaven-and-earth_16.9.jpg',
+      'Paradigm': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/paradigm/tr:q-65,w-300/paradigm_16.9.jpg'
     };
     return images[collectionName];
   }
