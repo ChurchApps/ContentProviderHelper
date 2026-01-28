@@ -66,7 +66,7 @@ export class BibleProjectProvider extends ContentProvider {
       return topLevelCollections.map(name => this.createFolder(
         this.slugify(name),
         name,
-        undefined,
+        this.getCollectionImage(name),
         { level: 'collection', collectionName: name }
       ));
     }
@@ -78,34 +78,42 @@ export class BibleProjectProvider extends ContentProvider {
       // Handle Sermon on the Mount special case (two sub-folders)
       if (collectionName === 'Sermon on the Mount') {
         return [
-          this.createFolder('sotm-videos', 'Videos', undefined, {
+          this.createFolder('sotm-videos', 'Videos', this.getCollectionImage('Sermon on the Mount'), {
             level: 'videos',
             collectionName: 'Sermon on the Mount'
           }),
-          this.createFolder('sotm-visual', 'Visual Commentaries', undefined, {
+          this.createFolder('sotm-visual', 'Visual Commentaries', this.getCollectionImage('Sermon on the Mount Visual Commentaries'), {
             level: 'videos',
             collectionName: 'Sermon on the Mount Visual Commentaries'
           })
         ];
       }
 
-      // For OT/NT Overviews, group by book
-      if (collectionName === 'Old Testament Overviews' || collectionName === 'New Testament Overviews') {
-        return this.getBookFolders(collections, collectionName);
-      }
-
-      // Return videos for other collections
-      return this.getVideosForCollection(collections, collectionName);
+      // Return lesson folders (one per video) for all collections
+      return this.getLessonFolders(collections, collectionName);
     }
 
-    if (level === 'book') {
-      // Return videos for a specific book
-      const bookName = folder.providerData?.bookName as string;
-      return this.getVideosForBook(collections, collectionName, bookName);
+    if (level === 'lesson') {
+      // Return the single video for this lesson
+      const videoData = folder.providerData?.videoData as BibleProjectVideo;
+      if (videoData) {
+        return [this.createFile(
+          videoData.id,
+          videoData.title,
+          videoData.videoUrl,
+          {
+            mediaType: 'video',
+            image: videoData.thumbnailUrl,
+            muxPlaybackId: videoData.muxPlaybackId
+          }
+        )];
+      }
+      return [];
     }
 
     if (level === 'videos') {
-      return this.getVideosForCollection(collections, collectionName);
+      // Sermon on the Mount sub-folders also use lesson folders
+      return this.getLessonFolders(collections, collectionName);
     }
 
     return [];
@@ -364,141 +372,33 @@ export class BibleProjectProvider extends ContentProvider {
     return total;
   }
 
-  private getVideosForCollection(
+  private getLessonFolders(
     collections: Map<string, BibleProjectVideo[]>,
     collectionName: string
   ): ContentItem[] {
     const videos = collections.get(collectionName) || [];
 
-    return videos.map(video => this.createFile(
+    return videos.map(video => this.createFolder(
       video.id,
       video.title,
-      video.videoUrl,
+      video.thumbnailUrl,
       {
-        mediaType: 'video',
-        image: video.thumbnailUrl,
-        muxPlaybackId: video.muxPlaybackId
+        level: 'lesson',
+        collectionName,
+        videoData: video
       }
     ));
   }
 
-  private getBookFolders(
-    collections: Map<string, BibleProjectVideo[]>,
-    collectionName: string
-  ): ContentItem[] {
-    const videos = collections.get(collectionName) || [];
-
-    // Group videos by book name
-    const bookGroups = new Map<string, BibleProjectVideo[]>();
-
-    for (const video of videos) {
-      const bookName = this.extractBookName(video.title);
-      const existing = bookGroups.get(bookName) || [];
-      existing.push(video);
-      bookGroups.set(bookName, existing);
-    }
-
-    // Sort book names in biblical order
-    const bookOrder = collectionName === 'Old Testament Overviews'
-      ? this.getOldTestamentBookOrder()
-      : this.getNewTestamentBookOrder();
-
-    const sortedBooks = Array.from(bookGroups.keys()).sort((a, b) => {
-      const indexA = bookOrder.indexOf(a);
-      const indexB = bookOrder.indexOf(b);
-      // Put unknown books at the end
-      const orderA = indexA >= 0 ? indexA : 999;
-      const orderB = indexB >= 0 ? indexB : 999;
-      return orderA - orderB;
-    });
-
-    // Get the first video's thumbnail for each book folder
-    return sortedBooks.map(bookName => {
-      const bookVideos = bookGroups.get(bookName) || [];
-      const firstVideo = bookVideos[0];
-      return this.createFolder(
-        this.slugify(bookName),
-        bookName,
-        firstVideo?.thumbnailUrl,
-        {
-          level: 'book',
-          collectionName,
-          bookName
-        }
-      );
-    });
-  }
-
-  private getVideosForBook(
-    collections: Map<string, BibleProjectVideo[]>,
-    collectionName: string,
-    bookName: string
-  ): ContentItem[] {
-    const videos = collections.get(collectionName) || [];
-
-    // Filter to only videos matching this book
-    const bookVideos = videos.filter(video => {
-      const videoBookName = this.extractBookName(video.title);
-      return videoBookName === bookName;
-    });
-
-    return bookVideos.map(video => this.createFile(
-      video.id,
-      video.title,
-      video.videoUrl,
-      {
-        mediaType: 'video',
-        image: video.thumbnailUrl,
-        muxPlaybackId: video.muxPlaybackId
-      }
-    ));
-  }
-
-  private extractBookName(title: string): string {
-    // Extract the book name from titles like "Genesis 1-11", "1 Samuel", "Song Of Solomon"
-    // Handle numbered books (1 Samuel, 2 Kings, etc.)
-    const numberedBookMatch = title.match(/^([123]\s+[A-Za-z]+)/i);
-    if (numberedBookMatch) {
-      return numberedBookMatch[1];
-    }
-
-    // Handle "Song Of Solomon" or similar multi-word book names
-    if (title.toLowerCase().startsWith('song of')) {
-      return 'Song Of Solomon';
-    }
-
-    // Extract first word as the book name
-    const parts = title.split(/\s+/);
-    if (parts.length > 0) {
-      return parts[0];
-    }
-
-    return title;
-  }
-
-  private getOldTestamentBookOrder(): string[] {
-    return [
-      'Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy',
-      'Joshua', 'Judges', 'Ruth', '1 Samuel', '2 Samuel',
-      '1 Kings', '2 Kings', '1 Chronicles', '2 Chronicles',
-      'Ezra', 'Nehemiah', 'Esther', 'Job', 'Psalms', 'Proverbs',
-      'Ecclesiastes', 'Song Of Solomon', 'Isaiah', 'Jeremiah',
-      'Lamentations', 'Ezekiel', 'Daniel', 'Hosea', 'Joel',
-      'Amos', 'Obadiah', 'Jonah', 'Micah', 'Nahum', 'Habakkuk',
-      'Zephaniah', 'Haggai', 'Zechariah', 'Malachi'
-    ];
-  }
-
-  private getNewTestamentBookOrder(): string[] {
-    return [
-      'Matthew', 'Mark', 'Luke', 'John', 'Acts',
-      'Romans', '1 Corinthians', '2 Corinthians', 'Galatians',
-      'Ephesians', 'Philippians', 'Colossians',
-      '1 Thessalonians', '2 Thessalonians', '1 Timothy', '2 Timothy',
-      'Titus', 'Philemon', 'Hebrews', 'James',
-      '1 Peter', '2 Peter', '1 John', '2 John', '3 John',
-      'Jude', 'Revelation'
-    ];
+  private getCollectionImage(collectionName: string): string | undefined {
+    const images: Record<string, string> = {
+      'Old Testament Overviews': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/old-testament-overviews/tr:q-65,w-300/ot-overviews_16.9.jpg',
+      'New Testament Overviews': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/new-testament-overviews/tr:q-65,w-300/nt-overviews_16.9.jpg',
+      'Biblical Themes': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/themes/tr:q-65,w-300/themes_16.9.jpg',
+      'Sermon on the Mount': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/sermon-on-the-mount/tr:q-65,w-300/sotm_16.9.jpg',
+      'Sermon on the Mount Visual Commentaries': 'https://ik.imagekit.io/bpweb1/web/media/video-collection-images/sermon-on-the-mount-visual-commentaries/tr:q-65,w-300/sotm-vc_16.9.jpg'
+    };
+    return images[collectionName];
   }
 
   private slugify(text: string): string {
