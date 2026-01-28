@@ -5,12 +5,14 @@ import { SignPresenterProvider } from './SignPresenterProvider';
 import { LessonsChurchProvider } from './LessonsChurchProvider';
 import { B1ChurchProvider } from './B1ChurchProvider';
 import { PlanningCenterProvider } from './PlanningCenterProvider';
+import { BibleProjectProvider } from './BibleProjectProvider';
 
 export { APlayProvider } from './APlayProvider';
 export { SignPresenterProvider } from './SignPresenterProvider';
 export { LessonsChurchProvider } from './LessonsChurchProvider';
 export { B1ChurchProvider } from './B1ChurchProvider';
 export { PlanningCenterProvider } from './PlanningCenterProvider';
+export { BibleProjectProvider } from './BibleProjectProvider';
 
 // Provider registry - singleton instances
 const providerRegistry: Map<string, ContentProvider> = new Map();
@@ -88,12 +90,14 @@ function initializeProviders() {
   const lessonsChurch = new LessonsChurchProvider();
   const b1Church = new B1ChurchProvider();
   const planningCenter = new PlanningCenterProvider();
+  const bibleProject = new BibleProjectProvider();
 
   providerRegistry.set(aplay.id, aplay);
   providerRegistry.set(signPresenter.id, signPresenter);
   providerRegistry.set(lessonsChurch.id, lessonsChurch);
   providerRegistry.set(b1Church.id, b1Church);
   providerRegistry.set(planningCenter.id, planningCenter);
+  providerRegistry.set(bibleProject.id, bibleProject);
 }
 
 // Initialize on module load
