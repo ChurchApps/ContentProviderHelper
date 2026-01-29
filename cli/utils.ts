@@ -12,6 +12,43 @@ import {
 } from '../src/index.js';
 
 /**
+ * Get an icon for an instruction item type
+ */
+function getItemTypeIcon(itemType?: string): string {
+  switch (itemType) {
+    // New content-prefixed types
+    case 'contentHeader':
+      return '📁';
+    case 'contentSection':
+      return '📋';
+    case 'contentAction':
+      return '▶️';
+    case 'contentAddon':
+      return '➕';
+    case 'contentFile':
+      return '🎬';
+    case 'contentItem':
+      return '📄';
+    // Legacy types for backwards compatibility
+    case 'header':
+      return '📁';
+    case 'lessonSection':
+    case 'section':
+      return '📋';
+    case 'lessonAction':
+    case 'action':
+      return '▶️';
+    case 'lessonAddOn':
+    case 'addon':
+      return '➕';
+    case 'file':
+      return '🎬';
+    default:
+      return '📄';
+  }
+}
+
+/**
  * Display a table of content items (folders and files)
  */
 export function displayContentTable(items: ContentItem[]): void {
@@ -115,16 +152,7 @@ export function displayInstructions(instructions: Instructions, isExpanded: bool
 
   const renderItem = (item: InstructionItem, depth: number = 0): void => {
     const indent = '  '.repeat(depth + 1);
-    const typeIcon =
-      item.itemType === 'header'
-        ? '📁'
-        : item.itemType === 'lessonSection'
-          ? '📋'
-          : item.itemType === 'lessonAction'
-            ? '▶️'
-            : item.itemType === 'lessonAddOn'
-              ? '➕'
-              : '📄';
+    const typeIcon = getItemTypeIcon(item.itemType);
 
     let line = `${indent}${typeIcon} ${item.label || 'Untitled'}`;
     if (item.itemType) {

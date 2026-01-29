@@ -333,22 +333,40 @@ export class LessonsChurchProvider extends ContentProvider {
     if (actionsResponse?.sections) {
       for (const section of actionsResponse.sections) {
         if (section.id && section.actions) {
-          sectionActionsMap.set(section.id, section.actions.map(action => ({
-            id: action.id,
-            itemType: 'lessonAction',
-            relatedId: action.id,
-            label: action.name,
-            description: action.actionType,
-            seconds: action.seconds,
-            embedUrl: this.getEmbedUrl('lessonAction', action.id)
-          })));
+          sectionActionsMap.set(section.id, section.actions.map(action => {
+            const embedUrl = this.getEmbedUrl('contentAction', action.id);
+            return {
+              id: action.id,
+              itemType: 'contentAction',
+              relatedId: action.id,
+              label: action.name,
+              description: action.actionType,
+              seconds: action.seconds,
+              children: [{
+                id: action.id + '-file',
+                itemType: 'contentFile',
+                label: action.name,
+                seconds: action.seconds,
+                embedUrl
+              }]
+            };
+          }));
         }
       }
     }
 
+    const normalizeItemType = (type?: string): string | undefined => {
+      if (type === 'header') return 'contentHeader';
+      if (type === 'lessonSection') return 'contentSection';
+      if (type === 'lessonAction') return 'contentAction';
+      if (type === 'lessonAddOn') return 'contentAddon';
+      return type;
+    };
+
     const processItem = (item: Record<string, unknown>): InstructionItem => {
       const relatedId = item.relatedId as string | undefined;
-      const itemType = item.itemType as string | undefined;
+      const rawItemType = item.itemType as string | undefined;
+      const itemType = normalizeItemType(rawItemType);
       const children = item.children as Record<string, unknown>[] | undefined;
 
       let processedChildren: InstructionItem[] | undefined;
@@ -356,16 +374,18 @@ export class LessonsChurchProvider extends ContentProvider {
       if (children) {
         processedChildren = children.map(child => {
           const childRelatedId = child.relatedId as string | undefined;
+          const childRawItemType = child.itemType as string | undefined;
+          const childItemType = normalizeItemType(childRawItemType);
           if (childRelatedId && sectionActionsMap.has(childRelatedId)) {
             return {
               id: child.id as string | undefined,
-              itemType: child.itemType as string | undefined,
+              itemType: childItemType,
               relatedId: childRelatedId,
               label: child.label as string | undefined,
               description: child.description as string | undefined,
               seconds: child.seconds as number | undefined,
               children: sectionActionsMap.get(childRelatedId),
-              embedUrl: this.getEmbedUrl(child.itemType as string | undefined, childRelatedId)
+              embedUrl: this.getEmbedUrl(childItemType, childRelatedId)
             };
           }
           return processItem(child);
@@ -395,9 +415,9 @@ export class LessonsChurchProvider extends ContentProvider {
 
     const baseUrl = 'https://lessons.church';
     switch (itemType) {
-      case 'lessonAction': return `${baseUrl}/embed/action/${relatedId}`;
-      case 'lessonAddOn': return `${baseUrl}/embed/addon/${relatedId}`;
-      case 'lessonSection': return `${baseUrl}/embed/section/${relatedId}`;
+      case 'contentAction': return `${baseUrl}/embed/action/${relatedId}`;
+      case 'contentAddon': return `${baseUrl}/embed/addon/${relatedId}`;
+      case 'contentSection': return `${baseUrl}/embed/section/${relatedId}`;
       default: return undefined;
     }
   }

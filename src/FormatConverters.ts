@@ -8,11 +8,13 @@ function generateId(): string {
 function mapItemTypeToActionType(itemType?: string): 'play' | 'add-on' | 'other' {
   switch (itemType) {
     case 'action':
+    case 'contentAction':
     case 'lessonAction':
     case 'providerPresentation':
     case 'play':
       return 'play';
     case 'addon':
+    case 'contentAddon':
     case 'add-on':
     case 'lessonAddOn':
     case 'providerFile':
@@ -24,9 +26,9 @@ function mapItemTypeToActionType(itemType?: string): 'play' | 'add-on' | 'other'
 
 function mapActionTypeToItemType(actionType: 'play' | 'add-on' | 'other'): string {
   switch (actionType) {
-    case 'play': return 'action';
-    case 'add-on': return 'addon';
-    default: return 'item';
+    case 'play': return 'contentAction';
+    case 'add-on': return 'contentAddon';
+    default: return 'contentItem';
   }
 }
 
@@ -51,7 +53,7 @@ export function presentationsToInstructions(plan: Plan): Instructions {
     venueName: plan.name,
     items: plan.sections.map(section => ({
       id: section.id,
-      itemType: 'section',
+      itemType: 'contentSection',
       label: section.name,
       children: section.presentations.map(pres => {
         const totalSeconds = pres.files.reduce(
@@ -77,7 +79,7 @@ export function presentationsToExpandedInstructions(plan: Plan): Instructions {
     venueName: plan.name,
     items: plan.sections.map(section => ({
       id: section.id,
-      itemType: 'section',
+      itemType: 'contentSection',
       label: section.name,
       children: section.presentations.map(pres => ({
         id: pres.id,
@@ -90,7 +92,7 @@ export function presentationsToExpandedInstructions(plan: Plan): Instructions {
         ) || undefined,
         children: pres.files.map(f => ({
           id: f.id,
-          itemType: 'file',
+          itemType: 'contentFile',
           label: f.title,
           seconds: (f.providerData?.seconds as number) || undefined,
           embedUrl: f.embedUrl || f.url
@@ -106,7 +108,7 @@ export function instructionsToPlaylist(instructions: Instructions): ContentFile[
 
   function extractFiles(items: InstructionItem[]) {
     for (const item of items) {
-      if (item.embedUrl && (item.itemType === 'file' || !item.children?.length)) {
+      if (item.embedUrl && (item.itemType === 'contentFile' || item.itemType === 'file' || !item.children?.length)) {
         files.push({
           type: 'file',
           id: item.id || item.relatedId || generateId(),
@@ -265,11 +267,11 @@ export function playlistToInstructions(
     venueName,
     items: [{
       id: 'main-section',
-      itemType: 'section',
+      itemType: 'contentSection',
       label: 'Content',
       children: files.map((file, index) => ({
         id: file.id || `item-${index}`,
-        itemType: 'file',
+        itemType: 'contentFile',
         label: file.title,
         seconds: (file.providerData?.seconds as number) || undefined,
         embedUrl: file.embedUrl || file.url

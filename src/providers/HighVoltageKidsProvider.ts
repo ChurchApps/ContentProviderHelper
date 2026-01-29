@@ -1,4 +1,4 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, ProviderCapabilities } from '../interfaces';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, ProviderCapabilities, Instructions, InstructionItem } from '../interfaces';
 import { ContentProvider } from '../ContentProvider';
 import highVoltageData from './highvoltage/data.json';
 
@@ -69,7 +69,7 @@ export class HighVoltageKidsProvider extends ContentProvider {
       presentations: true,  // Has hierarchical structure: study -> lessons -> files
       playlist: true,       // Can return flat list of files for a lesson
       instructions: false,
-      expandedInstructions: false,
+      expandedInstructions: true,
       mediaLicensing: false
     };
   }
@@ -246,6 +246,85 @@ export class HighVoltageKidsProvider extends ContentProvider {
     return null;
   }
 
+  override async getExpandedInstructions(folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
+    const level = folder.providerData?.level;
+
+    if (level === 'lesson') {
+      const lessonData = folder.providerData?.lessonData as LessonFolder;
+      const studyName = folder.providerData?.studyName as string;
+      if (!lessonData?.files) return null;
+
+      const headerLabel = studyName ? `${studyName} - ${lessonData.name}` : lessonData.name;
+
+      const fileItems: InstructionItem[] = lessonData.files.map(file => ({
+        id: file.id,
+        itemType: 'contentFile',
+        label: file.title,
+        embedUrl: file.url
+      }));
+
+      return {
+        venueName: lessonData.name,
+        items: [{
+          id: lessonData.id,
+          itemType: 'contentHeader',
+          label: headerLabel,
+          children: [{
+            id: 'main',
+            itemType: 'contentSection',
+            label: 'Content',
+            children: [{
+              id: lessonData.id + '-action',
+              itemType: 'contentAction',
+              label: lessonData.name,
+              description: 'play',
+              children: fileItems
+            }]
+          }]
+        }]
+      };
+    }
+
+    if (level === 'study') {
+      const studyData = folder.providerData?.studyData as StudyFolder;
+      if (!studyData) return null;
+
+      const lessonItems: InstructionItem[] = studyData.lessons.map(lesson => {
+        const fileItems: InstructionItem[] = lesson.files.map(file => ({
+          id: file.id,
+          itemType: 'contentFile',
+          label: file.title,
+          embedUrl: file.url
+        }));
+
+        return {
+          id: lesson.id,
+          itemType: 'contentAction',
+          label: lesson.name,
+          description: 'play',
+          children: fileItems
+        };
+      });
+
+      return {
+        venueName: studyData.name,
+        items: [{
+          id: studyData.id,
+          itemType: 'contentHeader',
+          label: studyData.name,
+          children: [{
+            id: 'main',
+            itemType: 'contentSection',
+            label: 'Content',
+            children: lessonItems
+          }]
+        }]
+      };
+    }
+
+    return null;
+  }
+
   private getStudyFolders(collectionName: string): ContentItem[] {
     const collection = this.data.collections.find(c => c.name === collectionName);
     if (!collection) return [];
@@ -257,8 +336,7 @@ export class HighVoltageKidsProvider extends ContentProvider {
       {
         level: 'study',
         collectionName,
-        studyData: study,
-        isLeaf: true  // Mark as leaf so venue choice modal appears
+        studyData: study
       }
     ));
   }
@@ -271,6 +349,7 @@ export class HighVoltageKidsProvider extends ContentProvider {
       {
         level: 'lesson',
         studyId: study.id,
+        studyName: study.name,
         lessonData: lesson,
         isLeaf: true  // Mark as leaf so venue choice modal appears
       }

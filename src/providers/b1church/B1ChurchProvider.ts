@@ -168,7 +168,9 @@ export class B1ChurchProvider extends ContentProvider {
     for (const sectionItem of planItems) {
       for (const child of sectionItem.children || []) {
         const itemType = child.itemType;
-        if ((itemType === 'lessonSection' || itemType === 'lessonAction' || itemType === 'lessonAddOn') && venueFeed) {
+        if ((itemType === 'lessonSection' || itemType === 'contentSection' ||
+             itemType === 'lessonAction' || itemType === 'contentAction' ||
+             itemType === 'lessonAddOn' || itemType === 'contentAddon') && venueFeed) {
           const itemFiles = getFilesFromVenueFeed(venueFeed, itemType, child.relatedId);
           files.push(...itemFiles);
         }
