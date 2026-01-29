@@ -1,7 +1,7 @@
 import { ContentProvider } from '../ContentProvider';
 import { ProviderInfo, ProviderLogos } from '../interfaces';
 import { APlayProvider } from './APlayProvider';
-import { B1ChurchProvider } from './B1ChurchProvider';
+import { B1ChurchProvider } from './b1church';
 import { BibleProjectProvider } from './bibleproject';
 import { HighVoltageKidsProvider } from './HighVoltageKidsProvider';
 import { LessonsChurchProvider } from './LessonsChurchProvider';
@@ -9,7 +9,7 @@ import { PlanningCenterProvider } from './PlanningCenterProvider';
 import { SignPresenterProvider } from './SignPresenterProvider';
 
 export { APlayProvider } from './APlayProvider';
-export { B1ChurchProvider } from './B1ChurchProvider';
+export { B1ChurchProvider } from './b1church';
 export { BibleProjectProvider } from './bibleproject';
 export { HighVoltageKidsProvider } from './HighVoltageKidsProvider';
 export { LessonsChurchProvider } from './LessonsChurchProvider';

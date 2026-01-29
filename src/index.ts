@@ -18,7 +18,7 @@ export { ContentProvider } from './ContentProvider';
 export { APlayProvider } from './providers/APlayProvider';
 export { SignPresenterProvider } from './providers/SignPresenterProvider';
 export { LessonsChurchProvider } from './providers/LessonsChurchProvider';
-export { B1ChurchProvider } from './providers/B1ChurchProvider';
+export { B1ChurchProvider } from './providers/b1church';
 export { PlanningCenterProvider } from './providers/PlanningCenterProvider';
 export { BibleProjectProvider } from './providers/bibleproject';
 
