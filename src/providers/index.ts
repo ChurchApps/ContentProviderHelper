@@ -1,20 +1,20 @@
 import { ContentProvider } from '../ContentProvider';
 import { ProviderInfo, ProviderLogos } from '../interfaces';
 import { APlayProvider } from './APlayProvider';
-import { SignPresenterProvider } from './SignPresenterProvider';
-import { LessonsChurchProvider } from './LessonsChurchProvider';
 import { B1ChurchProvider } from './B1ChurchProvider';
-import { PlanningCenterProvider } from './PlanningCenterProvider';
 import { BibleProjectProvider } from './bibleproject';
 import { HighVoltageKidsProvider } from './HighVoltageKidsProvider';
+import { LessonsChurchProvider } from './LessonsChurchProvider';
+import { PlanningCenterProvider } from './PlanningCenterProvider';
+import { SignPresenterProvider } from './SignPresenterProvider';
 
 export { APlayProvider } from './APlayProvider';
-export { SignPresenterProvider } from './SignPresenterProvider';
-export { LessonsChurchProvider } from './LessonsChurchProvider';
 export { B1ChurchProvider } from './B1ChurchProvider';
-export { PlanningCenterProvider } from './PlanningCenterProvider';
 export { BibleProjectProvider } from './bibleproject';
 export { HighVoltageKidsProvider } from './HighVoltageKidsProvider';
+export { LessonsChurchProvider } from './LessonsChurchProvider';
+export { PlanningCenterProvider } from './PlanningCenterProvider';
+export { SignPresenterProvider } from './SignPresenterProvider';
 
 // Provider registry - singleton instances
 const providerRegistry: Map<string, ContentProvider> = new Map();
@@ -27,6 +27,14 @@ interface UnimplementedProvider {
 }
 
 const unimplementedProviders: UnimplementedProvider[] = [
+  {
+    id: 'awana',
+    name: 'Awana',
+    logos: {
+      light: 'https://www.awana.org/wp-content/uploads/2025/04/awana-logo-black.svg',
+      dark: 'https://www.awana.org/wp-content/uploads/2025/04/awana-logo-white.svg',
+    },
+  },
   {
     id: 'freeshow',
     name: 'FreeShow',
@@ -44,27 +52,19 @@ const unimplementedProviders: UnimplementedProvider[] = [
     },
   },
   {
-    id: 'lifechurch',
-    name: 'LifeChurch',
-    logos: {
-      light: 'https://cdn.brandfetch.io/idRrA6pM45/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1668042253613',
-      dark: 'https://cdn.brandfetch.io/idRrA6pM45/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1668042253613',
-    },
-  },
-  {
-    id: 'awana',
-    name: 'Awana',
-    logos: {
-      light: 'https://www.awana.org/wp-content/uploads/2025/04/awana-logo-black.svg',
-      dark: 'https://www.awana.org/wp-content/uploads/2025/04/awana-logo-white.svg',
-    },
-  },
-  {
     id: 'iteachchurch',
     name: 'iTeachChurch',
     logos: {
       light: 'https://iteachchurch.com/wp-content/uploads/2022/05/iTeachChurch_Artboard-1-copy-3@2x.png',
       dark: 'https://iteachchurch.com/wp-content/uploads/2022/05/iTeachChurch_Artboard-1-copy-3@2x.png',
+    },
+  },
+  {
+    id: 'lifechurch',
+    name: 'LifeChurch',
+    logos: {
+      light: 'https://cdn.brandfetch.io/idRrA6pM45/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1668042253613',
+      dark: 'https://cdn.brandfetch.io/idRrA6pM45/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1668042253613',
     },
   },
   {
@@ -80,20 +80,20 @@ const unimplementedProviders: UnimplementedProvider[] = [
 // Register built-in providers
 function initializeProviders() {
   const aplay = new APlayProvider();
-  const signPresenter = new SignPresenterProvider();
-  const lessonsChurch = new LessonsChurchProvider();
   const b1Church = new B1ChurchProvider();
-  const planningCenter = new PlanningCenterProvider();
   const bibleProject = new BibleProjectProvider();
   const highVoltageKids = new HighVoltageKidsProvider();
+  const lessonsChurch = new LessonsChurchProvider();
+  const planningCenter = new PlanningCenterProvider();
+  const signPresenter = new SignPresenterProvider();
 
   providerRegistry.set(aplay.id, aplay);
-  providerRegistry.set(signPresenter.id, signPresenter);
-  providerRegistry.set(lessonsChurch.id, lessonsChurch);
   providerRegistry.set(b1Church.id, b1Church);
-  providerRegistry.set(planningCenter.id, planningCenter);
   providerRegistry.set(bibleProject.id, bibleProject);
   providerRegistry.set(highVoltageKids.id, highVoltageKids);
+  providerRegistry.set(lessonsChurch.id, lessonsChurch);
+  providerRegistry.set(planningCenter.id, planningCenter);
+  providerRegistry.set(signPresenter.id, signPresenter);
 }
 
 // Initialize on module load

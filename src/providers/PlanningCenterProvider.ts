@@ -75,8 +75,8 @@ export class PlanningCenterProvider extends ContentProvider {
   readonly name = 'Planning Center';
 
   readonly logos: ProviderLogos = {
-    light: 'https://cdn.brandfetch.io/idyVAJYz2b/w/400/h/400/theme/dark/icon.jpeg',
-    dark: 'https://cdn.brandfetch.io/idyVAJYz2b/w/400/h/400/theme/dark/icon.jpeg'
+    light: 'https://www.planningcenter.com/icons/icon-512x512.png',
+    dark: 'https://www.planningcenter.com/icons/icon-512x512.png'
   };
 
   // Planning Center uses OAuth 2.0 with PKCE (handled by base ContentProvider class)
