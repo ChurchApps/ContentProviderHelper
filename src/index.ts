@@ -11,6 +11,25 @@ export * from './interfaces';
 // Utilities
 export { detectMediaType } from './utils';
 
+// Format conversion utilities
+export * as FormatConverters from './FormatConverters';
+export {
+  presentationsToPlaylist,
+  presentationsToInstructions,
+  presentationsToExpandedInstructions,
+  instructionsToPlaylist,
+  expandedInstructionsToPlaylist,
+  instructionsToPresentations,
+  expandedInstructionsToPresentations,
+  collapseInstructions,
+  playlistToPresentations,
+  playlistToInstructions,
+  playlistToExpandedInstructions
+} from './FormatConverters';
+
+// Format resolver
+export { FormatResolver, type FormatResolverOptions, type ResolvedFormatMeta } from './FormatResolver';
+
 // Base class (for extending with custom providers)
 export { ContentProvider } from './ContentProvider';
 

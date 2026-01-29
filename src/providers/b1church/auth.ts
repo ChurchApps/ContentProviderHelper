@@ -1,9 +1,5 @@
 import { ContentProviderAuthData, ContentProviderConfig, DeviceAuthorizationResponse, DeviceFlowPollResult } from '../../interfaces';
 
-/**
- * Build the authorization URL for B1.Church OAuth flow.
- * Note: B1.Church uses standard OAuth with client_secret, not PKCE.
- */
 export function buildB1AuthUrl(
   config: ContentProviderConfig,
   appBase: string,
@@ -26,10 +22,6 @@ export function buildB1AuthUrl(
   return { url, challengeMethod: 'none' };
 }
 
-/**
- * Exchange authorization code for tokens.
- * Note: B1.Church requires client_secret in the token request.
- */
 export async function exchangeCodeForTokensWithSecret(
   config: ContentProviderConfig,
   code: string,
@@ -81,9 +73,6 @@ export async function exchangeCodeForTokensWithSecret(
   }
 }
 
-/**
- * Refresh token with client_secret.
- */
 export async function refreshTokenWithSecret(
   config: ContentProviderConfig,
   auth: ContentProviderAuthData,
@@ -121,10 +110,6 @@ export async function refreshTokenWithSecret(
   }
 }
 
-/**
- * Initiate the device authorization flow.
- * Uses JSON content-type (B1Admin expects JSON).
- */
 export async function initiateDeviceFlow(
   config: ContentProviderConfig
 ): Promise<DeviceAuthorizationResponse | null> {
@@ -153,10 +138,6 @@ export async function initiateDeviceFlow(
   }
 }
 
-/**
- * Poll for a token after user has authorized the device.
- * Uses JSON content-type (B1Admin expects JSON).
- */
 export async function pollDeviceFlowToken(
   config: ContentProviderConfig,
   deviceCode: string

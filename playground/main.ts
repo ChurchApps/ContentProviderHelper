@@ -1,4 +1,5 @@
-import { getAvailableProviders, getProvider, ContentProvider, ContentFolder, ContentItem, ContentProviderAuthData, DeviceAuthorizationResponse, isContentFolder, isContentFile, Plan, PlanPresentation, Instructions, InstructionItem, B1ChurchProvider, PlanningCenterProvider } from "../src";
+import { getAvailableProviders, getProvider, ContentProvider, ContentFolder, ContentItem, ContentProviderAuthData, DeviceAuthorizationResponse, isContentFolder, isContentFile, Plan, PlanPresentation, Instructions, InstructionItem, B1ChurchProvider, PlanningCenterProvider, FormatResolver, ProviderCapabilities, ContentFile } from "../src";
+import type { ResolvedFormatMeta } from "../src";
 
 const OAUTH_REDIRECT_URI = `${window.location.origin}${window.location.pathname}`;
 const STORAGE_KEY_VERIFIER = 'oauth_code_verifier';
@@ -172,20 +173,43 @@ function renderProviders() {
       }
     }
 
-    // Capability badges
+    // Capability badges - show all 4 formats with native vs derived indicators
     let capBadges = '';
     if (provider.implemented && provider.capabilities) {
-      if (provider.capabilities.browse) {
-        capBadges += '<span class="provider-badge badge-cap-browse">Playlist</span>';
+      const caps = provider.capabilities;
+
+      // Determine what formats can be derived
+      const canDerivePlaylist = caps.presentations || caps.expandedInstructions || caps.instructions;
+      const canDerivePresentations = caps.expandedInstructions || caps.instructions || caps.playlist;
+      const canDeriveInstructions = caps.expandedInstructions || caps.presentations || caps.playlist;
+      const canDeriveExpanded = caps.presentations || caps.instructions || caps.playlist;
+
+      // Playlist badge
+      if (caps.playlist) {
+        capBadges += '<span class="provider-badge badge-cap-playlist badge-native" title="Native support">Playlist</span>';
+      } else if (canDerivePlaylist) {
+        capBadges += '<span class="provider-badge badge-cap-playlist badge-derived" title="Derived from other formats">Playlist*</span>';
       }
-      if (provider.capabilities.presentations) {
-        capBadges += '<span class="provider-badge badge-cap-presentations">Presentations</span>';
+
+      // Presentations badge
+      if (caps.presentations) {
+        capBadges += '<span class="provider-badge badge-cap-presentations badge-native" title="Native support">Presentations</span>';
+      } else if (canDerivePresentations) {
+        capBadges += '<span class="provider-badge badge-cap-presentations badge-derived" title="Derived from other formats">Presentations*</span>';
       }
-      if (provider.capabilities.instructions) {
-        capBadges += '<span class="provider-badge badge-cap-instructions">Instructions</span>';
+
+      // Instructions badge
+      if (caps.instructions) {
+        capBadges += '<span class="provider-badge badge-cap-instructions badge-native" title="Native support">Instructions</span>';
+      } else if (canDeriveInstructions) {
+        capBadges += '<span class="provider-badge badge-cap-instructions badge-derived" title="Derived from other formats">Instructions*</span>';
       }
-      if (provider.capabilities.expandedInstructions) {
-        capBadges += '<span class="provider-badge badge-cap-expanded">Expanded</span>';
+
+      // Expanded Instructions badge
+      if (caps.expandedInstructions) {
+        capBadges += '<span class="provider-badge badge-cap-expanded badge-native" title="Native support">Expanded</span>';
+      } else if (canDeriveExpanded) {
+        capBadges += '<span class="provider-badge badge-cap-expanded badge-derived" title="Derived from other formats">Expanded*</span>';
       }
     }
 
@@ -732,32 +756,40 @@ function handleFolderClick(folder: ContentFolder) {
 function showVenueChoiceModal(folder: ContentFolder) {
   state.currentVenueFolder = folder;
 
+  // Get provider capabilities to determine native vs derived
+  const caps = state.currentProvider?.getCapabilities();
+
+  // Helper to create format button with native/derived indicator
+  const formatBtn = (id: string, icon: string, name: string, desc: string, isNative: boolean, sourceFormat?: string) => {
+    const nativeLabel = isNative ? '<span class="native-badge">Native</span>' : `<span class="derived-badge">Derived${sourceFormat ? ` from ${sourceFormat}` : ''}</span>`;
+    const btnClass = isNative ? 'venue-btn native' : 'venue-btn derived';
+    return `
+      <button id="${id}" class="${btnClass}">
+        <span class="btn-icon">${icon}</span>
+        <span class="btn-text">${name}</span>
+        ${nativeLabel}
+        <span class="btn-desc">${desc}</span>
+      </button>
+    `;
+  };
+
+  // Determine source format for each derived format
+  const getPlaylistSource = () => caps?.presentations ? 'Presentations' : caps?.expandedInstructions ? 'Expanded' : 'Instructions';
+  const getPresentationsSource = () => caps?.expandedInstructions ? 'Expanded' : caps?.instructions ? 'Instructions' : 'Playlist';
+  const getInstructionsSource = () => caps?.expandedInstructions ? 'Expanded' : caps?.presentations ? 'Presentations' : 'Playlist';
+  const getExpandedSource = () => caps?.presentations ? 'Presentations' : caps?.instructions ? 'Instructions' : 'Playlist';
+
   const choiceHtml = `
     <div class="venue-choice-modal" id="venue-choice-modal">
       <div class="venue-choice-content">
         <h2>Choose View for "${folder.title}"</h2>
         <p>How would you like to view this content?</p>
+        <p class="format-legend"><span class="native-badge">Native</span> = Direct provider support &nbsp; <span class="derived-badge">Derived</span> = Converted from another format</p>
         <div class="venue-choice-buttons">
-          <button id="view-playlist-btn" class="venue-btn playlist-btn">
-            <span class="btn-icon">📋</span>
-            <span class="btn-text">Playlist</span>
-            <span class="btn-desc">Simple list of media files</span>
-          </button>
-          <button id="view-presentations-btn" class="venue-btn presentations-btn">
-            <span class="btn-icon">🎬</span>
-            <span class="btn-text">Presentations</span>
-            <span class="btn-desc">Structured sections with media files</span>
-          </button>
-          <button id="view-instructions-btn" class="venue-btn instructions-btn">
-            <span class="btn-icon">📖</span>
-            <span class="btn-text">Instructions</span>
-            <span class="btn-desc">Headers and sections only</span>
-          </button>
-          <button id="view-expanded-btn" class="venue-btn expanded-btn">
-            <span class="btn-icon">📚</span>
-            <span class="btn-text">Expanded</span>
-            <span class="btn-desc">Full hierarchy with all actions</span>
-          </button>
+          ${formatBtn('view-playlist-btn', '📋', 'Playlist', 'Simple list of media files', !!caps?.playlist, getPlaylistSource())}
+          ${formatBtn('view-presentations-btn', '🎬', 'Presentations', 'Structured sections with media files', !!caps?.presentations, getPresentationsSource())}
+          ${formatBtn('view-instructions-btn', '📖', 'Instructions', 'Headers and sections only', !!caps?.instructions, getInstructionsSource())}
+          ${formatBtn('view-expanded-btn', '📚', 'Expanded', 'Full hierarchy with all actions', !!caps?.expandedInstructions, getExpandedSource())}
         </div>
         <button id="venue-choice-cancel" class="cancel-btn">Cancel</button>
       </div>
@@ -804,10 +836,35 @@ function closeVenueChoiceModal() {
   state.currentVenueFolder = null;
 }
 
-function viewAsPlaylist(folder: ContentFolder) {
-  state.folderStack.push(folder);
-  updateBreadcrumb();
-  loadContent();
+async function viewAsPlaylist(folder: ContentFolder) {
+  if (!state.currentProvider) return;
+
+  showLoading(true);
+
+  try {
+    const resolver = new FormatResolver(state.currentProvider);
+    const { data: playlist, meta } = await resolver.getPlaylistWithMeta(folder, state.currentAuth);
+
+    if (!playlist || playlist.length === 0) {
+      // Fallback to regular browse if no playlist
+      state.folderStack.push(folder);
+      updateBreadcrumb();
+      showLoading(false);
+      loadContent();
+      return;
+    }
+
+    state.currentVenueFolder = folder;
+    state.folderStack.push(folder);
+    updateBreadcrumb();
+
+    showLoading(false);
+    renderPlaylistView(playlist, meta);
+
+  } catch (error) {
+    showLoading(false);
+    showStatus(`Failed to load playlist: ${error}`, 'error');
+  }
 }
 
 async function viewAsPresentations(folder: ContentFolder) {
@@ -816,7 +873,8 @@ async function viewAsPresentations(folder: ContentFolder) {
   showLoading(true);
 
   try {
-    const plan = await state.currentProvider.getPresentations(folder, state.currentAuth);
+    const resolver = new FormatResolver(state.currentProvider);
+    const { data: plan, meta } = await resolver.getPresentationsWithMeta(folder, state.currentAuth);
 
     if (!plan) {
       showStatus('This provider does not support presentations view', 'error');
@@ -832,7 +890,7 @@ async function viewAsPresentations(folder: ContentFolder) {
     updateBreadcrumb();
 
     showLoading(false);
-    renderPlanView(plan);
+    renderPlanView(plan, meta);
 
   } catch (error) {
     showLoading(false);
@@ -846,7 +904,8 @@ async function viewAsInstructions(folder: ContentFolder) {
   showLoading(true);
 
   try {
-    const instructions = await state.currentProvider.getInstructions(folder, state.currentAuth);
+    const resolver = new FormatResolver(state.currentProvider);
+    const { data: instructions, meta } = await resolver.getInstructionsWithMeta(folder, state.currentAuth);
 
     if (!instructions) {
       showStatus('This provider does not support instructions view', 'error');
@@ -862,7 +921,7 @@ async function viewAsInstructions(folder: ContentFolder) {
     updateBreadcrumb();
 
     showLoading(false);
-    renderInstructionsView(instructions);
+    renderInstructionsView(instructions, false, meta);
 
   } catch (error) {
     showLoading(false);
@@ -876,7 +935,8 @@ async function viewAsExpandedInstructions(folder: ContentFolder) {
   showLoading(true);
 
   try {
-    const instructions = await state.currentProvider.getExpandedInstructions(folder, state.currentAuth);
+    const resolver = new FormatResolver(state.currentProvider);
+    const { data: instructions, meta } = await resolver.getExpandedInstructionsWithMeta(folder, state.currentAuth);
 
     if (!instructions) {
       showStatus('This provider does not support expanded instructions view', 'error');
@@ -892,7 +952,7 @@ async function viewAsExpandedInstructions(folder: ContentFolder) {
     updateBreadcrumb();
 
     showLoading(false);
-    renderInstructionsView(instructions, true);
+    renderInstructionsView(instructions, true, meta);
 
   } catch (error) {
     showLoading(false);
@@ -913,7 +973,67 @@ function renderJsonViewer(data: unknown, title: string = 'JSON Data'): string {
   `;
 }
 
-function renderPlanView(plan: Plan) {
+function renderFormatSourceBadge(meta: ResolvedFormatMeta): string {
+  if (meta.isNative) {
+    return '<span class="format-source-badge native">Native</span>';
+  }
+  const lossyWarning = meta.isLossy ? ' (lossy)' : '';
+  return `<span class="format-source-badge derived">Derived from ${meta.sourceFormat}${lossyWarning}</span>`;
+}
+
+function renderPlaylistView(playlist: ContentFile[], meta: ResolvedFormatMeta) {
+  browserTitle.textContent = `Playlist`;
+
+  let html = `
+    <div class="playlist-view">
+      <div class="playlist-header">
+        <div class="playlist-info">
+          <h2>Playlist</h2>
+          ${renderFormatSourceBadge(meta)}
+          <p class="playlist-stats">${playlist.length} files</p>
+          <button id="play-all-btn" class="play-all-btn">▶ Play All</button>
+        </div>
+      </div>
+      <div class="playlist-files">
+  `;
+
+  playlist.forEach((file, index) => {
+    const imageHtml = file.image
+      ? `<img class="file-thumb" src="${file.image}" alt="${file.title}" onerror="this.outerHTML='<span class=\\'file-thumb-icon\\'>${file.mediaType === 'video' ? '🎬' : '🖼️'}</span>'">`
+      : `<span class="file-thumb-icon">${file.mediaType === 'video' ? '🎬' : '🖼️'}</span>`;
+
+    html += `
+      <div class="playlist-file" data-file-index="${index}">
+        ${imageHtml}
+        <div class="playlist-file-info">
+          <span class="playlist-file-title">${file.title}</span>
+          <span class="playlist-file-type">${file.mediaType}</span>
+          ${file.providerData?.seconds ? `<span class="playlist-file-duration">${file.providerData.seconds}s</span>` : ''}
+        </div>
+        <a href="${file.url}" target="_blank" class="playlist-file-link">Open</a>
+      </div>
+    `;
+  });
+
+  html += `
+      </div>
+    </div>
+  `;
+
+  html += renderJsonViewer(playlist, 'Playlist JSON');
+
+  contentGrid.innerHTML = html;
+  emptyEl.classList.add('hidden');
+
+  document.getElementById('play-all-btn')?.addEventListener('click', () => {
+    if (playlist.length > 0) {
+      window.open(playlist[0].url, '_blank');
+      showStatus(`Playing: ${playlist[0].title} (${playlist.length} total files)`, 'success');
+    }
+  });
+}
+
+function renderPlanView(plan: Plan, meta: ResolvedFormatMeta) {
   browserTitle.textContent = `${plan.name} (Presentations)`;
 
   let html = `
@@ -922,6 +1042,7 @@ function renderPlanView(plan: Plan) {
         ${plan.image ? `<img class="plan-image" src="${plan.image}" alt="${plan.name}">` : ''}
         <div class="plan-info">
           <h2>${plan.name}</h2>
+          ${renderFormatSourceBadge(meta)}
           ${plan.description ? `<p class="plan-description">${plan.description}</p>` : ''}
           <p class="plan-stats">${plan.sections.length} sections • ${plan.allFiles.length} total files</p>
           <button id="play-all-btn" class="play-all-btn">▶ Play All (${plan.allFiles.length} files)</button>
@@ -1026,7 +1147,7 @@ function playPlanFiles(files: ContentItem[]) {
   console.log('Playlist:', files);
 }
 
-function renderInstructionsView(instructions: Instructions, isExpanded: boolean = false) {
+function renderInstructionsView(instructions: Instructions, isExpanded: boolean = false, meta?: ResolvedFormatMeta) {
   const viewType = isExpanded ? 'Expanded' : 'Instructions';
   browserTitle.textContent = `${instructions.venueName || 'Instructions'} (${viewType})`;
 
@@ -1045,6 +1166,7 @@ function renderInstructionsView(instructions: Instructions, isExpanded: boolean 
       <div class="instructions-header">
         <div class="instructions-info">
           <h2>${instructions.venueName || 'Instructions'}</h2>
+          ${meta ? renderFormatSourceBadge(meta) : ''}
           <p class="instructions-stats">${instructions.items.length} top-level items • ${totalItems} total items</p>
         </div>
       </div>

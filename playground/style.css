@@ -166,8 +166,8 @@ h2 {
   color: #ccc;
 }
 
-/* Capability badges */
-.badge-cap-browse {
+/* Capability badges - Base colors */
+.badge-cap-playlist {
   background: #2563eb;
   color: #fff;
 }
@@ -185,6 +185,37 @@ h2 {
 .badge-cap-expanded {
   background: #7c3aed;
   color: #fff;
+}
+
+/* Native vs Derived badge modifiers */
+.badge-native {
+  opacity: 1;
+}
+
+.badge-derived {
+  opacity: 0.6;
+  border: 1px dashed currentColor;
+  background: transparent !important;
+}
+
+.badge-cap-playlist.badge-derived {
+  color: #2563eb;
+  border-color: #2563eb;
+}
+
+.badge-cap-presentations.badge-derived {
+  color: #059669;
+  border-color: #059669;
+}
+
+.badge-cap-instructions.badge-derived {
+  color: #d97706;
+  border-color: #d97706;
+}
+
+.badge-cap-expanded.badge-derived {
+  color: #7c3aed;
+  border-color: #7c3aed;
 }
 
 /* Folder/File icons */
@@ -1267,4 +1298,184 @@ h2 {
   padding: 0.1rem 0.3rem;
   border-radius: 3px;
   font-size: 0.8rem;
+}
+
+/* ============= VENUE CHOICE NATIVE/DERIVED BADGES ============= */
+.format-legend {
+  font-size: 0.75rem;
+  color: #666;
+  margin-bottom: 1rem !important;
+}
+
+.native-badge,
+.derived-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-top: 0.25rem;
+}
+
+.native-badge {
+  background: #059669;
+  color: #fff;
+}
+
+.derived-badge {
+  background: transparent;
+  color: #d97706;
+  border: 1px dashed #d97706;
+}
+
+.venue-btn.native {
+  border-color: #059669;
+}
+
+.venue-btn.native:hover {
+  background: rgba(5, 150, 105, 0.1);
+  border-color: #10b981;
+}
+
+.venue-btn.derived {
+  border-color: #4a4a7a;
+}
+
+.venue-btn.derived:hover {
+  background: rgba(217, 119, 6, 0.1);
+  border-color: #d97706;
+}
+
+/* ============= FORMAT SOURCE BADGE (in view headers) ============= */
+.format-source-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.format-source-badge.native {
+  background: #059669;
+  color: #fff;
+}
+
+.format-source-badge.derived {
+  background: transparent;
+  color: #d97706;
+  border: 1px dashed #d97706;
+}
+
+/* ============= PLAYLIST VIEW ============= */
+.playlist-view {
+  background: #0f0f23;
+  border-radius: 12px;
+  padding: 1.5rem;
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+#content-grid:has(.playlist-view) {
+  display: block;
+}
+
+.playlist-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #2a2a4a;
+}
+
+.playlist-info h2 {
+  margin: 0 0 0.5rem;
+  color: #fff;
+}
+
+.playlist-stats {
+  color: #666;
+  font-size: 0.85rem;
+  margin: 0 0 1rem;
+}
+
+.playlist-files {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.playlist-file {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: #16213e;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.playlist-file:hover {
+  border-color: #4a4a7a;
+  background: #1a1a3e;
+}
+
+.file-thumb {
+  width: 60px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.file-thumb-icon {
+  width: 60px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f0f23;
+  border-radius: 4px;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.playlist-file-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.playlist-file-title {
+  color: #fff;
+  font-weight: 500;
+}
+
+.playlist-file-type {
+  padding: 0.2rem 0.5rem;
+  background: #2a2a4a;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.playlist-file-duration {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.playlist-file-link {
+  color: #4ecdc4;
+  text-decoration: none;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.75rem;
+  background: #2a2a4a;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.playlist-file-link:hover {
+  background: #3a3a6a;
 }

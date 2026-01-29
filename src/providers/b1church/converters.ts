@@ -3,9 +3,6 @@ import { detectMediaType } from '../../utils';
 import { B1Ministry, B1PlanType, B1Plan, B1PlanItem, ArrangementKeyResponse } from './types';
 import { fetchArrangementKey } from './api';
 
-/**
- * Convert a B1Ministry to a content folder item.
- */
 export function ministryToFolder(ministry: B1Ministry): ContentItem {
   return {
     type: 'folder' as const,
@@ -20,9 +17,6 @@ export function ministryToFolder(ministry: B1Ministry): ContentItem {
   };
 }
 
-/**
- * Convert a B1PlanType to a content folder item.
- */
 export function planTypeToFolder(planType: B1PlanType, ministryId: string): ContentItem {
   return {
     type: 'folder' as const,
@@ -37,9 +31,6 @@ export function planTypeToFolder(planType: B1PlanType, ministryId: string): Cont
   };
 }
 
-/**
- * Convert a B1Plan to a content folder item.
- */
 export function planToFolder(plan: B1Plan): ContentItem {
   return {
     type: 'folder' as const,
@@ -59,9 +50,6 @@ export function planToFolder(plan: B1Plan): ContentItem {
   };
 }
 
-/**
- * Convert a B1PlanItem section to a content folder.
- */
 export function sectionToFolder(section: B1PlanItem): ContentItem {
   return {
     type: 'folder' as const,
@@ -76,9 +64,6 @@ export function sectionToFolder(section: B1PlanItem): ContentItem {
   };
 }
 
-/**
- * Convert a B1PlanItem to a ContentItem.
- */
 export function planItemToContentItem(
   item: B1PlanItem,
   venueId: string | undefined
@@ -135,9 +120,6 @@ export function planItemToContentItem(
   return null;
 }
 
-/**
- * Convert a B1PlanItem to a PlanPresentation.
- */
 export async function planItemToPresentation(
   item: B1PlanItem,
   venueFeed: FeedVenueInterface | null
@@ -180,9 +162,6 @@ export async function planItemToPresentation(
   return null;
 }
 
-/**
- * Convert arrangement data to a presentation.
- */
 function arrangementToPresentation(item: B1PlanItem, songData: ArrangementKeyResponse): PlanPresentation {
   const title = songData.songDetail?.title || item.label || 'Song';
   return {
@@ -202,9 +181,6 @@ function arrangementToPresentation(item: B1PlanItem, songData: ArrangementKeyRes
   } as PlanPresentation;
 }
 
-/**
- * Extract files from venue feed based on item type and related ID.
- */
 export function getFilesFromVenueFeed(
   venueFeed: FeedVenueInterface,
   itemType: string,
@@ -240,9 +216,6 @@ export function getFilesFromVenueFeed(
   return files;
 }
 
-/**
- * Convert feed files to ContentFile array.
- */
 export function convertFeedFiles(
   feedFiles: Array<{ id?: string; name?: string; url?: string; streamUrl?: string; seconds?: number; fileType?: string }>,
   thumbnailImage?: string
@@ -260,9 +233,6 @@ export function convertFeedFiles(
     }));
 }
 
-/**
- * Convert B1PlanItem to InstructionItem recursively.
- */
 export function planItemToInstruction(item: B1PlanItem): InstructionItem {
   return {
     id: item.id,

@@ -19,7 +19,7 @@ export class B1ChurchProvider extends ContentProvider {
     name: 'B1.Church',
     apiBase: `${API_BASE}/doing`,
     oauthBase: `${API_BASE}/membership/oauth`,
-    clientId: '', // Consumer must provide client_id
+    clientId: '',
     scopes: ['plans'],
     supportsDeviceFlow: true,
     deviceAuthEndpoint: '/device/authorize',
@@ -29,10 +29,6 @@ export class B1ChurchProvider extends ContentProvider {
   };
 
   private appBase = 'https://admin.b1.church';
-
-  // ============================================================
-  // Provider Info
-  // ============================================================
 
   override requiresAuth(): boolean {
     return true;
@@ -48,10 +44,6 @@ export class B1ChurchProvider extends ContentProvider {
       mediaLicensing: false
     };
   }
-
-  // ============================================================
-  // Authentication
-  // ============================================================
 
   override async buildAuthUrl(_codeVerifier: string, redirectUri: string, state?: string): Promise<{ url: string; challengeMethod: string }> {
     return auth.buildB1AuthUrl(this.config, this.appBase, redirectUri, state);
@@ -73,22 +65,8 @@ export class B1ChurchProvider extends ContentProvider {
     return auth.pollDeviceFlowToken(this.config, deviceCode);
   }
 
-  // ============================================================
-  // Content Browsing
-  // ============================================================
-
-  /**
-   * Browse content hierarchy:
-   * - Root: List of ministries (groups with "ministry" tag)
-   * - Ministry: List of plan types
-   * - PlanType: List of plans (leaf nodes)
-   *
-   * Plans are leaf nodes - use getPresentations(), getPlaylist(), getInstructions()
-   * to get plan content.
-   */
   async browse(folder?: ContentFolder | null, authData?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     if (!folder) {
-      // Root level: show ministries
       const ministries = await fetchMinistries(authData);
       return ministries.map(ministryToFolder);
     }
@@ -96,7 +74,6 @@ export class B1ChurchProvider extends ContentProvider {
     const level = folder.providerData?.level;
 
     if (level === 'ministry') {
-      // Ministry level: show plan types
       const ministryId = folder.providerData?.ministryId as string;
       if (!ministryId) return [];
       const planTypes = await fetchPlanTypes(ministryId, authData);
@@ -104,20 +81,14 @@ export class B1ChurchProvider extends ContentProvider {
     }
 
     if (level === 'planType') {
-      // Plan type level: show plans (leaf nodes)
       const planTypeId = folder.providerData?.planTypeId as string;
       if (!planTypeId) return [];
       const plans = await fetchPlans(planTypeId, authData);
       return plans.map(planToFolder);
     }
 
-    // Plans are leaf nodes - no further browsing
     return [];
   }
-
-  // ============================================================
-  // Presentations
-  // ============================================================
 
   async getPresentations(folder: ContentFolder, authData?: ContentProviderAuthData | null): Promise<Plan | null> {
     const level = folder.providerData?.level;
@@ -160,10 +131,6 @@ export class B1ChurchProvider extends ContentProvider {
     return { id: planId, name: folder.title, sections, allFiles };
   }
 
-  // ============================================================
-  // Instructions
-  // ============================================================
-
   async getInstructions(folder: ContentFolder, authData?: ContentProviderAuthData | null): Promise<Instructions | null> {
     const level = folder.providerData?.level;
     if (level !== 'plan') return null;
@@ -181,10 +148,6 @@ export class B1ChurchProvider extends ContentProvider {
       items: planItems.map(planItemToInstruction)
     };
   }
-
-  // ============================================================
-  // Playlist
-  // ============================================================
 
   async getPlaylist(folder: ContentFolder, authData?: ContentProviderAuthData | null): Promise<ContentFile[]> {
     const level = folder.providerData?.level;

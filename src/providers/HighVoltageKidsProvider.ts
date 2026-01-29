@@ -1,4 +1,4 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ProviderLogos, Plan, ProviderCapabilities } from '../interfaces';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, ProviderCapabilities } from '../interfaces';
 import { ContentProvider } from '../ContentProvider';
 import highVoltageData from './highvoltage/data.json';
 
@@ -66,8 +66,8 @@ export class HighVoltageKidsProvider extends ContentProvider {
   override getCapabilities(): ProviderCapabilities {
     return {
       browse: true,
-      presentations: false,
-      playlist: false,
+      presentations: true,  // Has hierarchical structure: study -> lessons -> files
+      playlist: true,       // Can return flat list of files for a lesson
       instructions: false,
       expandedInstructions: false,
       mediaLicensing: false
@@ -120,7 +120,129 @@ export class HighVoltageKidsProvider extends ContentProvider {
     return [];
   }
 
-  async getPresentations(_folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
+  async getPresentations(folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
+    const level = folder.providerData?.level;
+
+    // For study level, create a plan with lessons as sections
+    if (level === 'study') {
+      const studyData = folder.providerData?.studyData as StudyFolder;
+      if (!studyData) return null;
+
+      const allFiles: ContentFile[] = [];
+      const sections: PlanSection[] = studyData.lessons.map(lesson => {
+        const files: ContentFile[] = lesson.files.map(file => {
+          const contentFile: ContentFile = {
+            type: 'file',
+            id: file.id,
+            title: file.title,
+            mediaType: file.mediaType as 'video' | 'image',
+            url: file.url,
+            image: lesson.image
+          };
+          allFiles.push(contentFile);
+          return contentFile;
+        });
+
+        const presentation: PlanPresentation = {
+          id: lesson.id,
+          name: lesson.name,
+          actionType: 'play',
+          files
+        };
+
+        return {
+          id: lesson.id,
+          name: lesson.name,
+          presentations: [presentation]
+        };
+      });
+
+      return {
+        id: studyData.id,
+        name: studyData.name,
+        description: studyData.description,
+        image: studyData.image,
+        sections,
+        allFiles
+      };
+    }
+
+    // For lesson level, create a simple plan with one section
+    if (level === 'lesson') {
+      const lessonData = folder.providerData?.lessonData as LessonFolder;
+      if (!lessonData?.files) return null;
+
+      const files: ContentFile[] = lessonData.files.map(file => ({
+        type: 'file' as const,
+        id: file.id,
+        title: file.title,
+        mediaType: file.mediaType as 'video' | 'image',
+        url: file.url,
+        image: lessonData.image
+      }));
+
+      const presentation: PlanPresentation = {
+        id: lessonData.id,
+        name: lessonData.name,
+        actionType: 'play',
+        files
+      };
+
+      return {
+        id: lessonData.id,
+        name: lessonData.name,
+        image: lessonData.image,
+        sections: [{
+          id: 'main',
+          name: 'Content',
+          presentations: [presentation]
+        }],
+        allFiles: files
+      };
+    }
+
+    return null;
+  }
+
+  override async getPlaylist(folder: ContentFolder, _auth?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
+    const level = folder.providerData?.level;
+
+    // For lesson level, return the files directly
+    if (level === 'lesson') {
+      const lessonData = folder.providerData?.lessonData as LessonFolder;
+      if (!lessonData?.files) return null;
+
+      return lessonData.files.map(file => ({
+        type: 'file' as const,
+        id: file.id,
+        title: file.title,
+        mediaType: file.mediaType as 'video' | 'image',
+        url: file.url,
+        image: lessonData.image
+      }));
+    }
+
+    // For study level, return all files from all lessons
+    if (level === 'study') {
+      const studyData = folder.providerData?.studyData as StudyFolder;
+      if (!studyData) return null;
+
+      const allFiles: ContentFile[] = [];
+      for (const lesson of studyData.lessons) {
+        for (const file of lesson.files) {
+          allFiles.push({
+            type: 'file',
+            id: file.id,
+            title: file.title,
+            mediaType: file.mediaType as 'video' | 'image',
+            url: file.url,
+            image: lesson.image
+          });
+        }
+      }
+      return allFiles;
+    }
+
     return null;
   }
 
@@ -135,7 +257,8 @@ export class HighVoltageKidsProvider extends ContentProvider {
       {
         level: 'study',
         collectionName,
-        studyData: study
+        studyData: study,
+        isLeaf: true  // Mark as leaf so venue choice modal appears
       }
     ));
   }
@@ -148,7 +271,8 @@ export class HighVoltageKidsProvider extends ContentProvider {
       {
         level: 'lesson',
         studyId: study.id,
-        lessonData: lesson
+        lessonData: lesson,
+        isLeaf: true  // Mark as leaf so venue choice modal appears
       }
     ));
   }

@@ -226,10 +226,6 @@ export class APlayProvider extends ContentProvider {
     };
   }
 
-  /**
-   * Check the license status for a specific media item.
-   * Returns license information including pingback URL if licensed.
-   */
   override async checkMediaLicense(mediaId: string, auth?: ContentProviderAuthData | null): Promise<MediaLicenseResult | null> {
     if (!auth) return null;
 
