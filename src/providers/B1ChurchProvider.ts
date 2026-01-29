@@ -1,4 +1,4 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, Instructions, InstructionItem, ProviderCapabilities, FeedVenueInterface } from '../interfaces';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, Instructions, InstructionItem, ProviderCapabilities, FeedVenueInterface, DeviceAuthorizationResponse, DeviceFlowPollResult } from '../interfaces';
 import { ContentProvider } from '../ContentProvider';
 import { detectMediaType } from '../utils';
 
@@ -61,6 +61,8 @@ export class B1ChurchProvider extends ContentProvider {
     oauthBase: 'https://api.churchapps.org/membership/oauth',
     clientId: '', // Consumer must provide client_id
     scopes: ['plans'],
+    supportsDeviceFlow: true,
+    deviceAuthEndpoint: '/device/authorize',
     endpoints: {
       plans: '/plans/presenter',
       planItems: (churchId: string, planId: string) => `/planItems/presenter/${churchId}/${planId}`,
@@ -187,6 +189,77 @@ export class B1ChurchProvider extends ContentProvider {
       };
     } catch {
       return null;
+    }
+  }
+
+  /**
+   * Initiate the device authorization flow.
+   * Overrides base class to use JSON content-type (B1Admin expects JSON).
+   */
+  override async initiateDeviceFlow(): Promise<DeviceAuthorizationResponse | null> {
+    if (!this.supportsDeviceFlow()) return null;
+
+    try {
+      const response = await fetch(`${this.config.oauthBase}${this.config.deviceAuthEndpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_id: this.config.clientId,
+          scope: this.config.scopes.join(' ')
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`B1Church device authorize failed: ${response.status} - ${errorText}`);
+        return null;
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('B1Church device flow initiation error:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Poll for a token after user has authorized the device.
+   * Overrides base class to use JSON content-type (B1Admin expects JSON).
+   */
+  override async pollDeviceFlowToken(deviceCode: string): Promise<DeviceFlowPollResult> {
+    try {
+      const response = await fetch(`${this.config.oauthBase}/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+          device_code: deviceCode,
+          client_id: this.config.clientId
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          access_token: data.access_token,
+          refresh_token: data.refresh_token,
+          token_type: data.token_type || 'Bearer',
+          created_at: Math.floor(Date.now() / 1000),
+          expires_in: data.expires_in,
+          scope: data.scope || this.config.scopes.join(' ')
+        };
+      }
+
+      const errorData = await response.json();
+      switch (errorData.error) {
+        case 'authorization_pending': return { error: 'authorization_pending' };
+        case 'slow_down': return { error: 'slow_down', shouldSlowDown: true };
+        case 'expired_token': return null;
+        case 'access_denied': return null;
+        default: return null;
+      }
+    } catch {
+      return { error: 'network_error' };
     }
   }
 
