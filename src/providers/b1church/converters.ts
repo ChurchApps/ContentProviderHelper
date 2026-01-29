@@ -1,12 +1,46 @@
 import { ContentItem, ContentFile, FeedVenueInterface, PlanPresentation, InstructionItem } from '../../interfaces';
 import { detectMediaType } from '../../utils';
-import { B1PlanItem, ArrangementKeyResponse } from './types';
+import { B1Ministry, B1PlanType, B1Plan, B1PlanItem, ArrangementKeyResponse } from './types';
 import { fetchArrangementKey } from './api';
+
+/**
+ * Convert a B1Ministry to a content folder item.
+ */
+export function ministryToFolder(ministry: B1Ministry): ContentItem {
+  return {
+    type: 'folder' as const,
+    id: ministry.id,
+    title: ministry.name,
+    image: ministry.photoUrl,
+    providerData: {
+      level: 'ministry',
+      ministryId: ministry.id,
+      churchId: ministry.churchId
+    }
+  };
+}
+
+/**
+ * Convert a B1PlanType to a content folder item.
+ */
+export function planTypeToFolder(planType: B1PlanType, ministryId: string): ContentItem {
+  return {
+    type: 'folder' as const,
+    id: planType.id,
+    title: planType.name,
+    providerData: {
+      level: 'planType',
+      planTypeId: planType.id,
+      ministryId: ministryId,
+      churchId: planType.churchId
+    }
+  };
+}
 
 /**
  * Convert a B1Plan to a content folder item.
  */
-export function planToFolder(plan: { id: string; name: string; churchId: string; serviceDate: string; contentType?: string; contentId?: string }): ContentItem {
+export function planToFolder(plan: B1Plan): ContentItem {
   return {
     type: 'folder' as const,
     id: plan.id,
@@ -14,6 +48,8 @@ export function planToFolder(plan: { id: string; name: string; churchId: string;
     providerData: {
       level: 'plan',
       planId: plan.id,
+      planTypeId: plan.planTypeId,
+      ministryId: plan.ministryId,
       churchId: plan.churchId,
       serviceDate: plan.serviceDate,
       contentType: plan.contentType,

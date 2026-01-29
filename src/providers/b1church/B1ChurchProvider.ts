@@ -1,9 +1,9 @@
 import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, Instructions, ProviderCapabilities, DeviceAuthorizationResponse, DeviceFlowPollResult } from '../../interfaces';
 import { ContentProvider } from '../../ContentProvider';
-import { B1Plan, B1PlanItem } from './types';
+import { B1PlanItem } from './types';
 import * as auth from './auth';
-import { fetchVenueFeed } from './api';
-import { planToFolder, sectionToFolder, planItemToContentItem, planItemToPresentation, planItemToInstruction } from './converters';
+import { fetchMinistries, fetchPlanTypes, fetchPlans, fetchVenueFeed, API_BASE } from './api';
+import { ministryToFolder, planTypeToFolder, planToFolder, planItemToPresentation, planItemToInstruction, getFilesFromVenueFeed } from './converters';
 
 export class B1ChurchProvider extends ContentProvider {
   readonly id = 'b1church';
@@ -17,17 +17,14 @@ export class B1ChurchProvider extends ContentProvider {
   readonly config: ContentProviderConfig = {
     id: 'b1church',
     name: 'B1.Church',
-    apiBase: 'https://api.churchapps.org/doing',
-    oauthBase: 'https://api.churchapps.org/membership/oauth',
+    apiBase: `${API_BASE}/doing`,
+    oauthBase: `${API_BASE}/membership/oauth`,
     clientId: '', // Consumer must provide client_id
     scopes: ['plans'],
     supportsDeviceFlow: true,
     deviceAuthEndpoint: '/device/authorize',
     endpoints: {
-      plans: '/plans/presenter',
-      planItems: (churchId: string, planId: string) => `/planItems/presenter/${churchId}/${planId}`,
-      arrangementKey: (churchId: string, arrangementId: string) => `/arrangementKeys/presenter/${churchId}/${arrangementId}`,
-      venueFeed: (venueId: string) => `/venues/public/feed/${venueId}`
+      planItems: (churchId: string, planId: string) => `/planItems/presenter/${churchId}/${planId}`
     }
   };
 
@@ -45,9 +42,9 @@ export class B1ChurchProvider extends ContentProvider {
     return {
       browse: true,
       presentations: true,
-      playlist: false,
+      playlist: true,
       instructions: true,
-      expandedInstructions: false,
+      expandedInstructions: true,
       mediaLicensing: false
     };
   }
@@ -80,36 +77,42 @@ export class B1ChurchProvider extends ContentProvider {
   // Content Browsing
   // ============================================================
 
+  /**
+   * Browse content hierarchy:
+   * - Root: List of ministries (groups with "ministry" tag)
+   * - Ministry: List of plan types
+   * - PlanType: List of plans (leaf nodes)
+   *
+   * Plans are leaf nodes - use getPresentations(), getPlaylist(), getInstructions()
+   * to get plan content.
+   */
   async browse(folder?: ContentFolder | null, authData?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     if (!folder) {
-      const plans = await this.apiRequest<B1Plan[]>(this.config.endpoints.plans as string, authData);
-      if (!plans || !Array.isArray(plans)) return [];
-      return plans.map(planToFolder);
+      // Root level: show ministries
+      const ministries = await fetchMinistries(authData);
+      return ministries.map(ministryToFolder);
     }
 
     const level = folder.providerData?.level;
-    if (level !== 'plan') return [];
 
-    const planId = folder.providerData?.planId as string;
-    const churchId = folder.providerData?.churchId as string;
-    if (!planId || !churchId) return [];
-
-    const pathFn = this.config.endpoints.planItems as (churchId: string, planId: string) => string;
-    const planItems = await this.apiRequest<B1PlanItem[]>(pathFn(churchId, planId), authData);
-    if (!planItems || !Array.isArray(planItems)) return [];
-
-    const items: ContentItem[] = [];
-    const venueId = folder.providerData?.contentId as string | undefined;
-
-    for (const section of planItems) {
-      items.push(sectionToFolder(section));
-      for (const child of section.children || []) {
-        const item = planItemToContentItem(child, venueId);
-        if (item) items.push(item);
-      }
+    if (level === 'ministry') {
+      // Ministry level: show plan types
+      const ministryId = folder.providerData?.ministryId as string;
+      if (!ministryId) return [];
+      const planTypes = await fetchPlanTypes(ministryId, authData);
+      return planTypes.map(pt => planTypeToFolder(pt, ministryId));
     }
 
-    return items;
+    if (level === 'planType') {
+      // Plan type level: show plans (leaf nodes)
+      const planTypeId = folder.providerData?.planTypeId as string;
+      if (!planTypeId) return [];
+      const plans = await fetchPlans(planTypeId, authData);
+      return plans.map(planToFolder);
+    }
+
+    // Plans are leaf nodes - no further browsing
+    return [];
   }
 
   // ============================================================
@@ -177,5 +180,38 @@ export class B1ChurchProvider extends ContentProvider {
       venueName: folder.title,
       items: planItems.map(planItemToInstruction)
     };
+  }
+
+  // ============================================================
+  // Playlist
+  // ============================================================
+
+  async getPlaylist(folder: ContentFolder, authData?: ContentProviderAuthData | null): Promise<ContentFile[]> {
+    const level = folder.providerData?.level;
+    if (level !== 'plan') return [];
+
+    const planId = folder.providerData?.planId as string;
+    const churchId = folder.providerData?.churchId as string;
+    const venueId = folder.providerData?.contentId as string | undefined;
+    if (!planId || !churchId) return [];
+
+    const pathFn = this.config.endpoints.planItems as (churchId: string, planId: string) => string;
+    const planItems = await this.apiRequest<B1PlanItem[]>(pathFn(churchId, planId), authData);
+    if (!planItems || !Array.isArray(planItems)) return [];
+
+    const venueFeed = venueId ? await fetchVenueFeed(venueId) : null;
+    const files: ContentFile[] = [];
+
+    for (const sectionItem of planItems) {
+      for (const child of sectionItem.children || []) {
+        const itemType = child.itemType;
+        if ((itemType === 'lessonSection' || itemType === 'lessonAction' || itemType === 'lessonAddOn') && venueFeed) {
+          const itemFiles = getFilesFromVenueFeed(venueFeed, itemType, child.relatedId);
+          files.push(...itemFiles);
+        }
+      }
+    }
+
+    return files;
   }
 }

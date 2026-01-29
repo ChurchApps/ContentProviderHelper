@@ -713,9 +713,13 @@ function renderFile(file: ContentItem & { type: 'file' }): string {
 }
 
 function handleFolderClick(folder: ContentFolder) {
-  const isVenue = folder.providerData?.venueId || folder.providerData?.level === 'playlist';
+  // Check if this is a leaf folder (offers view modes)
+  // Different providers use different level names: 'playlist' (LessonsChurch), 'plan' (B1Church)
+  const isLeafFolder = folder.providerData?.venueId
+    || folder.providerData?.level === 'playlist'
+    || folder.providerData?.level === 'plan';
 
-  if (isVenue && state.currentProvider) {
+  if (isLeafFolder && state.currentProvider) {
     showVenueChoiceModal(folder);
   } else {
     state.folderStack.push(folder);

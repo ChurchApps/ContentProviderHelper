@@ -382,10 +382,13 @@ async function handleContentSelection(items: ContentItem[]): Promise<void> {
  * Handle folder selection - check for venue or navigate
  */
 async function handleFolderSelection(folder: ContentFolder): Promise<void> {
-  // Check if this is a venue folder (offers view modes)
-  const isVenue = folder.providerData?.venueId || folder.providerData?.level === 'playlist';
+  // Check if this is a leaf folder (offers view modes)
+  // Different providers use different level names: 'playlist' (LessonsChurch), 'plan' (B1Church)
+  const isLeafFolder = folder.providerData?.venueId
+    || folder.providerData?.level === 'playlist'
+    || folder.providerData?.level === 'plan';
 
-  if (isVenue && state.currentProvider) {
+  if (isLeafFolder && state.currentProvider) {
     await showViewModeMenu(folder);
   } else {
     state.folderStack.push(folder);

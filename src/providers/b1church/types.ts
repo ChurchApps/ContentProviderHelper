@@ -2,9 +2,29 @@
  * B1.Church API response types
  */
 
+/** A ministry is a group with the "ministry" tag */
+export interface B1Ministry {
+  id: string;
+  churchId: string;
+  name: string;
+  photoUrl?: string;
+  tags?: string;
+}
+
+/** Plan type within a ministry */
+export interface B1PlanType {
+  id: string;
+  churchId: string;
+  ministryId: string;
+  name: string;
+}
+
+/** A plan/service within a plan type */
 export interface B1Plan {
   id: string;
   churchId: string;
+  ministryId?: string;
+  planTypeId?: string;
   name: string;
   serviceDate: string;
   contentType?: string;
