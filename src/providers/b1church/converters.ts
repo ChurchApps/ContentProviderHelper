@@ -46,6 +46,7 @@ export function planToFolder(plan: B1Plan): ContentItem {
     id: plan.id,
     title: plan.name,
     providerData: {
+      isLeaf: true,
       level: 'plan',
       planId: plan.id,
       planTypeId: plan.planTypeId,

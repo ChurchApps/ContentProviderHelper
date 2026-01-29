@@ -714,10 +714,11 @@ function renderFile(file: ContentItem & { type: 'file' }): string {
 
 function handleFolderClick(folder: ContentFolder) {
   // Check if this is a leaf folder (offers view modes)
-  // Different providers use different level names: 'playlist' (LessonsChurch), 'plan' (B1Church)
-  const isLeafFolder = folder.providerData?.venueId
-    || folder.providerData?.level === 'playlist'
-    || folder.providerData?.level === 'plan';
+  // Providers set isLeaf: true to indicate the bottom of the browse tree
+  // Legacy fallback: venueId or level === 'playlist' for older providers
+  const isLeafFolder = folder.providerData?.isLeaf
+    || folder.providerData?.venueId
+    || folder.providerData?.level === 'playlist';
 
   if (isLeafFolder && state.currentProvider) {
     showVenueChoiceModal(folder);
