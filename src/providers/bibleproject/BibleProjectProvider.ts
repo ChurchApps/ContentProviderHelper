@@ -8,9 +8,9 @@ import { BibleProjectData } from './BibleProjectInterfaces';
  * BibleProject Provider
  *
  * Path structure:
- *   /collections                              -> list collections
- *   /collections/{collectionName}             -> list videos in collection
- *   /collections/{collectionName}/{videoId}   -> single video
+ *   /                              -> list collections
+ *   /{collectionName}              -> list videos in collection
+ *   /{collectionName}/{videoId}    -> single video
  */
 export class BibleProjectProvider implements IProvider {
   readonly id = 'bibleproject';
@@ -49,34 +49,21 @@ export class BibleProjectProvider implements IProvider {
   async browse(path?: string | null, _auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const { segments, depth } = parsePath(path);
 
+    // / -> list all collections
     if (depth === 0) {
-      // Return top-level collections folder
-      return [{
-        type: 'folder' as const,
-        id: 'collections-root',
-        title: 'Collections',
-        path: '/collections'
-      }];
-    }
-
-    const root = segments[0];
-    if (root !== 'collections') return [];
-
-    // /collections -> list all collections
-    if (depth === 1) {
       return this.getCollections();
     }
 
-    // /collections/{collectionName} -> list videos in collection
-    if (depth === 2) {
-      const collectionName = decodeURIComponent(segments[1]);
+    // /{collectionName} -> list videos in collection
+    if (depth === 1) {
+      const collectionName = decodeURIComponent(segments[0]);
       return this.getLessonFolders(collectionName, path!);
     }
 
-    // /collections/{collectionName}/{videoId} -> single video file
-    if (depth === 3) {
-      const collectionName = decodeURIComponent(segments[1]);
-      const videoId = segments[2];
+    // /{collectionName}/{videoId} -> single video file
+    if (depth === 2) {
+      const collectionName = decodeURIComponent(segments[0]);
+      const videoId = segments[1];
       return this.getVideoFile(collectionName, videoId);
     }
 
@@ -91,7 +78,7 @@ export class BibleProjectProvider implements IProvider {
         id: this.slugify(collection.name),
         title: collection.name,
         image: collection.image || undefined,
-        path: `/collections/${encodeURIComponent(collection.name)}`
+        path: `/${encodeURIComponent(collection.name)}`
       }));
   }
 
@@ -123,14 +110,14 @@ export class BibleProjectProvider implements IProvider {
   async getPresentations(path: string, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
     const { segments, depth } = parsePath(path);
 
-    if (depth < 2 || segments[0] !== 'collections') return null;
+    if (depth < 1) return null;
 
-    const collectionName = decodeURIComponent(segments[1]);
+    const collectionName = decodeURIComponent(segments[0]);
     const collection = this.data.collections.find(c => c.name === collectionName);
     if (!collection) return null;
 
-    // For collection level (depth 2), create a plan with all videos
-    if (depth === 2) {
+    // For collection level (depth 1), create a plan with all videos
+    if (depth === 1) {
       const allFiles: ContentFile[] = [];
       const presentations: PlanPresentation[] = collection.videos.map(video => {
         const file: ContentFile = { type: 'file', id: video.id, title: video.title, mediaType: 'video', url: video.videoUrl, image: video.thumbnailUrl, muxPlaybackId: video.muxPlaybackId };
@@ -141,9 +128,9 @@ export class BibleProjectProvider implements IProvider {
       return { id: this.slugify(collection.name), name: collection.name, image: collection.image || undefined, sections: [{ id: 'videos', name: 'Videos', presentations }], allFiles };
     }
 
-    // For lesson level (depth 3, single video), create a simple plan
-    if (depth === 3) {
-      const videoId = segments[2];
+    // For video level (depth 2, single video), create a simple plan
+    if (depth === 2) {
+      const videoId = segments[1];
       const video = collection.videos.find(v => v.id === videoId);
       if (!video) return null;
 
@@ -157,20 +144,20 @@ export class BibleProjectProvider implements IProvider {
   async getPlaylist(path: string, _auth?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
     const { segments, depth } = parsePath(path);
 
-    if (depth < 2 || segments[0] !== 'collections') return null;
+    if (depth < 1) return null;
 
-    const collectionName = decodeURIComponent(segments[1]);
+    const collectionName = decodeURIComponent(segments[0]);
     const collection = this.data.collections.find(c => c.name === collectionName);
     if (!collection) return null;
 
     // For collection level, return all videos
-    if (depth === 2) {
+    if (depth === 1) {
       return collection.videos.map(video => ({ type: 'file' as const, id: video.id, title: video.title, mediaType: 'video' as const, url: video.videoUrl, image: video.thumbnailUrl, muxPlaybackId: video.muxPlaybackId }));
     }
 
-    // For lesson level, return the single video
-    if (depth === 3) {
-      const videoId = segments[2];
+    // For video level, return the single video
+    if (depth === 2) {
+      const videoId = segments[1];
       const video = collection.videos.find(v => v.id === videoId);
       if (!video) return null;
       return [{ type: 'file', id: video.id, title: video.title, mediaType: 'video', url: video.videoUrl, image: video.thumbnailUrl, muxPlaybackId: video.muxPlaybackId }];

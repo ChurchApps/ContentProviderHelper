@@ -8,10 +8,10 @@ import { HighVoltageData } from './HighVoltageKidsInterfaces';
  * HighVoltageKids Provider
  *
  * Path structure:
- *   /collections                                       -> list collections (Elementary, Preschool)
- *   /collections/{collectionName}                      -> list studies
- *   /collections/{collectionName}/{studyId}            -> list lessons
- *   /collections/{collectionName}/{studyId}/{lessonId} -> lesson files (leaf)
+ *   /                                          -> list collections (Elementary, Preschool)
+ *   /{collectionName}                          -> list studies
+ *   /{collectionName}/{studyId}                -> list lessons
+ *   /{collectionName}/{studyId}/{lessonId}     -> lesson files (leaf)
  */
 export class HighVoltageKidsProvider implements IProvider {
   readonly id = 'highvoltagekids';
@@ -50,41 +50,29 @@ export class HighVoltageKidsProvider implements IProvider {
   async browse(path?: string | null, _auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const { segments, depth } = parsePath(path);
 
+    // / -> list all collections
     if (depth === 0) {
-      return [{
-        type: 'folder' as const,
-        id: 'collections-root',
-        title: 'Collections',
-        path: '/collections'
-      }];
-    }
-
-    const root = segments[0];
-    if (root !== 'collections') return [];
-
-    // /collections -> list all collections
-    if (depth === 1) {
       return this.getCollections();
     }
 
-    // /collections/{collectionName} -> list studies
-    if (depth === 2) {
-      const collectionName = decodeURIComponent(segments[1]);
+    // /{collectionName} -> list studies
+    if (depth === 1) {
+      const collectionName = decodeURIComponent(segments[0]);
       return this.getStudyFolders(collectionName, path!);
     }
 
-    // /collections/{collectionName}/{studyId} -> list lessons
-    if (depth === 3) {
-      const collectionName = decodeURIComponent(segments[1]);
-      const studyId = segments[2];
+    // /{collectionName}/{studyId} -> list lessons
+    if (depth === 2) {
+      const collectionName = decodeURIComponent(segments[0]);
+      const studyId = segments[1];
       return this.getLessonFolders(collectionName, studyId, path!);
     }
 
-    // /collections/{collectionName}/{studyId}/{lessonId} -> lesson files
-    if (depth === 4) {
-      const collectionName = decodeURIComponent(segments[1]);
-      const studyId = segments[2];
-      const lessonId = segments[3];
+    // /{collectionName}/{studyId}/{lessonId} -> lesson files
+    if (depth === 3) {
+      const collectionName = decodeURIComponent(segments[0]);
+      const studyId = segments[1];
+      const lessonId = segments[2];
       return this.getLessonFiles(collectionName, studyId, lessonId);
     }
 
@@ -98,7 +86,7 @@ export class HighVoltageKidsProvider implements IProvider {
         type: 'folder' as const,
         id: this.slugify(collection.name),
         title: collection.name,
-        path: `/collections/${encodeURIComponent(collection.name)}`
+        path: `/${encodeURIComponent(collection.name)}`
       }));
   }
 
@@ -150,10 +138,10 @@ export class HighVoltageKidsProvider implements IProvider {
   async getPresentations(path: string, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
     const { segments, depth } = parsePath(path);
 
-    if (depth < 3 || segments[0] !== 'collections') return null;
+    if (depth < 2) return null;
 
-    const collectionName = decodeURIComponent(segments[1]);
-    const studyId = segments[2];
+    const collectionName = decodeURIComponent(segments[0]);
+    const studyId = segments[1];
 
     const collection = this.data.collections.find(c => c.name === collectionName);
     if (!collection) return null;
@@ -161,8 +149,8 @@ export class HighVoltageKidsProvider implements IProvider {
     const study = collection.folders.find(s => s.id === studyId);
     if (!study) return null;
 
-    // For study level (depth 3), create a plan with lessons as sections
-    if (depth === 3) {
+    // For study level (depth 2), create a plan with lessons as sections
+    if (depth === 2) {
       const allFiles: ContentFile[] = [];
       const sections: PlanSection[] = study.lessons.map(lesson => {
         const files: ContentFile[] = lesson.files.map(file => {
@@ -177,9 +165,9 @@ export class HighVoltageKidsProvider implements IProvider {
       return { id: study.id, name: study.name, description: study.description, image: study.image, sections, allFiles };
     }
 
-    // For lesson level (depth 4), create a simple plan with one section
-    if (depth === 4) {
-      const lessonId = segments[3];
+    // For lesson level (depth 3), create a simple plan with one section
+    if (depth === 3) {
+      const lessonId = segments[2];
       const lesson = study.lessons.find(l => l.id === lessonId);
       if (!lesson?.files) return null;
 
@@ -194,10 +182,10 @@ export class HighVoltageKidsProvider implements IProvider {
   async getPlaylist(path: string, _auth?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
     const { segments, depth } = parsePath(path);
 
-    if (depth < 3 || segments[0] !== 'collections') return null;
+    if (depth < 2) return null;
 
-    const collectionName = decodeURIComponent(segments[1]);
-    const studyId = segments[2];
+    const collectionName = decodeURIComponent(segments[0]);
+    const studyId = segments[1];
 
     const collection = this.data.collections.find(c => c.name === collectionName);
     if (!collection) return null;
@@ -206,7 +194,7 @@ export class HighVoltageKidsProvider implements IProvider {
     if (!study) return null;
 
     // For study level, return all files from all lessons
-    if (depth === 3) {
+    if (depth === 2) {
       const allFiles: ContentFile[] = [];
       for (const lesson of study.lessons) {
         for (const file of lesson.files) {
@@ -217,8 +205,8 @@ export class HighVoltageKidsProvider implements IProvider {
     }
 
     // For lesson level, return the files directly
-    if (depth === 4) {
-      const lessonId = segments[3];
+    if (depth === 3) {
+      const lessonId = segments[2];
       const lesson = study.lessons.find(l => l.id === lessonId);
       if (!lesson?.files) return null;
       return lesson.files.map(file => ({ type: 'file' as const, id: file.id, title: file.title, mediaType: file.mediaType as 'video' | 'image', url: file.url, image: lesson.image }));
@@ -230,10 +218,10 @@ export class HighVoltageKidsProvider implements IProvider {
   async getExpandedInstructions(path: string, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
     const { segments, depth } = parsePath(path);
 
-    if (depth < 3 || segments[0] !== 'collections') return null;
+    if (depth < 2) return null;
 
-    const collectionName = decodeURIComponent(segments[1]);
-    const studyId = segments[2];
+    const collectionName = decodeURIComponent(segments[0]);
+    const studyId = segments[1];
 
     const collection = this.data.collections.find(c => c.name === collectionName);
     if (!collection) return null;
@@ -242,7 +230,7 @@ export class HighVoltageKidsProvider implements IProvider {
     if (!study) return null;
 
     // For study level
-    if (depth === 3) {
+    if (depth === 2) {
       const lessonItems: InstructionItem[] = study.lessons.map(lesson => {
         const fileItems: InstructionItem[] = lesson.files.map(file => ({ id: file.id, itemType: 'file', label: file.title, embedUrl: file.url }));
         return { id: lesson.id, itemType: 'action', label: lesson.name, description: 'play', children: fileItems };
@@ -252,8 +240,8 @@ export class HighVoltageKidsProvider implements IProvider {
     }
 
     // For lesson level
-    if (depth === 4) {
-      const lessonId = segments[3];
+    if (depth === 3) {
+      const lessonId = segments[2];
       const lesson = study.lessons.find(l => l.id === lessonId);
       if (!lesson?.files) return null;
 
