@@ -285,13 +285,11 @@ export class LessonsChurchProvider extends ContentProvider {
     };
   }
 
-  async getPresentations(folder: ContentFolder, _auth?: ContentProviderAuthData | null, resolution?: number): Promise<Plan | null> {
+  async getPresentations(folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
     const venueId = folder.providerData?.venueId as string | undefined;
     if (!venueId) return null;
 
-    let path = `/venues/public/feed/${venueId}`;
-    if (resolution) path += `?resolution=${resolution}`;
-
+    const path = `/venues/public/feed/${venueId}`;
     const venueData = await this.apiRequest<FeedVenueInterface>(path);
     if (!venueData) return null;
 

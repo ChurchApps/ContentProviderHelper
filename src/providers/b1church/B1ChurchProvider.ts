@@ -149,7 +149,7 @@ export class B1ChurchProvider extends ContentProvider {
     };
   }
 
-  async getPlaylist(folder: ContentFolder, authData?: ContentProviderAuthData | null): Promise<ContentFile[]> {
+  async getPlaylist(folder: ContentFolder, authData?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
     const level = folder.providerData?.level;
     if (level !== 'plan') return [];
 
