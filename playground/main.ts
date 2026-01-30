@@ -740,7 +740,7 @@ function handleFolderClick(folder: ContentFolder) {
   // Check if this is a leaf folder (offers view modes)
   // Providers set isLeaf: true to indicate the bottom of the browse tree
   // Legacy fallback: venueId or level === 'playlist' for older providers
-  const isLeafFolder = folder.providerData?.isLeaf
+  const isLeafFolder = folder.isLeaf
     || folder.providerData?.venueId
     || folder.providerData?.level === 'playlist';
 
