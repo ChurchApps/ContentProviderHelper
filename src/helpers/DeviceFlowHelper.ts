@@ -9,8 +9,7 @@ export class DeviceFlowHelper {
     if (!this.supportsDeviceFlow(config)) return null;
 
     try {
-      const params = new URLSearchParams({ client_id: config.clientId, scope: config.scopes.join(" ") });
-      const response = await fetch(`${config.oauthBase}${config.deviceAuthEndpoint}`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: params.toString() });
+      const response = await fetch(`${config.oauthBase}${config.deviceAuthEndpoint}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ client_id: config.clientId, scope: config.scopes.join(" ") }) });
       if (!response.ok) return null;
       return await response.json();
     } catch {
@@ -20,13 +19,7 @@ export class DeviceFlowHelper {
 
   async pollDeviceFlowToken(config: ContentProviderConfig, deviceCode: string): Promise<DeviceFlowPollResult> {
     try {
-      const params = new URLSearchParams({
-        grant_type: "urn:ietf:params:oauth:grant-type:device_code",
-        device_code: deviceCode,
-        client_id: config.clientId
-      });
-
-      const response = await fetch(`${config.oauthBase}/token`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: params.toString() });
+      const response = await fetch(`${config.oauthBase}/token`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ grant_type: "urn:ietf:params:oauth:grant-type:device_code", device_code: deviceCode, client_id: config.clientId }) });
 
       if (response.ok) {
         const data = await response.json();

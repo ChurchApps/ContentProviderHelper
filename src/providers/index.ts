@@ -130,8 +130,9 @@ export function getProviderConfig(providerId: string) {
 /**
  * Get list of available providers with their info including logos and auth types.
  * Includes both implemented providers and coming soon providers.
+ * @param ids - Optional array of provider IDs to filter the results. If provided, only providers with matching IDs will be returned.
  */
-export function getAvailableProviders(): ProviderInfo[] {
+export function getAvailableProviders(ids?: string[]): ProviderInfo[] {
   // Implemented providers
   const implemented: ProviderInfo[] = getAllProviders().map((provider) => ({
     id: provider.id,
@@ -154,5 +155,13 @@ export function getAvailableProviders(): ProviderInfo[] {
     capabilities: { browse: false, presentations: false, playlist: false, instructions: false, expandedInstructions: false, mediaLicensing: false },
   }));
 
-  return [...implemented, ...comingSoon];
+  const all = [...implemented, ...comingSoon];
+
+  // Filter by IDs if provided
+  if (ids && ids.length > 0) {
+    const idSet = new Set(ids);
+    return all.filter((provider) => idSet.has(provider.id));
+  }
+
+  return all;
 }

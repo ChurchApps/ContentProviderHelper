@@ -7,8 +7,8 @@ const STORAGE_KEY_PROVIDER = 'oauth_provider_id';
 
 // Configure client IDs for OAuth providers (using FreeShow's registered app credentials for testing)
 const PCO_CLIENT_ID = '35d1112d839d678ce3f1de730d2cff0b81038c2944b11c5e2edf03f8b43abc05';
-const B1_CLIENT_ID = 'nEgWOCjpj3p';
-const B1_CLIENT_SECRET = 'raEFO2kT0Lc';
+const B1_CLIENT_ID = 'nsowldn58dk';
+const B1_CLIENT_SECRET = 'ED8wnTl243o';
 
 // Configure providers with client IDs
 function configureProviders() {
