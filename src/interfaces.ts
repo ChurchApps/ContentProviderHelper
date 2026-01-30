@@ -196,3 +196,79 @@ export interface MediaLicenseResult {
   message?: string;
   expiresAt?: string | number;
 }
+
+/**
+ * Core provider interface - all providers should implement this
+ */
+export interface IProvider {
+  // Identity (required)
+  readonly id: string;
+  readonly name: string;
+  readonly logos: ProviderLogos;
+  readonly config: ContentProviderConfig;
+
+  // Core methods (required)
+  browse(folder?: ContentFolder | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]>;
+  getPresentations(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Plan | null>;
+
+  // Metadata (required)
+  requiresAuth(): boolean;
+  getCapabilities(): ProviderCapabilities;
+  getAuthTypes(): AuthType[];
+
+  // Optional methods - providers can implement these if they have custom logic
+  getPlaylist?(folder: ContentFolder, auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null>;
+  getInstructions?(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
+  getExpandedInstructions?(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
+  checkMediaLicense?(mediaId: string, auth?: ContentProviderAuthData | null): Promise<MediaLicenseResult | null>;
+}
+
+/**
+ * @deprecated Use IProvider instead. This interface will be removed in a future version.
+ */
+export interface IContentProvider {
+  // Identity
+  readonly id: string;
+  readonly name: string;
+  readonly logos: ProviderLogos;
+  readonly config: ContentProviderConfig;
+
+  // Content browsing
+  browse(folder?: ContentFolder | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]>;
+  getPresentations(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Plan | null>;
+
+  // Content retrieval
+  getPlaylist(folder: ContentFolder, auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null>;
+  getInstructions(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
+  getExpandedInstructions(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
+
+  // Capability & auth detection
+  requiresAuth(): boolean;
+  getCapabilities(): ProviderCapabilities;
+
+  // Media licensing
+  checkMediaLicense(mediaId: string, auth?: ContentProviderAuthData | null): Promise<MediaLicenseResult | null>;
+}
+
+/**
+ * @deprecated Use auth helpers directly (OAuthHelper, DeviceFlowHelper, TokenHelper) with provider.config.
+ * This interface will be removed in a future version.
+ */
+export interface IAuthProvider {
+  getAuthTypes(): AuthType[];
+  isAuthValid(auth: ContentProviderAuthData | null | undefined): boolean;
+  isTokenExpired(auth: ContentProviderAuthData): boolean;
+  refreshToken(auth: ContentProviderAuthData): Promise<ContentProviderAuthData | null>;
+
+  // OAuth PKCE
+  generateCodeVerifier(): string;
+  generateCodeChallenge(verifier: string): Promise<string>;
+  buildAuthUrl(codeVerifier: string, redirectUri: string, state?: string): Promise<{ url: string; challengeMethod: string }>;
+  exchangeCodeForTokens(code: string, codeVerifier: string, redirectUri: string): Promise<ContentProviderAuthData | null>;
+
+  // Device flow
+  supportsDeviceFlow(): boolean;
+  initiateDeviceFlow(): Promise<DeviceAuthorizationResponse | null>;
+  pollDeviceFlowToken(deviceCode: string): Promise<DeviceFlowPollResult>;
+  calculatePollDelay(baseInterval?: number, slowDownCount?: number): number;
+}

@@ -9,7 +9,7 @@ export const VERSION = "0.0.1";
 export * from './interfaces';
 
 // Utilities
-export { detectMediaType } from './utils';
+export { detectMediaType, createFolder, createFile } from './utils';
 
 // Format conversion utilities
 export * as FormatConverters from './FormatConverters';
@@ -31,6 +31,7 @@ export {
 export { FormatResolver, type FormatResolverOptions, type ResolvedFormatMeta } from './FormatResolver';
 
 // Base class (for extending with custom providers)
+// @deprecated Use IProvider interface instead. ContentProvider will be removed in a future version.
 export { ContentProvider } from './ContentProvider';
 
 // Helper classes (for standalone use or custom providers)

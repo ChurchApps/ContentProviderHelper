@@ -1,8 +1,13 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities } from '../../interfaces';
-import { ContentProvider } from '../../ContentProvider';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities, IProvider, AuthType } from '../../interfaces';
 import { detectMediaType } from '../../utils';
+import { ApiHelper } from '../../helpers';
 
-export class SignPresenterProvider extends ContentProvider {
+export class SignPresenterProvider implements IProvider {
+  private readonly apiHelper = new ApiHelper();
+
+  private async apiRequest<T>(path: string, auth?: ContentProviderAuthData | null): Promise<T | null> {
+    return this.apiHelper.apiRequest<T>(this.config, this.id, path, auth);
+  }
   readonly id = 'signpresenter';
   readonly name = 'SignPresenter';
 
@@ -26,7 +31,15 @@ export class SignPresenterProvider extends ContentProvider {
     }
   };
 
-  override getCapabilities(): ProviderCapabilities {
+  requiresAuth(): boolean {
+    return true;
+  }
+
+  getAuthTypes(): AuthType[] {
+    return ['oauth_pkce', 'device_flow'];
+  }
+
+  getCapabilities(): ProviderCapabilities {
     return {
       browse: true,
       presentations: true,

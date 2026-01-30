@@ -1,6 +1,6 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, ProviderCapabilities } from '../../interfaces';
-import { ContentProvider } from '../../ContentProvider';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, ProviderCapabilities, IProvider, AuthType } from '../../interfaces';
 import { detectMediaType } from '../../utils';
+import { ApiHelper } from '../../helpers';
 
 interface PCOServiceType {
   id: string;
@@ -70,7 +70,13 @@ interface PCOAttachment {
   };
 }
 
-export class PlanningCenterProvider extends ContentProvider {
+export class PlanningCenterProvider implements IProvider {
+  private readonly apiHelper = new ApiHelper();
+
+  private async apiRequest<T>(path: string, auth?: ContentProviderAuthData | null): Promise<T | null> {
+    return this.apiHelper.apiRequest<T>(this.config, this.id, path, auth);
+  }
+
   readonly id = 'planningcenter';
   readonly name = 'Planning Center';
 
@@ -101,11 +107,15 @@ export class PlanningCenterProvider extends ContentProvider {
 
   private readonly ONE_WEEK_MS = 604800000;
 
-  override requiresAuth(): boolean {
+  requiresAuth(): boolean {
     return true;
   }
 
-  override getCapabilities(): ProviderCapabilities {
+  getAuthTypes(): AuthType[] {
+    return ['oauth_pkce'];
+  }
+
+  getCapabilities(): ProviderCapabilities {
     return {
       browse: true,
       presentations: true,

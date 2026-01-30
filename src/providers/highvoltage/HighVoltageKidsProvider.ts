@@ -1,5 +1,5 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, ProviderCapabilities, Instructions, InstructionItem } from '../../interfaces';
-import { ContentProvider } from '../../ContentProvider';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, ProviderCapabilities, Instructions, InstructionItem, IProvider, AuthType } from '../../interfaces';
+import { createFolder, createFile } from '../../utils';
 import highVoltageData from './data.json';
 
 interface LessonFileJson {
@@ -36,7 +36,7 @@ interface HighVoltageData {
   collections: Collection[];
 }
 
-export class HighVoltageKidsProvider extends ContentProvider {
+export class HighVoltageKidsProvider implements IProvider {
   readonly id = 'highvoltagekids';
   readonly name = 'High Voltage Kids';
 
@@ -59,11 +59,15 @@ export class HighVoltageKidsProvider extends ContentProvider {
 
   private data: HighVoltageData = highVoltageData;
 
-  override requiresAuth(): boolean {
+  requiresAuth(): boolean {
     return false;
   }
 
-  override getCapabilities(): ProviderCapabilities {
+  getAuthTypes(): AuthType[] {
+    return ['none'];
+  }
+
+  getCapabilities(): ProviderCapabilities {
     return {
       browse: true,
       presentations: true,  // Has hierarchical structure: study -> lessons -> files
@@ -79,7 +83,7 @@ export class HighVoltageKidsProvider extends ContentProvider {
       // Return top-level collection folders (Elementary, Preschool)
       return this.data.collections
         .filter(collection => collection.folders.length > 0)
-        .map(collection => this.createFolder(
+        .map(collection => createFolder(
           this.slugify(collection.name),
           collection.name,
           undefined,
@@ -107,7 +111,7 @@ export class HighVoltageKidsProvider extends ContentProvider {
     if (level === 'lesson') {
       const lessonData = folder.providerData?.lessonData as LessonFolder;
       if (lessonData?.files) {
-        return lessonData.files.map(file => this.createFile(
+        return lessonData.files.map(file => createFile(
           file.id,
           file.title,
           file.url,
@@ -240,7 +244,7 @@ export class HighVoltageKidsProvider extends ContentProvider {
     return null;
   }
 
-  override async getPlaylist(folder: ContentFolder, _auth?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
+  async getPlaylist(folder: ContentFolder, _auth?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
     const level = folder.providerData?.level;
 
     // Handle leaf folders (e.g., from plan association) - look up lesson by ID
@@ -312,7 +316,7 @@ export class HighVoltageKidsProvider extends ContentProvider {
     return null;
   }
 
-  override async getExpandedInstructions(folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
+  async getExpandedInstructions(folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
     const level = folder.providerData?.level;
 
     // Handle leaf folders (e.g., from plan association) - look up lesson by ID
@@ -433,7 +437,7 @@ export class HighVoltageKidsProvider extends ContentProvider {
     const collection = this.data.collections.find(c => c.name === collectionName);
     if (!collection) return [];
 
-    return collection.folders.map(study => this.createFolder(
+    return collection.folders.map(study => createFolder(
       study.id,
       study.name,
       study.image || undefined,
@@ -446,7 +450,7 @@ export class HighVoltageKidsProvider extends ContentProvider {
   }
 
   private getLessonFolders(study: StudyFolder): ContentItem[] {
-    return study.lessons.map(lesson => this.createFolder(
+    return study.lessons.map(lesson => createFolder(
       lesson.id,
       lesson.name,
       lesson.image || undefined,

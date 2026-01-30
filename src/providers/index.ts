@@ -1,5 +1,4 @@
-import { ContentProvider } from '../ContentProvider';
-import { ProviderInfo, ProviderLogos } from '../interfaces';
+import { ProviderInfo, ProviderLogos, IProvider } from '../interfaces';
 import { APlayProvider } from './aPlay';
 import { B1ChurchProvider } from './b1Church';
 import { BibleProjectProvider } from './bibleProject';
@@ -17,7 +16,7 @@ export { PlanningCenterProvider } from './planningCenter';
 export { SignPresenterProvider } from './signPresenter';
 
 // Provider registry - singleton instances
-const providerRegistry: Map<string, ContentProvider> = new Map();
+const providerRegistry: Map<string, IProvider> = new Map();
 
 // Unimplemented providers (coming soon)
 interface UnimplementedProvider {
@@ -102,21 +101,21 @@ initializeProviders();
 /**
  * Get a provider by ID.
  */
-export function getProvider(providerId: string): ContentProvider | null {
+export function getProvider(providerId: string): IProvider | null {
   return providerRegistry.get(providerId) || null;
 }
 
 /**
  * Get all registered providers.
  */
-export function getAllProviders(): ContentProvider[] {
+export function getAllProviders(): IProvider[] {
   return Array.from(providerRegistry.values());
 }
 
 /**
  * Register a custom provider.
  */
-export function registerProvider(provider: ContentProvider): void {
+export function registerProvider(provider: IProvider): void {
   providerRegistry.set(provider.id, provider);
 }
 

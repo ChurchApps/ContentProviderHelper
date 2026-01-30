@@ -1,8 +1,13 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities, MediaLicenseResult } from '../../interfaces';
-import { ContentProvider } from '../../ContentProvider';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities, MediaLicenseResult, IProvider, AuthType } from '../../interfaces';
 import { detectMediaType } from '../../utils';
+import { ApiHelper } from '../../helpers';
 
-export class APlayProvider extends ContentProvider {
+export class APlayProvider implements IProvider {
+  private readonly apiHelper = new ApiHelper();
+
+  private async apiRequest<T>(path: string, auth?: ContentProviderAuthData | null): Promise<T | null> {
+    return this.apiHelper.apiRequest<T>(this.config, this.id, path, auth);
+  }
   readonly id = 'aplay';
   readonly name = 'APlay';
 
@@ -25,7 +30,15 @@ export class APlayProvider extends ContentProvider {
     }
   };
 
-  override getCapabilities(): ProviderCapabilities {
+  requiresAuth(): boolean {
+    return true;
+  }
+
+  getAuthTypes(): AuthType[] {
+    return ['oauth_pkce'];
+  }
+
+  getCapabilities(): ProviderCapabilities {
     return {
       browse: true,
       presentations: true,
@@ -226,7 +239,7 @@ export class APlayProvider extends ContentProvider {
     };
   }
 
-  override async checkMediaLicense(mediaId: string, auth?: ContentProviderAuthData | null): Promise<MediaLicenseResult | null> {
+  async checkMediaLicense(mediaId: string, auth?: ContentProviderAuthData | null): Promise<MediaLicenseResult | null> {
     if (!auth) return null;
 
     try {

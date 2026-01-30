@@ -1,8 +1,7 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, FeedVenueInterface, Instructions, InstructionItem, VenueActionsResponseInterface, ProviderCapabilities } from '../../interfaces';
-import { ContentProvider } from '../../ContentProvider';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, FeedVenueInterface, Instructions, InstructionItem, VenueActionsResponseInterface, ProviderCapabilities, IProvider, AuthType } from '../../interfaces';
 import { detectMediaType } from '../../utils';
 
-export class LessonsChurchProvider extends ContentProvider {
+export class LessonsChurchProvider implements IProvider {
   readonly id = 'lessonschurch';
   readonly name = 'Lessons.church';
 
@@ -30,11 +29,15 @@ export class LessonsChurchProvider extends ContentProvider {
     }
   };
 
-  override requiresAuth(): boolean {
+  requiresAuth(): boolean {
     return false;
   }
 
-  override getCapabilities(): ProviderCapabilities {
+  getAuthTypes(): AuthType[] {
+    return ['none'];
+  }
+
+  getCapabilities(): ProviderCapabilities {
     return {
       browse: true,
       presentations: true,
@@ -45,7 +48,7 @@ export class LessonsChurchProvider extends ContentProvider {
     };
   }
 
-  override async getPlaylist(folder: ContentFolder, _auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null> {
+  async getPlaylist(folder: ContentFolder, _auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null> {
     const venueId = folder.providerData?.venueId as string | undefined;
     if (!venueId) return null;
 
@@ -84,7 +87,7 @@ export class LessonsChurchProvider extends ContentProvider {
     return files;
   }
 
-  protected override async apiRequest<T>(path: string): Promise<T | null> {
+  private async apiRequest<T>(path: string): Promise<T | null> {
     try {
       const url = `${this.config.apiBase}${path}`;
       const response = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });

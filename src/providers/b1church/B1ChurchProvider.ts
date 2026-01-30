@@ -1,11 +1,16 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, Instructions, ProviderCapabilities, DeviceAuthorizationResponse, DeviceFlowPollResult } from '../../interfaces';
-import { ContentProvider } from '../../ContentProvider';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, Instructions, ProviderCapabilities, DeviceAuthorizationResponse, DeviceFlowPollResult, IProvider, AuthType } from '../../interfaces';
+import { ApiHelper } from '../../helpers';
 import { B1PlanItem } from './types';
 import * as auth from './auth';
 import { fetchMinistries, fetchPlanTypes, fetchPlans, fetchVenueFeed, API_BASE } from './api';
 import { ministryToFolder, planTypeToFolder, planToFolder, planItemToPresentation, planItemToInstruction, getFilesFromVenueFeed } from './converters';
 
-export class B1ChurchProvider extends ContentProvider {
+export class B1ChurchProvider implements IProvider {
+  private readonly apiHelper = new ApiHelper();
+
+  private async apiRequest<T>(path: string, authData?: ContentProviderAuthData | null): Promise<T | null> {
+    return this.apiHelper.apiRequest<T>(this.config, this.id, path, authData);
+  }
   readonly id = 'b1church';
   readonly name = 'B1.Church';
 
@@ -30,11 +35,15 @@ export class B1ChurchProvider extends ContentProvider {
 
   private appBase = 'https://admin.b1.church';
 
-  override requiresAuth(): boolean {
+  requiresAuth(): boolean {
     return true;
   }
 
-  override getCapabilities(): ProviderCapabilities {
+  getAuthTypes(): AuthType[] {
+    return ['oauth_pkce', 'device_flow'];
+  }
+
+  getCapabilities(): ProviderCapabilities {
     return {
       browse: true,
       presentations: true,
@@ -45,7 +54,7 @@ export class B1ChurchProvider extends ContentProvider {
     };
   }
 
-  override async buildAuthUrl(_codeVerifier: string, redirectUri: string, state?: string): Promise<{ url: string; challengeMethod: string }> {
+  async buildAuthUrl(_codeVerifier: string, redirectUri: string, state?: string): Promise<{ url: string; challengeMethod: string }> {
     return auth.buildB1AuthUrl(this.config, this.appBase, redirectUri, state);
   }
 
@@ -57,11 +66,11 @@ export class B1ChurchProvider extends ContentProvider {
     return auth.refreshTokenWithSecret(this.config, authData, clientSecret);
   }
 
-  override async initiateDeviceFlow(): Promise<DeviceAuthorizationResponse | null> {
+  async initiateDeviceFlow(): Promise<DeviceAuthorizationResponse | null> {
     return auth.initiateDeviceFlow(this.config);
   }
 
-  override async pollDeviceFlowToken(deviceCode: string): Promise<DeviceFlowPollResult> {
+  async pollDeviceFlowToken(deviceCode: string): Promise<DeviceFlowPollResult> {
     return auth.pollDeviceFlowToken(this.config, deviceCode);
   }
 

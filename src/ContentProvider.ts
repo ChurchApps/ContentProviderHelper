@@ -1,9 +1,14 @@
-import { ContentProviderAuthData, ContentProviderConfig, ContentItem, ContentFolder, ContentFile, DeviceAuthorizationResponse, DeviceFlowPollResult, ProviderLogos, AuthType, Plan, Instructions, ProviderCapabilities, MediaLicenseResult } from './interfaces';
+import { ContentProviderAuthData, ContentProviderConfig, ContentItem, ContentFolder, ContentFile, DeviceAuthorizationResponse, DeviceFlowPollResult, ProviderLogos, AuthType, Plan, Instructions, ProviderCapabilities, MediaLicenseResult, IContentProvider, IAuthProvider } from './interfaces';
 import { detectMediaType } from './utils';
 import * as Converters from './FormatConverters';
 import { OAuthHelper, TokenHelper, DeviceFlowHelper, ApiHelper } from './helpers';
 
-export abstract class ContentProvider {
+/**
+ * @deprecated Use IProvider interface instead. Providers should implement IProvider directly
+ * and use helper classes (OAuthHelper, TokenHelper, DeviceFlowHelper, ApiHelper) via composition.
+ * This class will be removed in a future version.
+ */
+export abstract class ContentProvider implements IContentProvider, IAuthProvider {
   abstract readonly id: string;
   abstract readonly name: string;
   abstract readonly logos: ProviderLogos;

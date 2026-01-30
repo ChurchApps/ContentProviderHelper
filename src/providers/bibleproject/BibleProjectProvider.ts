@@ -1,5 +1,5 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities } from '../../interfaces';
-import { ContentProvider } from '../../ContentProvider';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities, IProvider, AuthType } from '../../interfaces';
+import { createFolder, createFile } from '../../utils';
 import bibleProjectData from './data.json';
 
 interface BibleProjectVideo {
@@ -21,7 +21,7 @@ interface BibleProjectData {
   collections: BibleProjectCollection[];
 }
 
-export class BibleProjectProvider extends ContentProvider {
+export class BibleProjectProvider implements IProvider {
   readonly id = 'bibleproject';
   readonly name = 'The Bible Project';
 
@@ -44,11 +44,15 @@ export class BibleProjectProvider extends ContentProvider {
 
   private data: BibleProjectData = bibleProjectData;
 
-  override requiresAuth(): boolean {
+  requiresAuth(): boolean {
     return false;
   }
 
-  override getCapabilities(): ProviderCapabilities {
+  getAuthTypes(): AuthType[] {
+    return ['none'];
+  }
+
+  getCapabilities(): ProviderCapabilities {
     return {
       browse: true,
       presentations: true,  // Has collections with videos
@@ -64,7 +68,7 @@ export class BibleProjectProvider extends ContentProvider {
       // Return top-level collection folders
       return this.data.collections
         .filter(collection => collection.videos.length > 0)
-        .map(collection => this.createFolder(
+        .map(collection => createFolder(
           this.slugify(collection.name),
           collection.name,
           collection.image || undefined,
@@ -84,7 +88,7 @@ export class BibleProjectProvider extends ContentProvider {
       // Return the single video for this lesson
       const videoData = folder.providerData?.videoData as BibleProjectVideo;
       if (videoData) {
-        return [this.createFile(
+        return [createFile(
           videoData.id,
           videoData.title,
           videoData.videoUrl,
@@ -179,7 +183,7 @@ export class BibleProjectProvider extends ContentProvider {
     return null;
   }
 
-  override async getPlaylist(folder: ContentFolder, _auth?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
+  async getPlaylist(folder: ContentFolder, _auth?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
     const level = folder.providerData?.level;
 
     // For collection level, return all videos
@@ -222,7 +226,7 @@ export class BibleProjectProvider extends ContentProvider {
     const collection = this.data.collections.find(c => c.name === collectionName);
     if (!collection) return [];
 
-    return collection.videos.map(video => this.createFolder(
+    return collection.videos.map(video => createFolder(
       video.id,
       video.title,
       video.thumbnailUrl,
