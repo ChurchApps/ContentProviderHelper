@@ -1,0 +1,1 @@
+export { HighVoltageKidsProvider } from './HighVoltageKidsProvider';

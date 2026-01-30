@@ -33,13 +33,17 @@ export { FormatResolver, type FormatResolverOptions, type ResolvedFormatMeta } f
 // Base class (for extending with custom providers)
 export { ContentProvider } from './ContentProvider';
 
+// Helper classes (for standalone use or custom providers)
+export { OAuthHelper, TokenHelper, DeviceFlowHelper, ApiHelper } from './helpers';
+
 // Built-in providers
-export { APlayProvider } from './providers/APlayProvider';
-export { SignPresenterProvider } from './providers/SignPresenterProvider';
-export { LessonsChurchProvider } from './providers/LessonsChurchProvider';
-export { B1ChurchProvider } from './providers/b1church';
-export { PlanningCenterProvider } from './providers/PlanningCenterProvider';
-export { BibleProjectProvider } from './providers/bibleproject';
+export { APlayProvider } from './providers/aPlay';
+export { SignPresenterProvider } from './providers/signPresenter';
+export { LessonsChurchProvider } from './providers/lessonsChurch';
+export { B1ChurchProvider } from './providers/b1Church';
+export { PlanningCenterProvider } from './providers/planningCenter';
+export { BibleProjectProvider } from './providers/bibleProject';
+export { HighVoltageKidsProvider } from './providers/highVoltage';
 
 // Registry functions
 export {

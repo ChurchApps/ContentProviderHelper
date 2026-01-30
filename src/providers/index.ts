@@ -1,20 +1,20 @@
 import { ContentProvider } from '../ContentProvider';
 import { ProviderInfo, ProviderLogos } from '../interfaces';
-import { APlayProvider } from './APlayProvider';
-import { B1ChurchProvider } from './b1church';
-import { BibleProjectProvider } from './bibleproject';
-import { HighVoltageKidsProvider } from './HighVoltageKidsProvider';
-import { LessonsChurchProvider } from './LessonsChurchProvider';
-import { PlanningCenterProvider } from './PlanningCenterProvider';
-import { SignPresenterProvider } from './SignPresenterProvider';
+import { APlayProvider } from './aPlay';
+import { B1ChurchProvider } from './b1Church';
+import { BibleProjectProvider } from './bibleProject';
+import { HighVoltageKidsProvider } from './highVoltage';
+import { LessonsChurchProvider } from './lessonsChurch';
+import { PlanningCenterProvider } from './planningCenter';
+import { SignPresenterProvider } from './signPresenter';
 
-export { APlayProvider } from './APlayProvider';
-export { B1ChurchProvider } from './b1church';
-export { BibleProjectProvider } from './bibleproject';
-export { HighVoltageKidsProvider } from './HighVoltageKidsProvider';
-export { LessonsChurchProvider } from './LessonsChurchProvider';
-export { PlanningCenterProvider } from './PlanningCenterProvider';
-export { SignPresenterProvider } from './SignPresenterProvider';
+export { APlayProvider } from './aPlay';
+export { B1ChurchProvider } from './b1Church';
+export { BibleProjectProvider } from './bibleProject';
+export { HighVoltageKidsProvider } from './highVoltage';
+export { LessonsChurchProvider } from './lessonsChurch';
+export { PlanningCenterProvider } from './planningCenter';
+export { SignPresenterProvider } from './signPresenter';
 
 // Provider registry - singleton instances
 const providerRegistry: Map<string, ContentProvider> = new Map();

@@ -1,6 +1,6 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, FeedVenueInterface, Instructions, InstructionItem, VenueActionsResponseInterface, ProviderCapabilities } from '../interfaces';
-import { ContentProvider } from '../ContentProvider';
-import { detectMediaType } from '../utils';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, FeedVenueInterface, Instructions, InstructionItem, VenueActionsResponseInterface, ProviderCapabilities } from '../../interfaces';
+import { ContentProvider } from '../../ContentProvider';
+import { detectMediaType } from '../../utils';
 
 export class LessonsChurchProvider extends ContentProvider {
   readonly id = 'lessonschurch';

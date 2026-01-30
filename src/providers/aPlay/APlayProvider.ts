@@ -1,6 +1,6 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities, MediaLicenseResult } from '../interfaces';
-import { ContentProvider } from '../ContentProvider';
-import { detectMediaType } from '../utils';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities, MediaLicenseResult } from '../../interfaces';
+import { ContentProvider } from '../../ContentProvider';
+import { detectMediaType } from '../../utils';
 
 export class APlayProvider extends ContentProvider {
   readonly id = 'aplay';

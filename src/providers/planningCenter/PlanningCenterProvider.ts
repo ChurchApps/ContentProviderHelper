@@ -1,6 +1,6 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, ProviderCapabilities } from '../interfaces';
-import { ContentProvider } from '../ContentProvider';
-import { detectMediaType } from '../utils';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, ProviderCapabilities } from '../../interfaces';
+import { ContentProvider } from '../../ContentProvider';
+import { detectMediaType } from '../../utils';
 
 interface PCOServiceType {
   id: string;

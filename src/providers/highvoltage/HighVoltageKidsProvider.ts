@@ -1,6 +1,6 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, ProviderCapabilities, Instructions, InstructionItem } from '../interfaces';
-import { ContentProvider } from '../ContentProvider';
-import highVoltageData from './highvoltage/data.json';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, ProviderCapabilities, Instructions, InstructionItem } from '../../interfaces';
+import { ContentProvider } from '../../ContentProvider';
+import highVoltageData from './data.json';
 
 interface LessonFileJson {
   type: string;
