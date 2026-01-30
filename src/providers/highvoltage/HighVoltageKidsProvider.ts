@@ -1,40 +1,7 @@
 import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, ProviderCapabilities, Instructions, InstructionItem, IProvider, AuthType } from '../../interfaces';
 import { createFolder, createFile } from '../../utils';
 import highVoltageData from './data.json';
-
-interface LessonFileJson {
-  type: string;
-  id: string;
-  title: string;
-  mediaType: string;
-  url: string;
-}
-
-interface LessonFolder {
-  id: string;
-  name: string;
-  image: string;
-  files: LessonFileJson[];
-}
-
-interface StudyFolder {
-  id: string;
-  name: string;
-  image: string;
-  description: string;
-  url: string;
-  lessonCount: number;
-  lessons: LessonFolder[];
-}
-
-interface Collection {
-  name: string;
-  folders: StudyFolder[];
-}
-
-interface HighVoltageData {
-  collections: Collection[];
-}
+import { LessonFolder, StudyFolder, HighVoltageData } from './HighVoltageKidsInterfaces';
 
 export class HighVoltageKidsProvider implements IProvider {
   readonly id = 'highvoltagekids';

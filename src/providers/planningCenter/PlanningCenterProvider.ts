@@ -1,74 +1,7 @@
 import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, ProviderCapabilities, IProvider, AuthType } from '../../interfaces';
 import { detectMediaType } from '../../utils';
 import { ApiHelper } from '../../helpers';
-
-interface PCOServiceType {
-  id: string;
-  type: string;
-  attributes: {
-    name: string;
-  };
-}
-
-interface PCOPlan {
-  id: string;
-  type: string;
-  attributes: {
-    title?: string;
-    sort_date: string;
-    created_at: string;
-    items_count: number;
-  };
-}
-
-interface PCOPlanItem {
-  id: string;
-  type: string;
-  attributes: {
-    item_type: string;
-    title?: string;
-    description?: string;
-    length?: number;
-  };
-  relationships?: {
-    song?: { data?: { id: string } };
-    arrangement?: { data?: { id: string } };
-  };
-}
-
-interface PCOSong {
-  id: string;
-  attributes: {
-    title?: string;
-    author?: string;
-    copyright?: string;
-    ccli_number?: string;
-  };
-}
-
-interface PCOArrangement {
-  id: string;
-  attributes: {
-    name?: string;
-    chord_chart_key?: string;
-    bpm?: number;
-    sequence?: string[];
-  };
-}
-
-interface PCOSection {
-  label: string;
-  lyrics: string;
-}
-
-interface PCOAttachment {
-  id: string;
-  attributes: {
-    filename: string;
-    content_type?: string;
-    url?: string;
-  };
-}
+import { PCOServiceType, PCOPlan, PCOPlanItem, PCOSong, PCOArrangement, PCOSection, PCOAttachment } from './PlanningCenterInterfaces';
 
 export class PlanningCenterProvider implements IProvider {
   private readonly apiHelper = new ApiHelper();

@@ -1,25 +1,7 @@
 import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities, IProvider, AuthType } from '../../interfaces';
 import { createFolder, createFile } from '../../utils';
 import bibleProjectData from './data.json';
-
-interface BibleProjectVideo {
-  id: string;
-  title: string;
-  filename: string;
-  muxPlaybackId: string;
-  videoUrl: string;
-  thumbnailUrl?: string;
-}
-
-interface BibleProjectCollection {
-  name: string;
-  image: string | null;
-  videos: BibleProjectVideo[];
-}
-
-interface BibleProjectData {
-  collections: BibleProjectCollection[];
-}
+import { BibleProjectVideo, BibleProjectData } from './BibleProjectInterfaces';
 
 export class BibleProjectProvider implements IProvider {
   readonly id = 'bibleproject';
