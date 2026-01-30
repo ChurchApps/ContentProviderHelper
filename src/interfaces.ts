@@ -57,6 +57,7 @@ export interface ContentFolder {
   id: string;
   title: string;
   image?: string;
+  isLeaf?: boolean;
   providerData?: Record<string, unknown>;
 }
 

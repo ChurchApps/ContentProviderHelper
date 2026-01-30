@@ -282,8 +282,8 @@ export abstract class ContentProvider {
     }
   }
 
-  protected createFolder(id: string, title: string, image?: string, providerData?: Record<string, unknown>): ContentFolder {
-    return { type: 'folder', id, title, image, providerData };
+  protected createFolder(id: string, title: string, image?: string, providerData?: Record<string, unknown>, isLeaf?: boolean): ContentFolder {
+    return { type: 'folder', id, title, image, isLeaf, providerData };
   }
 
   protected createFile(id: string, title: string, url: string, options?: {

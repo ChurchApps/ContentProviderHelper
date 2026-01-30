@@ -229,9 +229,9 @@ export class BibleProjectProvider extends ContentProvider {
       {
         level: 'lesson',
         collectionName,
-        videoData: video,
-        isLeaf: true  // Mark as leaf so venue choice modal appears
-      }
+        videoData: video
+      },
+      true  // isLeaf: Mark as leaf so venue choice modal appears
     ));
   }
 

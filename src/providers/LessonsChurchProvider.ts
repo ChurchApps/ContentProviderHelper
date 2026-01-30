@@ -96,6 +96,7 @@ export class LessonsChurchProvider extends ContentProvider {
   }
 
   async browse(folder?: ContentFolder | null, _auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentItem[]> {
+    console.log('[LessonsChurchProvider.browse] folder:', folder ? { id: folder.id, title: folder.title, level: folder.providerData?.level, isLeaf: folder.isLeaf } : null);
     if (!folder) {
       // Return top-level folders: Lessons and Add-Ons
       return [
@@ -189,13 +190,16 @@ export class LessonsChurchProvider extends ContentProvider {
     if (!response) return [];
 
     const venues = Array.isArray(response) ? response : [];
-    return venues.map((v) => ({
+    const result = venues.map((v) => ({
       type: 'folder' as const,
       id: v.id as string,
       title: v.name as string,
       image: folder.providerData?.lessonImage as string | undefined,
+      isLeaf: true,
       providerData: { level: 'playlist', venueId: v.id }
     }));
+    console.log('[LessonsChurchProvider.getVenues] returning:', result.map(r => ({ id: r.id, title: r.title, isLeaf: r.isLeaf })));
+    return result;
   }
 
   private async getPlaylistFiles(folder: ContentFolder, resolution?: number): Promise<ContentItem[]> {

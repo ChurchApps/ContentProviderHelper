@@ -350,9 +350,9 @@ export class HighVoltageKidsProvider extends ContentProvider {
         level: 'lesson',
         studyId: study.id,
         studyName: study.name,
-        lessonData: lesson,
-        isLeaf: true  // Mark as leaf so venue choice modal appears
-      }
+        lessonData: lesson
+      },
+      true  // isLeaf: Mark as leaf so venue choice modal appears
     ));
   }
 

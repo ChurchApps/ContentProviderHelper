@@ -36,8 +36,8 @@ export function planToFolder(plan: B1Plan): ContentItem {
     type: 'folder' as const,
     id: plan.id,
     title: plan.name,
+    isLeaf: true,
     providerData: {
-      isLeaf: true,
       level: 'plan',
       planId: plan.id,
       planTypeId: plan.planTypeId,
