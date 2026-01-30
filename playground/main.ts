@@ -1,4 +1,4 @@
-import { getAvailableProviders, getProvider, ContentProvider, ContentFolder, ContentItem, ContentProviderAuthData, DeviceAuthorizationResponse, isContentFolder, isContentFile, Plan, PlanPresentation, Instructions, InstructionItem, B1ChurchProvider, PlanningCenterProvider, FormatResolver, ProviderCapabilities, ContentFile } from "../src";
+import { getAvailableProviders, getProvider, IProvider, ContentFolder, ContentItem, ContentProviderAuthData, DeviceAuthorizationResponse, isContentFolder, isContentFile, Plan, PlanPresentation, Instructions, InstructionItem, B1ChurchProvider, PlanningCenterProvider, FormatResolver, ProviderCapabilities, ContentFile, OAuthHelper, DeviceFlowHelper } from "../src";
 import type { ResolvedFormatMeta } from "../src";
 
 const OAUTH_REDIRECT_URI = `${window.location.origin}${window.location.pathname}`;
@@ -25,9 +25,13 @@ function configureProviders() {
 
 configureProviders();
 
+// Auth helpers (used instead of methods on provider)
+const oauthHelper = new OAuthHelper();
+const deviceFlowHelper = new DeviceFlowHelper();
+
 interface AppState {
   currentView: 'providers' | 'browser' | 'plan' | 'instructions';
-  currentProvider: ContentProvider | null;
+  currentProvider: IProvider | null;
   currentAuth: ContentProviderAuthData | null;
   folderStack: ContentFolder[];
   connectedProviders: Map<string, ContentProviderAuthData | null>;
@@ -263,10 +267,10 @@ async function handleProviderClick(providerId: string) {
     return;
   }
 
-  if (provider.requiresAuth()) {
-    if (provider.supportsDeviceFlow()) {
+  if (provider.requiresAuth) {
+    if (deviceFlowHelper.supportsDeviceFlow(provider.config)) {
       await startDeviceFlow();
-    } else if (provider.getAuthTypes().includes('form_login')) {
+    } else if (provider.authTypes.includes('form_login')) {
       showFormLoginModal();
     } else {
       showOAuthModal();
@@ -345,10 +349,10 @@ async function startOAuthRedirect() {
   if (!state.currentProvider) return;
 
   try {
-    const codeVerifier = state.currentProvider.generateCodeVerifier();
+    const codeVerifier = oauthHelper.generateCodeVerifier();
     sessionStorage.setItem(STORAGE_KEY_VERIFIER, codeVerifier);
     sessionStorage.setItem(STORAGE_KEY_PROVIDER, state.currentProvider.id);
-    const { url } = await state.currentProvider.buildAuthUrl(codeVerifier, OAUTH_REDIRECT_URI);
+    const { url } = await oauthHelper.buildAuthUrl(state.currentProvider.config, codeVerifier, OAUTH_REDIRECT_URI);
     window.location.href = url;
   } catch (error) {
     showModal('error');
@@ -400,7 +404,7 @@ async function handleOAuthCallback() {
       const b1Provider = provider as B1ChurchProvider;
       authData = await b1Provider.exchangeCodeForTokensWithSecret(code, OAUTH_REDIRECT_URI, B1_CLIENT_SECRET);
     } else {
-      authData = await provider.exchangeCodeForTokens(code, codeVerifier, OAUTH_REDIRECT_URI);
+      authData = await oauthHelper.exchangeCodeForTokens(provider.config, provider.id, code, codeVerifier, OAUTH_REDIRECT_URI);
     }
 
     if (!authData) {
@@ -432,7 +436,7 @@ async function startDeviceFlow() {
   modalTitle.textContent = `Connect to ${state.currentProvider.name}`;
 
   try {
-    const deviceAuth = await state.currentProvider.initiateDeviceFlow();
+    const deviceAuth = await deviceFlowHelper.initiateDeviceFlow(state.currentProvider.config);
 
     if (!deviceAuth) {
       showModal('error');
@@ -479,7 +483,7 @@ function startPolling(deviceAuth: DeviceAuthorizationResponse) {
     }
 
     try {
-      const result = await state.currentProvider.pollDeviceFlowToken(state.deviceFlowData.device_code);
+      const result = await deviceFlowHelper.pollDeviceFlowToken(state.currentProvider.config, state.deviceFlowData.device_code);
 
       if (result === null) {
         state.deviceFlowActive = false;
@@ -493,7 +497,7 @@ function startPolling(deviceAuth: DeviceAuthorizationResponse) {
           state.slowDownCount++;
         }
 
-        const delay = state.currentProvider.calculatePollDelay(baseInterval, state.slowDownCount);
+        const delay = deviceFlowHelper.calculatePollDelay(baseInterval, state.slowDownCount);
         state.pollingInterval = window.setTimeout(poll, delay);
         return;
       }
@@ -512,12 +516,12 @@ function startPolling(deviceAuth: DeviceAuthorizationResponse) {
 
     } catch (error) {
       console.error('Polling error:', error);
-      const delay = state.currentProvider!.calculatePollDelay(baseInterval, state.slowDownCount);
+      const delay = deviceFlowHelper.calculatePollDelay(baseInterval, state.slowDownCount);
       state.pollingInterval = window.setTimeout(poll, delay);
     }
   };
 
-  const initialDelay = state.currentProvider.calculatePollDelay(baseInterval, 0);
+  const initialDelay = deviceFlowHelper.calculatePollDelay(baseInterval, 0);
   state.pollingInterval = window.setTimeout(poll, initialDelay);
 }
 
@@ -580,7 +584,7 @@ function retryAuth() {
     return;
   }
 
-  if (state.currentProvider.supportsDeviceFlow()) {
+  if (deviceFlowHelper.supportsDeviceFlow(state.currentProvider.config)) {
     startDeviceFlow();
   } else {
     showOAuthModal();
@@ -757,7 +761,7 @@ function showVenueChoiceModal(folder: ContentFolder) {
   state.currentVenueFolder = folder;
 
   // Get provider capabilities to determine native vs derived
-  const caps = state.currentProvider?.getCapabilities();
+  const caps = state.currentProvider?.capabilities;
 
   // Helper to create format button with native/derived indicator
   const formatBtn = (id: string, icon: string, name: string, desc: string, isNative: boolean, sourceFormat?: string) => {

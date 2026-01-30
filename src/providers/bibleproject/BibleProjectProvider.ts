@@ -44,24 +44,16 @@ export class BibleProjectProvider implements IProvider {
 
   private data: BibleProjectData = bibleProjectData;
 
-  requiresAuth(): boolean {
-    return false;
-  }
-
-  getAuthTypes(): AuthType[] {
-    return ['none'];
-  }
-
-  getCapabilities(): ProviderCapabilities {
-    return {
-      browse: true,
-      presentations: true,  // Has collections with videos
-      playlist: true,       // Can return flat list of videos
-      instructions: false,
-      expandedInstructions: false,
-      mediaLicensing: false
-    };
-  }
+  readonly requiresAuth = false;
+  readonly authTypes: AuthType[] = ['none'];
+  readonly capabilities: ProviderCapabilities = {
+    browse: true,
+    presentations: true,
+    playlist: true,
+    instructions: false,
+    expandedInstructions: false,
+    mediaLicensing: false
+  };
 
   async browse(folder?: ContentFolder | null, _auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     if (!folder) {

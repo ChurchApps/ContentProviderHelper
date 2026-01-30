@@ -29,24 +29,16 @@ export class LessonsChurchProvider implements IProvider {
     }
   };
 
-  requiresAuth(): boolean {
-    return false;
-  }
-
-  getAuthTypes(): AuthType[] {
-    return ['none'];
-  }
-
-  getCapabilities(): ProviderCapabilities {
-    return {
-      browse: true,
-      presentations: true,
-      playlist: true,
-      instructions: true,
-      expandedInstructions: true,
-      mediaLicensing: false
-    };
-  }
+  readonly requiresAuth = false;
+  readonly authTypes: AuthType[] = ['none'];
+  readonly capabilities: ProviderCapabilities = {
+    browse: true,
+    presentations: true,
+    playlist: true,
+    instructions: true,
+    expandedInstructions: true,
+    mediaLicensing: false
+  };
 
   async getPlaylist(folder: ContentFolder, _auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null> {
     const venueId = folder.providerData?.venueId as string | undefined;

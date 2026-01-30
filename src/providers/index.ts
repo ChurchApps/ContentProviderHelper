@@ -138,9 +138,9 @@ export function getAvailableProviders(): ProviderInfo[] {
     name: provider.name,
     logos: provider.logos,
     implemented: true,
-    requiresAuth: provider.requiresAuth(),
-    authTypes: provider.getAuthTypes(),
-    capabilities: provider.getCapabilities(),
+    requiresAuth: provider.requiresAuth,
+    authTypes: provider.authTypes,
+    capabilities: provider.capabilities,
   }));
 
   // Coming soon providers

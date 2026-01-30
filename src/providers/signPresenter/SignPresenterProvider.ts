@@ -31,24 +31,16 @@ export class SignPresenterProvider implements IProvider {
     }
   };
 
-  requiresAuth(): boolean {
-    return true;
-  }
-
-  getAuthTypes(): AuthType[] {
-    return ['oauth_pkce', 'device_flow'];
-  }
-
-  getCapabilities(): ProviderCapabilities {
-    return {
-      browse: true,
-      presentations: true,
-      playlist: false,
-      instructions: false,
-      expandedInstructions: false,
-      mediaLicensing: false
-    };
-  }
+  readonly requiresAuth = true;
+  readonly authTypes: AuthType[] = ['oauth_pkce', 'device_flow'];
+  readonly capabilities: ProviderCapabilities = {
+    browse: true,
+    presentations: true,
+    playlist: false,
+    instructions: false,
+    expandedInstructions: false,
+    mediaLicensing: false
+  };
 
   async browse(folder?: ContentFolder | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     if (!folder) {

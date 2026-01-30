@@ -207,14 +207,14 @@ export interface IProvider {
   readonly logos: ProviderLogos;
   readonly config: ContentProviderConfig;
 
+  // Metadata (required)
+  readonly requiresAuth: boolean;
+  readonly capabilities: ProviderCapabilities;
+  readonly authTypes: AuthType[];
+
   // Core methods (required)
   browse(folder?: ContentFolder | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]>;
   getPresentations(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Plan | null>;
-
-  // Metadata (required)
-  requiresAuth(): boolean;
-  getCapabilities(): ProviderCapabilities;
-  getAuthTypes(): AuthType[];
 
   // Optional methods - providers can implement these if they have custom logic
   getPlaylist?(folder: ContentFolder, auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null>;

@@ -30,24 +30,16 @@ export class APlayProvider implements IProvider {
     }
   };
 
-  requiresAuth(): boolean {
-    return true;
-  }
-
-  getAuthTypes(): AuthType[] {
-    return ['oauth_pkce'];
-  }
-
-  getCapabilities(): ProviderCapabilities {
-    return {
-      browse: true,
-      presentations: true,
-      playlist: false,
-      instructions: false,
-      expandedInstructions: false,
-      mediaLicensing: true
-    };
-  }
+  readonly requiresAuth = true;
+  readonly authTypes: AuthType[] = ['oauth_pkce'];
+  readonly capabilities: ProviderCapabilities = {
+    browse: true,
+    presentations: true,
+    playlist: false,
+    instructions: false,
+    expandedInstructions: false,
+    mediaLicensing: true
+  };
 
   async browse(folder?: ContentFolder | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     console.log(`APlay browse called with folder:`, folder ? { id: folder.id, level: folder.providerData?.level } : 'null');

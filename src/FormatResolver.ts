@@ -1,5 +1,4 @@
-import type { ContentProvider } from './ContentProvider';
-import type { ContentFile, ContentFolder, ContentProviderAuthData, Plan, Instructions } from './interfaces';
+import type { IProvider, ContentFile, ContentFolder, ContentProviderAuthData, Plan, Instructions } from './interfaces';
 import * as Converters from './FormatConverters';
 
 export interface FormatResolverOptions {
@@ -13,17 +12,17 @@ export interface ResolvedFormatMeta {
 }
 
 export class FormatResolver {
-  private provider: ContentProvider;
+  private provider: IProvider;
   private options: Required<FormatResolverOptions>;
 
-  constructor(provider: ContentProvider, options: FormatResolverOptions = {}) {
+  constructor(provider: IProvider, options: FormatResolverOptions = {}) {
     this.provider = provider;
     this.options = {
       allowLossy: options.allowLossy ?? true
     };
   }
 
-  getProvider(): ContentProvider {
+  getProvider(): IProvider {
     return this.provider;
   }
 
@@ -31,9 +30,9 @@ export class FormatResolver {
     folder: ContentFolder,
     auth?: ContentProviderAuthData | null
   ): Promise<ContentFile[] | null> {
-    const caps = this.provider.getCapabilities();
+    const caps = this.provider.capabilities;
 
-    if (caps.playlist) {
+    if (caps.playlist && this.provider.getPlaylist) {
       const result = await this.provider.getPlaylist(folder, auth);
       if (result && result.length > 0) return result;
     }
@@ -43,12 +42,12 @@ export class FormatResolver {
       if (plan) return Converters.presentationsToPlaylist(plan);
     }
 
-    if (caps.expandedInstructions) {
+    if (caps.expandedInstructions && this.provider.getExpandedInstructions) {
       const expanded = await this.provider.getExpandedInstructions(folder, auth);
       if (expanded) return Converters.instructionsToPlaylist(expanded);
     }
 
-    if (this.options.allowLossy && caps.instructions) {
+    if (this.options.allowLossy && caps.instructions && this.provider.getInstructions) {
       const instructions = await this.provider.getInstructions(folder, auth);
       if (instructions) return Converters.instructionsToPlaylist(instructions);
     }
@@ -60,9 +59,9 @@ export class FormatResolver {
     folder: ContentFolder,
     auth?: ContentProviderAuthData | null
   ): Promise<{ data: ContentFile[] | null; meta: ResolvedFormatMeta }> {
-    const caps = this.provider.getCapabilities();
+    const caps = this.provider.capabilities;
 
-    if (caps.playlist) {
+    if (caps.playlist && this.provider.getPlaylist) {
       const result = await this.provider.getPlaylist(folder, auth);
       if (result && result.length > 0) {
         return { data: result, meta: { isNative: true, isLossy: false } };
@@ -79,7 +78,7 @@ export class FormatResolver {
       }
     }
 
-    if (caps.expandedInstructions) {
+    if (caps.expandedInstructions && this.provider.getExpandedInstructions) {
       const expanded = await this.provider.getExpandedInstructions(folder, auth);
       if (expanded) {
         return {
@@ -89,7 +88,7 @@ export class FormatResolver {
       }
     }
 
-    if (this.options.allowLossy && caps.instructions) {
+    if (this.options.allowLossy && caps.instructions && this.provider.getInstructions) {
       const instructions = await this.provider.getInstructions(folder, auth);
       if (instructions) {
         return {
@@ -106,24 +105,24 @@ export class FormatResolver {
     folder: ContentFolder,
     auth?: ContentProviderAuthData | null
   ): Promise<Plan | null> {
-    const caps = this.provider.getCapabilities();
+    const caps = this.provider.capabilities;
 
     if (caps.presentations) {
       const result = await this.provider.getPresentations(folder, auth);
       if (result) return result;
     }
 
-    if (caps.expandedInstructions) {
+    if (caps.expandedInstructions && this.provider.getExpandedInstructions) {
       const expanded = await this.provider.getExpandedInstructions(folder, auth);
       if (expanded) return Converters.instructionsToPresentations(expanded, folder.id);
     }
 
-    if (caps.instructions) {
+    if (caps.instructions && this.provider.getInstructions) {
       const instructions = await this.provider.getInstructions(folder, auth);
       if (instructions) return Converters.instructionsToPresentations(instructions, folder.id);
     }
 
-    if (this.options.allowLossy && caps.playlist) {
+    if (this.options.allowLossy && caps.playlist && this.provider.getPlaylist) {
       const playlist = await this.provider.getPlaylist(folder, auth);
       if (playlist && playlist.length > 0) {
         return Converters.playlistToPresentations(playlist, folder.title);
@@ -137,7 +136,7 @@ export class FormatResolver {
     folder: ContentFolder,
     auth?: ContentProviderAuthData | null
   ): Promise<{ data: Plan | null; meta: ResolvedFormatMeta }> {
-    const caps = this.provider.getCapabilities();
+    const caps = this.provider.capabilities;
 
     if (caps.presentations) {
       const result = await this.provider.getPresentations(folder, auth);
@@ -146,7 +145,7 @@ export class FormatResolver {
       }
     }
 
-    if (caps.expandedInstructions) {
+    if (caps.expandedInstructions && this.provider.getExpandedInstructions) {
       const expanded = await this.provider.getExpandedInstructions(folder, auth);
       if (expanded) {
         return {
@@ -156,7 +155,7 @@ export class FormatResolver {
       }
     }
 
-    if (caps.instructions) {
+    if (caps.instructions && this.provider.getInstructions) {
       const instructions = await this.provider.getInstructions(folder, auth);
       if (instructions) {
         return {
@@ -166,7 +165,7 @@ export class FormatResolver {
       }
     }
 
-    if (this.options.allowLossy && caps.playlist) {
+    if (this.options.allowLossy && caps.playlist && this.provider.getPlaylist) {
       const playlist = await this.provider.getPlaylist(folder, auth);
       if (playlist && playlist.length > 0) {
         return {
@@ -183,14 +182,14 @@ export class FormatResolver {
     folder: ContentFolder,
     auth?: ContentProviderAuthData | null
   ): Promise<Instructions | null> {
-    const caps = this.provider.getCapabilities();
+    const caps = this.provider.capabilities;
 
-    if (caps.instructions) {
+    if (caps.instructions && this.provider.getInstructions) {
       const result = await this.provider.getInstructions(folder, auth);
       if (result) return result;
     }
 
-    if (caps.expandedInstructions) {
+    if (caps.expandedInstructions && this.provider.getExpandedInstructions) {
       const expanded = await this.provider.getExpandedInstructions(folder, auth);
       if (expanded) return Converters.collapseInstructions(expanded);
     }
@@ -200,7 +199,7 @@ export class FormatResolver {
       if (plan) return Converters.presentationsToInstructions(plan);
     }
 
-    if (this.options.allowLossy && caps.playlist) {
+    if (this.options.allowLossy && caps.playlist && this.provider.getPlaylist) {
       const playlist = await this.provider.getPlaylist(folder, auth);
       if (playlist && playlist.length > 0) {
         return Converters.playlistToInstructions(playlist, folder.title);
@@ -214,16 +213,16 @@ export class FormatResolver {
     folder: ContentFolder,
     auth?: ContentProviderAuthData | null
   ): Promise<{ data: Instructions | null; meta: ResolvedFormatMeta }> {
-    const caps = this.provider.getCapabilities();
+    const caps = this.provider.capabilities;
 
-    if (caps.instructions) {
+    if (caps.instructions && this.provider.getInstructions) {
       const result = await this.provider.getInstructions(folder, auth);
       if (result) {
         return { data: result, meta: { isNative: true, isLossy: false } };
       }
     }
 
-    if (caps.expandedInstructions) {
+    if (caps.expandedInstructions && this.provider.getExpandedInstructions) {
       const expanded = await this.provider.getExpandedInstructions(folder, auth);
       if (expanded) {
         return {
@@ -243,7 +242,7 @@ export class FormatResolver {
       }
     }
 
-    if (this.options.allowLossy && caps.playlist) {
+    if (this.options.allowLossy && caps.playlist && this.provider.getPlaylist) {
       const playlist = await this.provider.getPlaylist(folder, auth);
       if (playlist && playlist.length > 0) {
         return {
@@ -260,9 +259,9 @@ export class FormatResolver {
     folder: ContentFolder,
     auth?: ContentProviderAuthData | null
   ): Promise<Instructions | null> {
-    const caps = this.provider.getCapabilities();
+    const caps = this.provider.capabilities;
 
-    if (caps.expandedInstructions) {
+    if (caps.expandedInstructions && this.provider.getExpandedInstructions) {
       const result = await this.provider.getExpandedInstructions(folder, auth);
       if (result) return result;
     }
@@ -272,12 +271,12 @@ export class FormatResolver {
       if (plan) return Converters.presentationsToExpandedInstructions(plan);
     }
 
-    if (caps.instructions) {
+    if (caps.instructions && this.provider.getInstructions) {
       const instructions = await this.provider.getInstructions(folder, auth);
       if (instructions) return instructions;
     }
 
-    if (this.options.allowLossy && caps.playlist) {
+    if (this.options.allowLossy && caps.playlist && this.provider.getPlaylist) {
       const playlist = await this.provider.getPlaylist(folder, auth);
       if (playlist && playlist.length > 0) {
         return Converters.playlistToInstructions(playlist, folder.title);
@@ -291,9 +290,9 @@ export class FormatResolver {
     folder: ContentFolder,
     auth?: ContentProviderAuthData | null
   ): Promise<{ data: Instructions | null; meta: ResolvedFormatMeta }> {
-    const caps = this.provider.getCapabilities();
+    const caps = this.provider.capabilities;
 
-    if (caps.expandedInstructions) {
+    if (caps.expandedInstructions && this.provider.getExpandedInstructions) {
       const result = await this.provider.getExpandedInstructions(folder, auth);
       if (result) {
         return { data: result, meta: { isNative: true, isLossy: false } };
@@ -310,7 +309,7 @@ export class FormatResolver {
       }
     }
 
-    if (caps.instructions) {
+    if (caps.instructions && this.provider.getInstructions) {
       const instructions = await this.provider.getInstructions(folder, auth);
       if (instructions) {
         return {
@@ -320,7 +319,7 @@ export class FormatResolver {
       }
     }
 
-    if (this.options.allowLossy && caps.playlist) {
+    if (this.options.allowLossy && caps.playlist && this.provider.getPlaylist) {
       const playlist = await this.provider.getPlaylist(folder, auth);
       if (playlist && playlist.length > 0) {
         return {

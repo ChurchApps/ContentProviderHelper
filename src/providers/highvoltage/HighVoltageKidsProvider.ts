@@ -59,24 +59,16 @@ export class HighVoltageKidsProvider implements IProvider {
 
   private data: HighVoltageData = highVoltageData;
 
-  requiresAuth(): boolean {
-    return false;
-  }
-
-  getAuthTypes(): AuthType[] {
-    return ['none'];
-  }
-
-  getCapabilities(): ProviderCapabilities {
-    return {
-      browse: true,
-      presentations: true,  // Has hierarchical structure: study -> lessons -> files
-      playlist: true,       // Can return flat list of files for a lesson
-      instructions: false,
-      expandedInstructions: true,
-      mediaLicensing: false
-    };
-  }
+  readonly requiresAuth = false;
+  readonly authTypes: AuthType[] = ['none'];
+  readonly capabilities: ProviderCapabilities = {
+    browse: true,
+    presentations: true,
+    playlist: true,
+    instructions: false,
+    expandedInstructions: true,
+    mediaLicensing: false
+  };
 
   async browse(folder?: ContentFolder | null, _auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     if (!folder) {
