@@ -64,14 +64,7 @@ export abstract class ContentProvider implements IContentProvider, IAuthProvider
   }
 
   getCapabilities(): ProviderCapabilities {
-    return {
-      browse: true,
-      presentations: false,
-      playlist: false,
-      instructions: false,
-      expandedInstructions: false,
-      mediaLicensing: false
-    };
+    return { browse: true, presentations: false, playlist: false, instructions: false, expandedInstructions: false, mediaLicensing: false };
   }
 
   checkMediaLicense(_mediaId: string, _auth?: ContentProviderAuthData | null): Promise<MediaLicenseResult | null> {
@@ -146,21 +139,7 @@ export abstract class ContentProvider implements IContentProvider, IAuthProvider
     return { type: 'folder', id, title, image, isLeaf, providerData };
   }
 
-  protected createFile(id: string, title: string, url: string, options?: {
-    mediaType?: 'video' | 'image';
-    image?: string;
-    muxPlaybackId?: string;
-    providerData?: Record<string, unknown>;
-  }): ContentFile {
-    return {
-      type: 'file',
-      id,
-      title,
-      url,
-      mediaType: options?.mediaType ?? detectMediaType(url),
-      image: options?.image,
-      muxPlaybackId: options?.muxPlaybackId,
-      providerData: options?.providerData
-    };
+  protected createFile(id: string, title: string, url: string, options?: { mediaType?: 'video' | 'image'; image?: string; muxPlaybackId?: string; providerData?: Record<string, unknown>; }): ContentFile {
+    return { type: 'file', id, title, url, mediaType: options?.mediaType ?? detectMediaType(url), image: options?.image, muxPlaybackId: options?.muxPlaybackId, providerData: options?.providerData };
   }
 }

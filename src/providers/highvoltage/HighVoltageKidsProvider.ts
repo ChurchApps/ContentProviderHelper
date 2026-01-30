@@ -42,12 +42,7 @@ export class HighVoltageKidsProvider implements IProvider {
       // Return top-level collection folders (Elementary, Preschool)
       return this.data.collections
         .filter(collection => collection.folders.length > 0)
-        .map(collection => createFolder(
-          this.slugify(collection.name),
-          collection.name,
-          undefined,
-          { level: 'collection', collectionName: collection.name }
-        ));
+        .map(collection => createFolder(this.slugify(collection.name), collection.name, undefined, { level: 'collection', collectionName: collection.name }));
     }
 
     const level = folder.providerData?.level;
@@ -70,12 +65,7 @@ export class HighVoltageKidsProvider implements IProvider {
     if (level === 'lesson') {
       const lessonData = folder.providerData?.lessonData as LessonFolder;
       if (lessonData?.files) {
-        return lessonData.files.map(file => createFile(
-          file.id,
-          file.title,
-          file.url,
-          { mediaType: file.mediaType as 'video' | 'image' }
-        ));
+        return lessonData.files.map(file => createFile(file.id, file.title, file.url, { mediaType: file.mediaType as 'video' | 'image' }));
       }
       return [];
     }
@@ -93,33 +83,9 @@ export class HighVoltageKidsProvider implements IProvider {
       if (!found) return null;
 
       const lessonData = found.lesson;
-      const files: ContentFile[] = lessonData.files.map(file => ({
-        type: 'file' as const,
-        id: file.id,
-        title: file.title,
-        mediaType: file.mediaType as 'video' | 'image',
-        url: file.url,
-        image: lessonData.image
-      }));
-
-      const presentation: PlanPresentation = {
-        id: lessonData.id,
-        name: lessonData.name,
-        actionType: 'play',
-        files
-      };
-
-      return {
-        id: lessonData.id,
-        name: lessonData.name,
-        image: lessonData.image,
-        sections: [{
-          id: 'main',
-          name: 'Content',
-          presentations: [presentation]
-        }],
-        allFiles: files
-      };
+      const files: ContentFile[] = lessonData.files.map(file => ({ type: 'file' as const, id: file.id, title: file.title, mediaType: file.mediaType as 'video' | 'image', url: file.url, image: lessonData.image }));
+      const presentation: PlanPresentation = { id: lessonData.id, name: lessonData.name, actionType: 'play', files };
+      return { id: lessonData.id, name: lessonData.name, image: lessonData.image, sections: [{ id: 'main', name: 'Content', presentations: [presentation] }], allFiles: files };
     }
 
     // For study level, create a plan with lessons as sections
@@ -130,40 +96,15 @@ export class HighVoltageKidsProvider implements IProvider {
       const allFiles: ContentFile[] = [];
       const sections: PlanSection[] = studyData.lessons.map(lesson => {
         const files: ContentFile[] = lesson.files.map(file => {
-          const contentFile: ContentFile = {
-            type: 'file',
-            id: file.id,
-            title: file.title,
-            mediaType: file.mediaType as 'video' | 'image',
-            url: file.url,
-            image: lesson.image
-          };
+          const contentFile: ContentFile = { type: 'file', id: file.id, title: file.title, mediaType: file.mediaType as 'video' | 'image', url: file.url, image: lesson.image };
           allFiles.push(contentFile);
           return contentFile;
         });
-
-        const presentation: PlanPresentation = {
-          id: lesson.id,
-          name: lesson.name,
-          actionType: 'play',
-          files
-        };
-
-        return {
-          id: lesson.id,
-          name: lesson.name,
-          presentations: [presentation]
-        };
+        const presentation: PlanPresentation = { id: lesson.id, name: lesson.name, actionType: 'play', files };
+        return { id: lesson.id, name: lesson.name, presentations: [presentation] };
       });
 
-      return {
-        id: studyData.id,
-        name: studyData.name,
-        description: studyData.description,
-        image: studyData.image,
-        sections,
-        allFiles
-      };
+      return { id: studyData.id, name: studyData.name, description: studyData.description, image: studyData.image, sections, allFiles };
     }
 
     // For lesson level, create a simple plan with one section
@@ -171,33 +112,9 @@ export class HighVoltageKidsProvider implements IProvider {
       const lessonData = folder.providerData?.lessonData as LessonFolder;
       if (!lessonData?.files) return null;
 
-      const files: ContentFile[] = lessonData.files.map(file => ({
-        type: 'file' as const,
-        id: file.id,
-        title: file.title,
-        mediaType: file.mediaType as 'video' | 'image',
-        url: file.url,
-        image: lessonData.image
-      }));
-
-      const presentation: PlanPresentation = {
-        id: lessonData.id,
-        name: lessonData.name,
-        actionType: 'play',
-        files
-      };
-
-      return {
-        id: lessonData.id,
-        name: lessonData.name,
-        image: lessonData.image,
-        sections: [{
-          id: 'main',
-          name: 'Content',
-          presentations: [presentation]
-        }],
-        allFiles: files
-      };
+      const files: ContentFile[] = lessonData.files.map(file => ({ type: 'file' as const, id: file.id, title: file.title, mediaType: file.mediaType as 'video' | 'image', url: file.url, image: lessonData.image }));
+      const presentation: PlanPresentation = { id: lessonData.id, name: lessonData.name, actionType: 'play', files };
+      return { id: lessonData.id, name: lessonData.name, image: lessonData.image, sections: [{ id: 'main', name: 'Content', presentations: [presentation] }], allFiles: files };
     }
 
     return null;
@@ -213,29 +130,14 @@ export class HighVoltageKidsProvider implements IProvider {
       if (!found) return null;
 
       const lessonData = found.lesson;
-      return lessonData.files.map(file => ({
-        type: 'file' as const,
-        id: file.id,
-        title: file.title,
-        mediaType: file.mediaType as 'video' | 'image',
-        url: file.url,
-        image: lessonData.image
-      }));
+      return lessonData.files.map(file => ({ type: 'file' as const, id: file.id, title: file.title, mediaType: file.mediaType as 'video' | 'image', url: file.url, image: lessonData.image }));
     }
 
     // For lesson level, return the files directly
     if (level === 'lesson') {
       const lessonData = folder.providerData?.lessonData as LessonFolder;
       if (!lessonData?.files) return null;
-
-      return lessonData.files.map(file => ({
-        type: 'file' as const,
-        id: file.id,
-        title: file.title,
-        mediaType: file.mediaType as 'video' | 'image',
-        url: file.url,
-        image: lessonData.image
-      }));
+      return lessonData.files.map(file => ({ type: 'file' as const, id: file.id, title: file.title, mediaType: file.mediaType as 'video' | 'image', url: file.url, image: lessonData.image }));
     }
 
     // For study level, return all files from all lessons
@@ -246,14 +148,7 @@ export class HighVoltageKidsProvider implements IProvider {
       const allFiles: ContentFile[] = [];
       for (const lesson of studyData.lessons) {
         for (const file of lesson.files) {
-          allFiles.push({
-            type: 'file',
-            id: file.id,
-            title: file.title,
-            mediaType: file.mediaType as 'video' | 'image',
-            url: file.url,
-            image: lesson.image
-          });
+          allFiles.push({ type: 'file', id: file.id, title: file.title, mediaType: file.mediaType as 'video' | 'image', url: file.url, image: lesson.image });
         }
       }
       return allFiles;
@@ -287,33 +182,8 @@ export class HighVoltageKidsProvider implements IProvider {
       const { lesson: lessonData, studyName } = found;
       const headerLabel = `${studyName} - ${lessonData.name}`;
 
-      const fileItems: InstructionItem[] = lessonData.files.map(file => ({
-        id: file.id,
-        itemType: 'file',
-        label: file.title,
-        embedUrl: file.url
-      }));
-
-      return {
-        venueName: lessonData.name,
-        items: [{
-          id: lessonData.id,
-          itemType: 'header',
-          label: headerLabel,
-          children: [{
-            id: 'main',
-            itemType: 'section',
-            label: 'Content',
-            children: [{
-              id: lessonData.id + '-action',
-              itemType: 'action',
-              label: lessonData.name,
-              description: 'play',
-              children: fileItems
-            }]
-          }]
-        }]
-      };
+      const fileItems: InstructionItem[] = lessonData.files.map(file => ({ id: file.id, itemType: 'file', label: file.title, embedUrl: file.url }));
+      return { venueName: lessonData.name, items: [{ id: lessonData.id, itemType: 'header', label: headerLabel, children: [{ id: 'main', itemType: 'section', label: 'Content', children: [{ id: lessonData.id + '-action', itemType: 'action', label: lessonData.name, description: 'play', children: fileItems }] }] }] };
     }
 
     if (level === 'lesson') {
@@ -322,34 +192,8 @@ export class HighVoltageKidsProvider implements IProvider {
       if (!lessonData?.files) return null;
 
       const headerLabel = studyName ? `${studyName} - ${lessonData.name}` : lessonData.name;
-
-      const fileItems: InstructionItem[] = lessonData.files.map(file => ({
-        id: file.id,
-        itemType: 'file',
-        label: file.title,
-        embedUrl: file.url
-      }));
-
-      return {
-        venueName: lessonData.name,
-        items: [{
-          id: lessonData.id,
-          itemType: 'header',
-          label: headerLabel,
-          children: [{
-            id: 'main',
-            itemType: 'section',
-            label: 'Content',
-            children: [{
-              id: lessonData.id + '-action',
-              itemType: 'action',
-              label: lessonData.name,
-              description: 'play',
-              children: fileItems
-            }]
-          }]
-        }]
-      };
+      const fileItems: InstructionItem[] = lessonData.files.map(file => ({ id: file.id, itemType: 'file', label: file.title, embedUrl: file.url }));
+      return { venueName: lessonData.name, items: [{ id: lessonData.id, itemType: 'header', label: headerLabel, children: [{ id: 'main', itemType: 'section', label: 'Content', children: [{ id: lessonData.id + '-action', itemType: 'action', label: lessonData.name, description: 'play', children: fileItems }] }] }] };
     }
 
     if (level === 'study') {
@@ -357,36 +201,11 @@ export class HighVoltageKidsProvider implements IProvider {
       if (!studyData) return null;
 
       const lessonItems: InstructionItem[] = studyData.lessons.map(lesson => {
-        const fileItems: InstructionItem[] = lesson.files.map(file => ({
-          id: file.id,
-          itemType: 'file',
-          label: file.title,
-          embedUrl: file.url
-        }));
-
-        return {
-          id: lesson.id,
-          itemType: 'action',
-          label: lesson.name,
-          description: 'play',
-          children: fileItems
-        };
+        const fileItems: InstructionItem[] = lesson.files.map(file => ({ id: file.id, itemType: 'file', label: file.title, embedUrl: file.url }));
+        return { id: lesson.id, itemType: 'action', label: lesson.name, description: 'play', children: fileItems };
       });
 
-      return {
-        venueName: studyData.name,
-        items: [{
-          id: studyData.id,
-          itemType: 'header',
-          label: studyData.name,
-          children: [{
-            id: 'main',
-            itemType: 'section',
-            label: 'Content',
-            children: lessonItems
-          }]
-        }]
-      };
+      return { venueName: studyData.name, items: [{ id: studyData.id, itemType: 'header', label: studyData.name, children: [{ id: 'main', itemType: 'section', label: 'Content', children: lessonItems }] }] };
     }
 
     return null;
@@ -396,31 +215,11 @@ export class HighVoltageKidsProvider implements IProvider {
     const collection = this.data.collections.find(c => c.name === collectionName);
     if (!collection) return [];
 
-    return collection.folders.map(study => createFolder(
-      study.id,
-      study.name,
-      study.image || undefined,
-      {
-        level: 'study',
-        collectionName,
-        studyData: study
-      }
-    ));
+    return collection.folders.map(study => createFolder(study.id, study.name, study.image || undefined, { level: 'study', collectionName, studyData: study }));
   }
 
   private getLessonFolders(study: StudyFolder): ContentItem[] {
-    return study.lessons.map(lesson => createFolder(
-      lesson.id,
-      lesson.name,
-      lesson.image || undefined,
-      {
-        level: 'lesson',
-        studyId: study.id,
-        studyName: study.name,
-        lessonData: lesson
-      },
-      true  // isLeaf: Mark as leaf so venue choice modal appears
-    ));
+    return study.lessons.map(lesson => createFolder(lesson.id, lesson.name, lesson.image || undefined, { level: 'lesson', studyId: study.id, studyName: study.name, lessonData: lesson }, true));
   }
 
   private slugify(text: string): string {

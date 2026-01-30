@@ -26,14 +26,7 @@ export class TokenHelper {
       if (!response.ok) return null;
 
       const data = await response.json();
-      return {
-        access_token: data.access_token,
-        refresh_token: data.refresh_token || auth.refresh_token,
-        token_type: data.token_type || 'Bearer',
-        created_at: Math.floor(Date.now() / 1000),
-        expires_in: data.expires_in,
-        scope: data.scope || auth.scope
-      };
+      return { access_token: data.access_token, refresh_token: data.refresh_token || auth.refresh_token, token_type: data.token_type || 'Bearer', created_at: Math.floor(Date.now() / 1000), expires_in: data.expires_in, scope: data.scope || auth.scope };
     } catch {
       return null;
     }

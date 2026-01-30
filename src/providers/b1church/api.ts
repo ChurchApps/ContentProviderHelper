@@ -37,10 +37,7 @@ export async function fetchPlans(planTypeId: string, auth: ContentProviderAuthDa
 export async function fetchVenueFeed(venueId: string): Promise<FeedVenueInterface | null> {
   try {
     const url = `${LESSONS_API_BASE}/venues/public/feed/${venueId}`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: { Accept: 'application/json' }
-    });
+    const response = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });
     if (!response.ok) return null;
     return await response.json();
   } catch {
@@ -48,16 +45,10 @@ export async function fetchVenueFeed(venueId: string): Promise<FeedVenueInterfac
   }
 }
 
-export async function fetchArrangementKey(
-  churchId: string,
-  arrangementId: string
-): Promise<ArrangementKeyResponse | null> {
+export async function fetchArrangementKey(churchId: string, arrangementId: string): Promise<ArrangementKeyResponse | null> {
   try {
     const url = `${CONTENT_API_BASE}/arrangementKeys/presenter/${churchId}/${arrangementId}`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: { Accept: 'application/json' }
-    });
+    const response = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });
     if (!response.ok) return null;
     return await response.json();
   } catch {

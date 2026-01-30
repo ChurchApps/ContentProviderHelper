@@ -6,35 +6,10 @@ export function detectMediaType(url: string, explicitType?: string): 'video' | '
   return videoPatterns.some(p => url.includes(p)) ? 'video' : 'image';
 }
 
-export function createFolder(
-  id: string,
-  title: string,
-  image?: string,
-  providerData?: Record<string, unknown>,
-  isLeaf?: boolean
-): ContentFolder {
+export function createFolder(id: string, title: string, image?: string, providerData?: Record<string, unknown>, isLeaf?: boolean): ContentFolder {
   return { type: 'folder', id, title, image, isLeaf, providerData };
 }
 
-export function createFile(
-  id: string,
-  title: string,
-  url: string,
-  options?: {
-    mediaType?: 'video' | 'image';
-    image?: string;
-    muxPlaybackId?: string;
-    providerData?: Record<string, unknown>;
-  }
-): ContentFile {
-  return {
-    type: 'file',
-    id,
-    title,
-    url,
-    mediaType: options?.mediaType ?? detectMediaType(url),
-    image: options?.image,
-    muxPlaybackId: options?.muxPlaybackId,
-    providerData: options?.providerData
-  };
+export function createFile(id: string, title: string, url: string, options?: { mediaType?: 'video' | 'image'; image?: string; muxPlaybackId?: string; providerData?: Record<string, unknown>; }): ContentFile {
+  return { type: 'file', id, title, url, mediaType: options?.mediaType ?? detectMediaType(url), image: options?.image, muxPlaybackId: options?.muxPlaybackId, providerData: options?.providerData };
 }

@@ -14,37 +14,15 @@ export class B1ChurchProvider implements IProvider {
   readonly id = 'b1church';
   readonly name = 'B1.Church';
 
-  readonly logos: ProviderLogos = {
-    light: 'https://b1.church/b1-church-logo.png',
-    dark: 'https://b1.church/b1-church-logo.png'
-  };
+  readonly logos: ProviderLogos = { light: 'https://b1.church/b1-church-logo.png', dark: 'https://b1.church/b1-church-logo.png' };
 
-  readonly config: ContentProviderConfig = {
-    id: 'b1church',
-    name: 'B1.Church',
-    apiBase: `${API_BASE}/doing`,
-    oauthBase: `${API_BASE}/membership/oauth`,
-    clientId: '',
-    scopes: ['plans'],
-    supportsDeviceFlow: true,
-    deviceAuthEndpoint: '/device/authorize',
-    endpoints: {
-      planItems: (churchId: string, planId: string) => `/planItems/presenter/${churchId}/${planId}`
-    }
-  };
+  readonly config: ContentProviderConfig = { id: 'b1church', name: 'B1.Church', apiBase: `${API_BASE}/doing`, oauthBase: `${API_BASE}/membership/oauth`, clientId: '', scopes: ['plans'], supportsDeviceFlow: true, deviceAuthEndpoint: '/device/authorize', endpoints: { planItems: (churchId: string, planId: string) => `/planItems/presenter/${churchId}/${planId}` } };
 
   private appBase = 'https://admin.b1.church';
 
   readonly requiresAuth = true;
   readonly authTypes: AuthType[] = ['oauth_pkce', 'device_flow'];
-  readonly capabilities: ProviderCapabilities = {
-    browse: true,
-    presentations: true,
-    playlist: true,
-    instructions: true,
-    expandedInstructions: true,
-    mediaLicensing: false
-  };
+  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: true, instructions: true, expandedInstructions: true, mediaLicensing: false };
 
   async buildAuthUrl(_codeVerifier: string, redirectUri: string, state?: string): Promise<{ url: string; challengeMethod: string }> {
     return auth.buildB1AuthUrl(this.config, this.appBase, redirectUri, state);
@@ -121,11 +99,7 @@ export class B1ChurchProvider implements IProvider {
       }
 
       if (presentations.length > 0 || sectionItem.label) {
-        sections.push({
-          id: sectionItem.id,
-          name: sectionItem.label || 'Section',
-          presentations
-        });
+        sections.push({ id: sectionItem.id, name: sectionItem.label || 'Section', presentations });
       }
     }
 
@@ -144,10 +118,7 @@ export class B1ChurchProvider implements IProvider {
     const planItems = await this.apiRequest<B1PlanItem[]>(pathFn(churchId, planId), authData);
     if (!planItems || !Array.isArray(planItems)) return null;
 
-    return {
-      venueName: folder.title,
-      items: planItems.map(planItemToInstruction)
-    };
+    return { venueName: folder.title, items: planItems.map(planItemToInstruction) };
   }
 
   async getPlaylist(folder: ContentFolder, authData?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {

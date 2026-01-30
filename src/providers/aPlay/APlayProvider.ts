@@ -11,35 +11,13 @@ export class APlayProvider implements IProvider {
   readonly id = 'aplay';
   readonly name = 'APlay';
 
-  readonly logos: ProviderLogos = {
-    light: 'https://www.joinamazing.com/_assets/v11/3ba846c5afd7e73d27bc4d87b63d423e7ae2dc73.svg',
-    dark: 'https://www.joinamazing.com/_assets/v11/3ba846c5afd7e73d27bc4d87b63d423e7ae2dc73.svg'
-  };
+  readonly logos: ProviderLogos = { light: 'https://www.joinamazing.com/_assets/v11/3ba846c5afd7e73d27bc4d87b63d423e7ae2dc73.svg', dark: 'https://www.joinamazing.com/_assets/v11/3ba846c5afd7e73d27bc4d87b63d423e7ae2dc73.svg' };
 
-  readonly config: ContentProviderConfig = {
-    id: 'aplay',
-    name: 'APlay',
-    apiBase: 'https://api-prod.amazingkids.app',
-    oauthBase: 'https://api.joinamazing.com/prod/aims/oauth',
-    clientId: 'xFJFq7yNYuXXXMx0YBiQ',
-    scopes: ['openid', 'profile', 'email'],
-    endpoints: {
-      modules: '/prod/curriculum/modules',
-      productLibraries: (productId: string) => `/prod/curriculum/modules/products/${productId}/libraries`,
-      libraryMedia: (libraryId: string) => `/prod/creators/libraries/${libraryId}/media`
-    }
-  };
+  readonly config: ContentProviderConfig = { id: 'aplay', name: 'APlay', apiBase: 'https://api-prod.amazingkids.app', oauthBase: 'https://api.joinamazing.com/prod/aims/oauth', clientId: 'xFJFq7yNYuXXXMx0YBiQ', scopes: ['openid', 'profile', 'email'], endpoints: { modules: '/prod/curriculum/modules', productLibraries: (productId: string) => `/prod/curriculum/modules/products/${productId}/libraries`, libraryMedia: (libraryId: string) => `/prod/creators/libraries/${libraryId}/media` } };
 
   readonly requiresAuth = true;
   readonly authTypes: AuthType[] = ['oauth_pkce'];
-  readonly capabilities: ProviderCapabilities = {
-    browse: true,
-    presentations: true,
-    playlist: false,
-    instructions: false,
-    expandedInstructions: false,
-    mediaLicensing: true
-  };
+  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: false, instructions: false, expandedInstructions: false, mediaLicensing: true };
 
   async browse(folder?: ContentFolder | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     console.log(`APlay browse called with folder:`, folder ? { id: folder.id, level: folder.providerData?.level } : 'null');
@@ -64,33 +42,12 @@ export class APlayProvider implements IProvider {
         const products = allProducts.filter((p) => !p.isHidden);
 
         if (products.length === 0) {
-          items.push({
-            type: 'folder',
-            id: (m.id || m.moduleId) as string,
-            title: (m.title || m.name) as string,
-            image: m.image as string | undefined,
-            providerData: { level: 'libraries', productId: m.id || m.moduleId }
-          });
+          items.push({ type: 'folder', id: (m.id || m.moduleId) as string, title: (m.title || m.name) as string, image: m.image as string | undefined, providerData: { level: 'libraries', productId: m.id || m.moduleId } });
         } else if (products.length === 1) {
           const product = products[0];
-          items.push({
-            type: 'folder',
-            id: (product.productId || product.id) as string,
-            title: (m.title || m.name) as string,
-            image: (m.image || product.image) as string | undefined,
-            providerData: { level: 'libraries', productId: product.productId || product.id }
-          });
+          items.push({ type: 'folder', id: (product.productId || product.id) as string, title: (m.title || m.name) as string, image: (m.image || product.image) as string | undefined, providerData: { level: 'libraries', productId: product.productId || product.id } });
         } else {
-          items.push({
-            type: 'folder',
-            id: (m.id || m.moduleId) as string,
-            title: (m.title || m.name) as string,
-            image: m.image as string | undefined,
-            providerData: {
-              level: 'products',
-              products: products.map((p) => ({ id: p.productId || p.id, title: p.title || p.name, image: p.image }))
-            }
-          });
+          items.push({ type: 'folder', id: (m.id || m.moduleId) as string, title: (m.title || m.name) as string, image: m.image as string | undefined, providerData: { level: 'products', products: products.map((p) => ({ id: p.productId || p.id, title: p.title || p.name, image: p.image })) } });
         }
       }
 
@@ -108,13 +65,7 @@ export class APlayProvider implements IProvider {
 
   private getProductFolders(folder: ContentFolder): ContentItem[] {
     const products = (folder.providerData?.products as Record<string, unknown>[]) || [];
-    return products.map((p) => ({
-      type: 'folder' as const,
-      id: p.id as string,
-      title: p.title as string,
-      image: p.image as string | undefined,
-      providerData: { level: 'libraries', productId: p.id }
-    }));
+    return products.map((p) => ({ type: 'folder' as const, id: p.id as string, title: p.title as string, image: p.image as string | undefined, providerData: { level: 'libraries', productId: p.id } }));
   }
 
   private async getLibraryFolders(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
@@ -133,13 +84,7 @@ export class APlayProvider implements IProvider {
     console.log(`APlay libraries count:`, Array.isArray(libraries) ? libraries.length : 'not an array');
     if (!Array.isArray(libraries)) return [];
 
-    return libraries.map((l) => ({
-      type: 'folder' as const,
-      id: (l.libraryId || l.id) as string,
-      title: (l.title || l.name) as string,
-      image: l.image as string | undefined,
-      providerData: { level: 'media', libraryId: l.libraryId || l.id }
-    }));
+    return libraries.map((l) => ({ type: 'folder' as const, id: (l.libraryId || l.id) as string, title: (l.title || l.name) as string, image: l.image as string | undefined, providerData: { level: 'media', libraryId: l.libraryId || l.id } }));
   }
 
   private async getMediaFiles(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
@@ -189,16 +134,7 @@ export class APlayProvider implements IProvider {
       const detectedMediaType = detectMediaType(url, mediaType);
 
       const fileId = (item.mediaId || item.id) as string;
-      files.push({
-        type: 'file',
-        id: fileId,
-        title: (item.title || item.name || item.fileName || '') as string,
-        mediaType: detectedMediaType,
-        image: thumbnail,
-        url,
-        muxPlaybackId,
-        mediaId: fileId
-      });
+      files.push({ type: 'file', id: fileId, title: (item.title || item.name || item.fileName || '') as string, mediaType: detectedMediaType, image: thumbnail, url, muxPlaybackId, mediaId: fileId });
     }
 
     return files;
@@ -211,24 +147,8 @@ export class APlayProvider implements IProvider {
     const files = await this.getMediaFiles(folder, auth) as ContentFile[];
     if (files.length === 0) return null;
 
-    const presentations: PlanPresentation[] = files.map(f => ({
-      id: f.id,
-      name: f.title,
-      actionType: 'play' as const,
-      files: [f]
-    }));
-
-    return {
-      id: libraryId,
-      name: folder.title,
-      image: folder.image,
-      sections: [{
-        id: `section-${libraryId}`,
-        name: folder.title || 'Library',
-        presentations
-      }],
-      allFiles: files
-    };
+    const presentations: PlanPresentation[] = files.map(f => ({ id: f.id, name: f.title, actionType: 'play' as const, files: [f] }));
+    return { id: libraryId, name: folder.title, image: folder.image, sections: [{ id: `section-${libraryId}`, name: folder.title || 'Library', presentations }], allFiles: files };
   }
 
   async checkMediaLicense(mediaId: string, auth?: ContentProviderAuthData | null): Promise<MediaLicenseResult | null> {
@@ -236,15 +156,7 @@ export class APlayProvider implements IProvider {
 
     try {
       const url = `${this.config.apiBase}/prod/reports/media/license-check`;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${auth.access_token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({ mediaIds: [mediaId] })
-      });
+      const response = await fetch(url, { method: 'POST', headers: { 'Authorization': `Bearer ${auth.access_token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify({ mediaIds: [mediaId] }) });
 
       if (!response.ok) return null;
 
@@ -254,25 +166,11 @@ export class APlayProvider implements IProvider {
 
       if (result?.isLicensed) {
         const pingbackUrl = `${this.config.apiBase}/prod/reports/media/${mediaId}/stream-count?source=aplay-pro`;
-        return {
-          mediaId,
-          status: 'valid',
-          message: 'Media is licensed for playback',
-          expiresAt: result.expiresAt as string | number | undefined
-        };
+        return { mediaId, status: 'valid', message: 'Media is licensed for playback', expiresAt: result.expiresAt as string | number | undefined };
       }
-
-      return {
-        mediaId,
-        status: 'not_licensed',
-        message: 'Media is not licensed'
-      };
+      return { mediaId, status: 'not_licensed', message: 'Media is not licensed' };
     } catch {
-      return {
-        mediaId,
-        status: 'unknown',
-        message: 'Unable to verify license status'
-      };
+      return { mediaId, status: 'unknown', message: 'Unable to verify license status' };
     }
   }
 

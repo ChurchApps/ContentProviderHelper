@@ -69,14 +69,7 @@ export class OAuthHelper {
 
       const data = await response.json();
       console.log(`${providerId} token exchange successful, got access_token: ${!!data.access_token}`);
-      return {
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
-        token_type: data.token_type || 'Bearer',
-        created_at: Math.floor(Date.now() / 1000),
-        expires_in: data.expires_in,
-        scope: data.scope || config.scopes.join(' ')
-      };
+      return { access_token: data.access_token, refresh_token: data.refresh_token, token_type: data.token_type || 'Bearer', created_at: Math.floor(Date.now() / 1000), expires_in: data.expires_in, scope: data.scope || config.scopes.join(' ') };
     } catch (error) {
       console.error(`${providerId} token exchange error:`, error);
       return null;

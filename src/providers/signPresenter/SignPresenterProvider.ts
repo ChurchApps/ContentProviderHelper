@@ -11,36 +11,13 @@ export class SignPresenterProvider implements IProvider {
   readonly id = 'signpresenter';
   readonly name = 'SignPresenter';
 
-  readonly logos: ProviderLogos = {
-    light: 'https://signpresenter.com/files/shared/images/logo.png',
-    dark: 'https://signpresenter.com/files/shared/images/logo.png'
-  };
+  readonly logos: ProviderLogos = { light: 'https://signpresenter.com/files/shared/images/logo.png', dark: 'https://signpresenter.com/files/shared/images/logo.png' };
 
-  readonly config: ContentProviderConfig = {
-    id: 'signpresenter',
-    name: 'SignPresenter',
-    apiBase: 'https://api.signpresenter.com',
-    oauthBase: 'https://api.signpresenter.com/oauth',
-    clientId: 'lessonsscreen-tv',
-    scopes: ['openid', 'profile', 'content'],
-    supportsDeviceFlow: true,
-    deviceAuthEndpoint: '/device/authorize',
-    endpoints: {
-      playlists: '/content/playlists',
-      messages: (playlistId: string) => `/content/playlists/${playlistId}/messages`
-    }
-  };
+  readonly config: ContentProviderConfig = { id: 'signpresenter', name: 'SignPresenter', apiBase: 'https://api.signpresenter.com', oauthBase: 'https://api.signpresenter.com/oauth', clientId: 'lessonsscreen-tv', scopes: ['openid', 'profile', 'content'], supportsDeviceFlow: true, deviceAuthEndpoint: '/device/authorize', endpoints: { playlists: '/content/playlists', messages: (playlistId: string) => `/content/playlists/${playlistId}/messages` } };
 
   readonly requiresAuth = true;
   readonly authTypes: AuthType[] = ['oauth_pkce', 'device_flow'];
-  readonly capabilities: ProviderCapabilities = {
-    browse: true,
-    presentations: true,
-    playlist: false,
-    instructions: false,
-    expandedInstructions: false,
-    mediaLicensing: false
-  };
+  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: false, instructions: false, expandedInstructions: false, mediaLicensing: false };
 
   async browse(folder?: ContentFolder | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     if (!folder) {
@@ -54,13 +31,7 @@ export class SignPresenterProvider implements IProvider {
 
       if (!Array.isArray(playlists)) return [];
 
-      return playlists.map((p) => ({
-        type: 'folder' as const,
-        id: p.id as string,
-        title: p.name as string,
-        image: p.image as string | undefined,
-        providerData: { level: 'messages', playlistId: p.id }
-      }));
+      return playlists.map((p) => ({ type: 'folder' as const, id: p.id as string, title: p.name as string, image: p.image as string | undefined, providerData: { level: 'messages', playlistId: p.id } }));
     }
 
     const level = folder.providerData?.level;
@@ -90,17 +61,7 @@ export class SignPresenterProvider implements IProvider {
       const url = msg.url as string;
       const seconds = msg.seconds as number | undefined;
 
-      files.push({
-        type: 'file',
-        id: msg.id as string,
-        title: msg.name as string,
-        mediaType: detectMediaType(url, msg.mediaType as string | undefined),
-        image: (msg.thumbnail || msg.image) as string | undefined,
-        url,
-        // For direct media providers, embedUrl is the media URL itself
-        embedUrl: url,
-        providerData: seconds !== undefined ? { seconds } : undefined
-      });
+      files.push({ type: 'file', id: msg.id as string, title: msg.name as string, mediaType: detectMediaType(url, msg.mediaType as string | undefined), image: (msg.thumbnail || msg.image) as string | undefined, url, embedUrl: url, providerData: seconds !== undefined ? { seconds } : undefined });
     }
 
     return files;
@@ -113,24 +74,8 @@ export class SignPresenterProvider implements IProvider {
     const files = await this.getMessages(folder, auth) as ContentFile[];
     if (files.length === 0) return null;
 
-    const presentations: PlanPresentation[] = files.map(f => ({
-      id: f.id,
-      name: f.title,
-      actionType: 'play' as const,
-      files: [f]
-    }));
-
-    return {
-      id: playlistId,
-      name: folder.title,
-      image: folder.image,
-      sections: [{
-        id: `section-${playlistId}`,
-        name: folder.title || 'Playlist',
-        presentations
-      }],
-      allFiles: files
-    };
+    const presentations: PlanPresentation[] = files.map(f => ({ id: f.id, name: f.title, actionType: 'play' as const, files: [f] }));
+    return { id: playlistId, name: folder.title, image: folder.image, sections: [{ id: `section-${playlistId}`, name: folder.title || 'Playlist', presentations }], allFiles: files };
   }
 
 }
