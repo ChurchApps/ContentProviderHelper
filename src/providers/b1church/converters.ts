@@ -57,7 +57,7 @@ export function sectionToFolder(section: B1PlanItem): ContentItem {
     title: section.label || 'Section',
     providerData: {
       level: 'section',
-      itemType: 'contentSection',
+      itemType: 'section',
       description: section.description,
       seconds: section.seconds
     }
@@ -86,9 +86,9 @@ export function planItemToContentItem(
     };
   }
 
-  if ((itemType === 'lessonSection' || itemType === 'contentSection' ||
-       itemType === 'lessonAction' || itemType === 'contentAction' ||
-       itemType === 'lessonAddOn' || itemType === 'contentAddon') && item.relatedId) {
+  if ((itemType === 'lessonSection' || itemType === 'section' ||
+       itemType === 'lessonAction' || itemType === 'action' ||
+       itemType === 'lessonAddOn' || itemType === 'addon') && item.relatedId) {
     return {
       type: 'file' as const,
       id: item.id,
@@ -135,15 +135,15 @@ export async function planItemToPresentation(
     }
   }
 
-  if ((itemType === 'lessonSection' || itemType === 'contentSection' ||
-       itemType === 'lessonAction' || itemType === 'contentAction' ||
-       itemType === 'lessonAddOn' || itemType === 'contentAddon') && venueFeed) {
+  if ((itemType === 'lessonSection' || itemType === 'section' ||
+       itemType === 'lessonAction' || itemType === 'action' ||
+       itemType === 'lessonAddOn' || itemType === 'addon') && venueFeed) {
     const files = getFilesFromVenueFeed(venueFeed, itemType, item.relatedId);
     if (files.length > 0) {
       return {
         id: item.id,
         name: item.label || 'Lesson Content',
-        actionType: (itemType === 'lessonAddOn' || itemType === 'contentAddon') ? 'add-on' : 'play',
+        actionType: (itemType === 'lessonAddOn' || itemType === 'addon') ? 'add-on' : 'play',
         files
       };
     }
@@ -194,7 +194,7 @@ export function getFilesFromVenueFeed(
 
   if (!relatedId) return files;
 
-  if (itemType === 'lessonSection' || itemType === 'contentSection') {
+  if (itemType === 'lessonSection' || itemType === 'section') {
     for (const section of venueFeed.sections || []) {
       if (section.id === relatedId) {
         for (const action of section.actions || []) {
@@ -206,7 +206,7 @@ export function getFilesFromVenueFeed(
         break;
       }
     }
-  } else if (itemType === 'lessonAction' || itemType === 'contentAction') {
+  } else if (itemType === 'lessonAction' || itemType === 'action') {
     for (const section of venueFeed.sections || []) {
       for (const action of section.actions || []) {
         if (action.id === relatedId) {
@@ -238,17 +238,12 @@ export function convertFeedFiles(
 }
 
 export function planItemToInstruction(item: B1PlanItem): InstructionItem {
-  // Convert B1 API itemTypes to standardized content-prefixed types
+  // Convert B1 API itemTypes to standardized short names
   let itemType: string | undefined = item.itemType;
   switch (item.itemType) {
-    case 'header': itemType = 'contentHeader'; break;
-    case 'lessonSection': itemType = 'contentSection'; break;
-    case 'lessonAction': itemType = 'contentAction'; break;
-    case 'lessonAddOn': itemType = 'contentAddon'; break;
-    case 'section': itemType = 'contentSection'; break;
-    case 'action': itemType = 'contentAction'; break;
-    case 'addon': itemType = 'contentAddon'; break;
-    case 'file': itemType = 'contentFile'; break;
+    case 'lessonSection': itemType = 'section'; break;
+    case 'lessonAction': itemType = 'action'; break;
+    case 'lessonAddOn': itemType = 'addon'; break;
   }
 
   return {

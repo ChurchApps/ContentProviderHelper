@@ -123,6 +123,42 @@ export class HighVoltageKidsProvider extends ContentProvider {
   async getPresentations(folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
     const level = folder.providerData?.level;
 
+    // Handle playlist level - look up lesson by ID
+    if (level === 'playlist') {
+      const venueId = folder.providerData?.venueId as string || folder.id;
+      const found = this.findLessonById(venueId);
+      if (!found) return null;
+
+      const lessonData = found.lesson;
+      const files: ContentFile[] = lessonData.files.map(file => ({
+        type: 'file' as const,
+        id: file.id,
+        title: file.title,
+        mediaType: file.mediaType as 'video' | 'image',
+        url: file.url,
+        image: lessonData.image
+      }));
+
+      const presentation: PlanPresentation = {
+        id: lessonData.id,
+        name: lessonData.name,
+        actionType: 'play',
+        files
+      };
+
+      return {
+        id: lessonData.id,
+        name: lessonData.name,
+        image: lessonData.image,
+        sections: [{
+          id: 'main',
+          name: 'Content',
+          presentations: [presentation]
+        }],
+        allFiles: files
+      };
+    }
+
     // For study level, create a plan with lessons as sections
     if (level === 'study') {
       const studyData = folder.providerData?.studyData as StudyFolder;
@@ -207,6 +243,23 @@ export class HighVoltageKidsProvider extends ContentProvider {
   override async getPlaylist(folder: ContentFolder, _auth?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
     const level = folder.providerData?.level;
 
+    // Handle playlist level - look up lesson by ID
+    if (level === 'playlist') {
+      const venueId = folder.providerData?.venueId as string || folder.id;
+      const found = this.findLessonById(venueId);
+      if (!found) return null;
+
+      const lessonData = found.lesson;
+      return lessonData.files.map(file => ({
+        type: 'file' as const,
+        id: file.id,
+        title: file.title,
+        mediaType: file.mediaType as 'video' | 'image',
+        url: file.url,
+        image: lessonData.image
+      }));
+    }
+
     // For lesson level, return the files directly
     if (level === 'lesson') {
       const lessonData = folder.providerData?.lessonData as LessonFolder;
@@ -246,8 +299,59 @@ export class HighVoltageKidsProvider extends ContentProvider {
     return null;
   }
 
+  private findLessonById(lessonId: string): { lesson: LessonFolder; studyName: string } | null {
+    for (const collection of this.data.collections) {
+      for (const study of collection.folders) {
+        for (const lesson of study.lessons) {
+          if (lesson.id === lessonId) {
+            return { lesson, studyName: study.name };
+          }
+        }
+      }
+    }
+    return null;
+  }
+
   override async getExpandedInstructions(folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
     const level = folder.providerData?.level;
+
+    // Handle playlist level - look up lesson by ID
+    if (level === 'playlist') {
+      const venueId = folder.providerData?.venueId as string || folder.id;
+      const found = this.findLessonById(venueId);
+      if (!found) return null;
+
+      const { lesson: lessonData, studyName } = found;
+      const headerLabel = `${studyName} - ${lessonData.name}`;
+
+      const fileItems: InstructionItem[] = lessonData.files.map(file => ({
+        id: file.id,
+        itemType: 'file',
+        label: file.title,
+        embedUrl: file.url
+      }));
+
+      return {
+        venueName: lessonData.name,
+        items: [{
+          id: lessonData.id,
+          itemType: 'header',
+          label: headerLabel,
+          children: [{
+            id: 'main',
+            itemType: 'section',
+            label: 'Content',
+            children: [{
+              id: lessonData.id + '-action',
+              itemType: 'action',
+              label: lessonData.name,
+              description: 'play',
+              children: fileItems
+            }]
+          }]
+        }]
+      };
+    }
 
     if (level === 'lesson') {
       const lessonData = folder.providerData?.lessonData as LessonFolder;
@@ -258,7 +362,7 @@ export class HighVoltageKidsProvider extends ContentProvider {
 
       const fileItems: InstructionItem[] = lessonData.files.map(file => ({
         id: file.id,
-        itemType: 'contentFile',
+        itemType: 'file',
         label: file.title,
         embedUrl: file.url
       }));
@@ -267,15 +371,15 @@ export class HighVoltageKidsProvider extends ContentProvider {
         venueName: lessonData.name,
         items: [{
           id: lessonData.id,
-          itemType: 'contentHeader',
+          itemType: 'header',
           label: headerLabel,
           children: [{
             id: 'main',
-            itemType: 'contentSection',
+            itemType: 'section',
             label: 'Content',
             children: [{
               id: lessonData.id + '-action',
-              itemType: 'contentAction',
+              itemType: 'action',
               label: lessonData.name,
               description: 'play',
               children: fileItems
@@ -292,14 +396,14 @@ export class HighVoltageKidsProvider extends ContentProvider {
       const lessonItems: InstructionItem[] = studyData.lessons.map(lesson => {
         const fileItems: InstructionItem[] = lesson.files.map(file => ({
           id: file.id,
-          itemType: 'contentFile',
+          itemType: 'file',
           label: file.title,
           embedUrl: file.url
         }));
 
         return {
           id: lesson.id,
-          itemType: 'contentAction',
+          itemType: 'action',
           label: lesson.name,
           description: 'play',
           children: fileItems
@@ -310,11 +414,11 @@ export class HighVoltageKidsProvider extends ContentProvider {
         venueName: studyData.name,
         items: [{
           id: studyData.id,
-          itemType: 'contentHeader',
+          itemType: 'header',
           label: studyData.name,
           children: [{
             id: 'main',
-            itemType: 'contentSection',
+            itemType: 'section',
             label: 'Content',
             children: lessonItems
           }]

@@ -16,33 +16,20 @@ import {
  */
 function getItemTypeIcon(itemType?: string): string {
   switch (itemType) {
-    // New content-prefixed types
-    case 'contentHeader':
-      return '📁';
-    case 'contentSection':
-      return '📋';
-    case 'contentAction':
-      return '▶️';
-    case 'contentAddon':
-      return '➕';
-    case 'contentFile':
-      return '🎬';
-    case 'contentItem':
-      return '📄';
-    // Legacy types for backwards compatibility
     case 'header':
       return '📁';
-    case 'lessonSection':
     case 'section':
+    case 'lessonSection':
       return '📋';
-    case 'lessonAction':
     case 'action':
+    case 'lessonAction':
       return '▶️';
-    case 'lessonAddOn':
     case 'addon':
+    case 'lessonAddOn':
       return '➕';
     case 'file':
       return '🎬';
+    case 'item':
     default:
       return '📄';
   }

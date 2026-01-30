@@ -336,17 +336,17 @@ export class LessonsChurchProvider extends ContentProvider {
       for (const section of actionsResponse.sections) {
         if (section.id && section.actions) {
           sectionActionsMap.set(section.id, section.actions.map(action => {
-            const embedUrl = this.getEmbedUrl('contentAction', action.id);
+            const embedUrl = this.getEmbedUrl('action', action.id);
             return {
               id: action.id,
-              itemType: 'contentAction',
+              itemType: 'action',
               relatedId: action.id,
               label: action.name,
               description: action.actionType,
               seconds: action.seconds,
               children: [{
                 id: action.id + '-file',
-                itemType: 'contentFile',
+                itemType: 'file',
                 label: action.name,
                 seconds: action.seconds,
                 embedUrl
@@ -358,10 +358,9 @@ export class LessonsChurchProvider extends ContentProvider {
     }
 
     const normalizeItemType = (type?: string): string | undefined => {
-      if (type === 'header') return 'contentHeader';
-      if (type === 'lessonSection') return 'contentSection';
-      if (type === 'lessonAction') return 'contentAction';
-      if (type === 'lessonAddOn') return 'contentAddon';
+      if (type === 'lessonSection') return 'section';
+      if (type === 'lessonAction') return 'action';
+      if (type === 'lessonAddOn') return 'addon';
       return type;
     };
 
@@ -417,9 +416,9 @@ export class LessonsChurchProvider extends ContentProvider {
 
     const baseUrl = 'https://lessons.church';
     switch (itemType) {
-      case 'contentAction': return `${baseUrl}/embed/action/${relatedId}`;
-      case 'contentAddon': return `${baseUrl}/embed/addon/${relatedId}`;
-      case 'contentSection': return `${baseUrl}/embed/section/${relatedId}`;
+      case 'action': return `${baseUrl}/embed/action/${relatedId}`;
+      case 'addon': return `${baseUrl}/embed/addon/${relatedId}`;
+      case 'section': return `${baseUrl}/embed/section/${relatedId}`;
       default: return undefined;
     }
   }
