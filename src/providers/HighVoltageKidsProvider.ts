@@ -123,10 +123,10 @@ export class HighVoltageKidsProvider extends ContentProvider {
   async getPresentations(folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
     const level = folder.providerData?.level;
 
-    // Handle playlist level - look up lesson by ID
-    if (level === 'playlist') {
-      const venueId = folder.providerData?.venueId as string || folder.id;
-      const found = this.findLessonById(venueId);
+    // Handle leaf folders (e.g., from plan association) - look up lesson by ID
+    if (folder.isLeaf) {
+      const lessonId = folder.providerData?.venueId as string || folder.id;
+      const found = this.findLessonById(lessonId);
       if (!found) return null;
 
       const lessonData = found.lesson;
@@ -243,10 +243,10 @@ export class HighVoltageKidsProvider extends ContentProvider {
   override async getPlaylist(folder: ContentFolder, _auth?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
     const level = folder.providerData?.level;
 
-    // Handle playlist level - look up lesson by ID
-    if (level === 'playlist') {
-      const venueId = folder.providerData?.venueId as string || folder.id;
-      const found = this.findLessonById(venueId);
+    // Handle leaf folders (e.g., from plan association) - look up lesson by ID
+    if (folder.isLeaf && level !== 'lesson' && level !== 'study') {
+      const lessonId = folder.providerData?.venueId as string || folder.id;
+      const found = this.findLessonById(lessonId);
       if (!found) return null;
 
       const lessonData = found.lesson;
@@ -315,10 +315,10 @@ export class HighVoltageKidsProvider extends ContentProvider {
   override async getExpandedInstructions(folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
     const level = folder.providerData?.level;
 
-    // Handle playlist level - look up lesson by ID
-    if (level === 'playlist') {
-      const venueId = folder.providerData?.venueId as string || folder.id;
-      const found = this.findLessonById(venueId);
+    // Handle leaf folders (e.g., from plan association) - look up lesson by ID
+    if (folder.isLeaf && level !== 'lesson' && level !== 'study') {
+      const lessonId = folder.providerData?.venueId as string || folder.id;
+      const found = this.findLessonById(lessonId);
       if (!found) return null;
 
       const { lesson: lessonData, studyName } = found;
