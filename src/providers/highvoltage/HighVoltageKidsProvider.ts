@@ -246,8 +246,8 @@ export class HighVoltageKidsProvider implements IProvider {
       if (!lesson?.files) return null;
 
       const headerLabel = `${study.name} - ${lesson.name}`;
-      const fileItems: InstructionItem[] = lesson.files.map(file => ({ id: file.id, itemType: 'file', label: file.title, embedUrl: file.url }));
-      return { venueName: lesson.name, items: [{ id: lesson.id, itemType: 'header', label: headerLabel, children: [{ id: 'main', itemType: 'section', label: 'Content', children: [{ id: lesson.id + '-action', itemType: 'action', label: lesson.name, description: 'play', children: fileItems }] }] }] };
+      const actionItems = this.groupFilesIntoActions(lesson.files);
+      return { venueName: lesson.name, items: [{ id: lesson.id, itemType: 'header', label: headerLabel, children: [{ id: 'main', itemType: 'section', label: lesson.name, children: actionItems }] }] };
     }
 
     return null;
@@ -258,5 +258,57 @@ export class HighVoltageKidsProvider implements IProvider {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '');
+  }
+
+  private groupFilesIntoActions(files: { id: string; title: string; url: string }[]): InstructionItem[] {
+    // Group only consecutive files with the same base name
+    const actionItems: InstructionItem[] = [];
+    let currentGroup: typeof files = [];
+    let currentBaseName: string | null = null;
+
+    const flushGroup = () => {
+      if (currentGroup.length === 0) return;
+      const children: InstructionItem[] = currentGroup.map(file => ({
+        id: file.id,
+        itemType: 'file' as const,
+        label: file.title,
+        embedUrl: file.url
+      }));
+      // Use base name as label only if multiple files were grouped
+      const label = (currentGroup.length > 1 && currentBaseName) ? currentBaseName : currentGroup[0].title;
+      actionItems.push({
+        id: currentGroup[0].id + '-action',
+        itemType: 'action',
+        label,
+        description: 'play',
+        children
+      });
+      currentGroup = [];
+      currentBaseName = null;
+    };
+
+    for (const file of files) {
+      const baseName = this.getBaseName(file.title);
+      const isNumbered = baseName !== file.title;
+
+      if (isNumbered && baseName === currentBaseName) {
+        // Continue the current group
+        currentGroup.push(file);
+      } else {
+        // Flush previous group and start a new one
+        flushGroup();
+        currentGroup = [file];
+        currentBaseName = isNumbered ? baseName : null;
+      }
+    }
+    flushGroup();
+
+    return actionItems;
+  }
+
+  private getBaseName(title: string): string {
+    // Remove trailing number (e.g., "Call to Action - Point 1" -> "Call to Action - Point")
+    const match = title.match(/^(.+?)\s*\d+$/);
+    return match ? match[1].trim() : title;
   }
 }
