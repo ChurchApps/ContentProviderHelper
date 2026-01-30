@@ -1,7 +1,16 @@
-import { ContentProviderAuthData, FeedVenueInterface } from "../../interfaces";
+import { ContentProviderAuthData, FeedVenueInterface, ContentItem, Plan, ContentFile, Instructions } from "../../interfaces";
 import { ArrangementKeyResponse, B1Ministry, B1PlanType, B1Plan } from "./types";
 
 export const API_BASE = "https://api.churchapps.org";
+
+export type ProxyMethod = "browse" | "getPresentations" | "getPlaylist" | "getInstructions" | "getExpandedInstructions";
+
+export type ProxyResult<M extends ProxyMethod> =
+  M extends "browse" ? ContentItem[] :
+  M extends "getPresentations" ? Plan :
+  M extends "getPlaylist" ? ContentFile[] :
+  M extends "getInstructions" | "getExpandedInstructions" ? Instructions :
+  never;
 export const LESSONS_API_BASE = "https://api.lessons.church";
 export const CONTENT_API_BASE = "https://contentapi.churchapps.org";
 
@@ -49,6 +58,40 @@ export async function fetchArrangementKey(churchId: string, arrangementId: strin
   try {
     const url = `${CONTENT_API_BASE}/arrangementKeys/presenter/${churchId}/${arrangementId}`;
     const response = await fetch(url, { method: "GET", headers: { Accept: "application/json" } });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchFromProviderProxy<M extends ProxyMethod>(
+  method: M,
+  ministryId: string,
+  providerId: string,
+  path: string,
+  authData?: ContentProviderAuthData | null,
+  resolution?: number
+): Promise<ProxyResult<M> | null> {
+  try {
+    const url = `${API_BASE}/doing/providerProxy/${method}`;
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Accept: "application/json"
+    };
+    if (authData) {
+      headers["Authorization"] = `Bearer ${authData.access_token}`;
+    }
+
+    const body: Record<string, unknown> = { ministryId, providerId, path };
+    if (resolution !== undefined) body.resolution = resolution;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body)
+    });
+
     if (!response.ok) return null;
     return await response.json();
   } catch {

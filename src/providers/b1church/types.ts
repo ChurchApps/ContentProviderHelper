@@ -32,6 +32,8 @@ export interface B1PlanItem {
   itemType?: string;
   relatedId?: string;
   churchId?: string;
+  providerId?: string;
+  providerPath?: string;
   children?: B1PlanItem[];
 }
 

@@ -3,8 +3,16 @@ import { parsePath } from "../../pathUtils";
 import { ApiHelper } from "../../helpers";
 import { B1PlanItem } from "./types";
 import * as auth from "./auth";
-import { fetchMinistries, fetchPlanTypes, fetchPlans, fetchVenueFeed, API_BASE } from "./api";
+import { fetchMinistries, fetchPlanTypes, fetchPlans, fetchVenueFeed, fetchFromProviderProxy, API_BASE } from "./api";
 import { ministryToFolder, planTypeToFolder, planToFolder, planItemToPresentation, planItemToInstruction, getFilesFromVenueFeed } from "./converters";
+
+const INTERNAL_PROVIDERS = ["b1church", "lessonschurch"];
+
+function isExternalProviderItem(item: B1PlanItem): boolean {
+  if (!item.providerId || INTERNAL_PROVIDERS.includes(item.providerId)) return false;
+  const itemType = item.itemType || "";
+  return itemType.startsWith("provider");
+}
 
 export class B1ChurchProvider implements IProvider {
   private readonly apiHelper = new ApiHelper();
@@ -109,6 +117,7 @@ export class B1ChurchProvider implements IProvider {
 
     if (depth < 4 || segments[0] !== "ministries") return null;
 
+    const ministryId = segments[1];
     const planId = segments[3];
     const planTypeId = segments[2];
 
@@ -141,10 +150,29 @@ export class B1ChurchProvider implements IProvider {
       const presentations: PlanPresentation[] = [];
 
       for (const child of sectionItem.children || []) {
-        const presentation = await planItemToPresentation(child, venueFeed);
-        if (presentation) {
-          presentations.push(presentation);
-          allFiles.push(...presentation.files);
+        // Handle external provider items via proxy
+        if (isExternalProviderItem(child) && child.providerId && child.providerPath) {
+          const externalPlan = await fetchFromProviderProxy(
+            "getPresentations",
+            ministryId,
+            child.providerId,
+            child.providerPath,
+            authData
+          );
+          if (externalPlan) {
+            // Add all presentations from the external plan
+            for (const section of externalPlan.sections) {
+              presentations.push(...section.presentations);
+            }
+            allFiles.push(...externalPlan.allFiles);
+          }
+        } else {
+          // Handle internal items as before
+          const presentation = await planItemToPresentation(child, venueFeed);
+          if (presentation) {
+            presentations.push(presentation);
+            allFiles.push(...presentation.files);
+          }
         }
       }
 
@@ -161,6 +189,7 @@ export class B1ChurchProvider implements IProvider {
 
     if (depth < 4 || segments[0] !== "ministries") return null;
 
+    const ministryId = segments[1];
     const planId = segments[3];
     const planTypeId = segments[2];
 
@@ -183,14 +212,58 @@ export class B1ChurchProvider implements IProvider {
     const planItems = await this.apiRequest<B1PlanItem[]>(pathFn(churchId, planId), authData);
     if (!planItems || !Array.isArray(planItems)) return null;
 
-    return { venueName: planTitle, items: planItems.map(planItemToInstruction) };
+    // Process items, handling external providers
+    const processedItems = await this.processInstructionItems(planItems, ministryId, authData);
+    return { venueName: planTitle, items: processedItems };
   }
 
-  async getPlaylist(path: string, authData?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
+  async getExpandedInstructions(path: string, authData?: ContentProviderAuthData | null): Promise<Instructions | null> {
+    // For B1Church, expanded instructions are the same as regular instructions
+    // External provider items will be expanded via proxy
+    return this.getInstructions(path, authData);
+  }
+
+  private async processInstructionItems(
+    items: B1PlanItem[],
+    ministryId: string,
+    authData?: ContentProviderAuthData | null
+  ): Promise<import("../../interfaces").InstructionItem[]> {
+    const result: import("../../interfaces").InstructionItem[] = [];
+
+    for (const item of items) {
+      if (isExternalProviderItem(item) && item.providerId && item.providerPath) {
+        // Fetch expanded instructions from external provider
+        const externalInstructions = await fetchFromProviderProxy(
+          "getExpandedInstructions",
+          ministryId,
+          item.providerId,
+          item.providerPath,
+          authData
+        );
+        if (externalInstructions) {
+          // Add the external instruction items
+          result.push(...externalInstructions.items);
+        }
+      } else {
+        // Convert internal item
+        const instructionItem = planItemToInstruction(item);
+        // Recursively process children if they exist
+        if (item.children && item.children.length > 0) {
+          instructionItem.children = await this.processInstructionItems(item.children, ministryId, authData);
+        }
+        result.push(instructionItem);
+      }
+    }
+
+    return result;
+  }
+
+  async getPlaylist(path: string, authData?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null> {
     const { segments, depth } = parsePath(path);
 
     if (depth < 4 || segments[0] !== "ministries") return [];
 
+    const ministryId = segments[1];
     const planId = segments[3];
     const planTypeId = segments[2];
 
@@ -218,12 +291,28 @@ export class B1ChurchProvider implements IProvider {
 
     for (const sectionItem of planItems) {
       for (const child of sectionItem.children || []) {
-        const itemType = child.itemType;
-        if ((itemType === "lessonSection" || itemType === "section" ||
-             itemType === "lessonAction" || itemType === "action" ||
-             itemType === "lessonAddOn" || itemType === "addon") && venueFeed) {
-          const itemFiles = getFilesFromVenueFeed(venueFeed, itemType, child.relatedId);
-          files.push(...itemFiles);
+        // Handle external provider items via proxy
+        if (isExternalProviderItem(child) && child.providerId && child.providerPath) {
+          const externalFiles = await fetchFromProviderProxy(
+            "getPlaylist",
+            ministryId,
+            child.providerId,
+            child.providerPath,
+            authData,
+            resolution
+          );
+          if (externalFiles) {
+            files.push(...externalFiles);
+          }
+        } else {
+          // Handle internal items as before
+          const itemType = child.itemType;
+          if ((itemType === "lessonSection" || itemType === "section" ||
+               itemType === "lessonAction" || itemType === "action" ||
+               itemType === "lessonAddOn" || itemType === "addon") && venueFeed) {
+            const itemFiles = getFilesFromVenueFeed(venueFeed, itemType, child.relatedId);
+            files.push(...itemFiles);
+          }
         }
       }
     }
