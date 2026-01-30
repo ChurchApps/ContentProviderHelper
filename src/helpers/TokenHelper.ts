@@ -1,4 +1,4 @@
-import { ContentProviderAuthData, ContentProviderConfig } from '../interfaces';
+import { ContentProviderAuthData, ContentProviderConfig } from "../interfaces";
 
 export class TokenHelper {
   isAuthValid(auth: ContentProviderAuthData | null | undefined): boolean {
@@ -17,16 +17,16 @@ export class TokenHelper {
 
     try {
       const params = new URLSearchParams({
-        grant_type: 'refresh_token',
+        grant_type: "refresh_token",
         refresh_token: auth.refresh_token,
         client_id: config.clientId
       });
 
-      const response = await fetch(`${config.oauthBase}/token`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params.toString() });
+      const response = await fetch(`${config.oauthBase}/token`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: params.toString() });
       if (!response.ok) return null;
 
       const data = await response.json();
-      return { access_token: data.access_token, refresh_token: data.refresh_token || auth.refresh_token, token_type: data.token_type || 'Bearer', created_at: Math.floor(Date.now() / 1000), expires_in: data.expires_in, scope: data.scope || auth.scope };
+      return { access_token: data.access_token, refresh_token: data.refresh_token || auth.refresh_token, token_type: data.token_type || "Bearer", created_at: Math.floor(Date.now() / 1000), expires_in: data.expires_in, scope: data.scope || auth.scope };
     } catch {
       return null;
     }

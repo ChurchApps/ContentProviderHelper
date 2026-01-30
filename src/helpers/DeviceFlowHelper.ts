@@ -1,4 +1,4 @@
-import { ContentProviderConfig, DeviceAuthorizationResponse, DeviceFlowPollResult } from '../interfaces';
+import { ContentProviderConfig, DeviceAuthorizationResponse, DeviceFlowPollResult } from "../interfaces";
 
 export class DeviceFlowHelper {
   supportsDeviceFlow(config: ContentProviderConfig): boolean {
@@ -9,8 +9,8 @@ export class DeviceFlowHelper {
     if (!this.supportsDeviceFlow(config)) return null;
 
     try {
-      const params = new URLSearchParams({ client_id: config.clientId, scope: config.scopes.join(' ') });
-      const response = await fetch(`${config.oauthBase}${config.deviceAuthEndpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params.toString() });
+      const params = new URLSearchParams({ client_id: config.clientId, scope: config.scopes.join(" ") });
+      const response = await fetch(`${config.oauthBase}${config.deviceAuthEndpoint}`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: params.toString() });
       if (!response.ok) return null;
       return await response.json();
     } catch {
@@ -21,28 +21,28 @@ export class DeviceFlowHelper {
   async pollDeviceFlowToken(config: ContentProviderConfig, deviceCode: string): Promise<DeviceFlowPollResult> {
     try {
       const params = new URLSearchParams({
-        grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+        grant_type: "urn:ietf:params:oauth:grant-type:device_code",
         device_code: deviceCode,
         client_id: config.clientId
       });
 
-      const response = await fetch(`${config.oauthBase}/token`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params.toString() });
+      const response = await fetch(`${config.oauthBase}/token`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: params.toString() });
 
       if (response.ok) {
         const data = await response.json();
-        return { access_token: data.access_token, refresh_token: data.refresh_token, token_type: data.token_type || 'Bearer', created_at: Math.floor(Date.now() / 1000), expires_in: data.expires_in, scope: data.scope || config.scopes.join(' ') };
+        return { access_token: data.access_token, refresh_token: data.refresh_token, token_type: data.token_type || "Bearer", created_at: Math.floor(Date.now() / 1000), expires_in: data.expires_in, scope: data.scope || config.scopes.join(" ") };
       }
 
       const errorData = await response.json();
       switch (errorData.error) {
-        case 'authorization_pending': return { error: 'authorization_pending' };
-        case 'slow_down': return { error: 'slow_down', shouldSlowDown: true };
-        case 'expired_token': return null;
-        case 'access_denied': return null;
+        case "authorization_pending": return { error: "authorization_pending" };
+        case "slow_down": return { error: "slow_down", shouldSlowDown: true };
+        case "expired_token": return null;
+        case "access_denied": return null;
         default: return null;
       }
     } catch {
-      return { error: 'network_error' };
+      return { error: "network_error" };
     }
   }
 

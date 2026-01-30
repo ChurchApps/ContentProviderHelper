@@ -1,17 +1,17 @@
-import { ContentProviderAuthData, FeedVenueInterface } from '../../interfaces';
-import { ArrangementKeyResponse, B1Ministry, B1PlanType, B1Plan } from './types';
+import { ContentProviderAuthData, FeedVenueInterface } from "../../interfaces";
+import { ArrangementKeyResponse, B1Ministry, B1PlanType, B1Plan } from "./types";
 
-export const API_BASE = 'https://api.churchapps.org';
-export const LESSONS_API_BASE = 'https://api.lessons.church';
-export const CONTENT_API_BASE = 'https://contentapi.churchapps.org';
+export const API_BASE = "https://api.churchapps.org";
+export const LESSONS_API_BASE = "https://api.lessons.church";
+export const CONTENT_API_BASE = "https://contentapi.churchapps.org";
 
 async function authFetch<T>(url: string, auth: ContentProviderAuthData | null | undefined): Promise<T | null> {
   try {
-    const headers: Record<string, string> = { Accept: 'application/json' };
+    const headers: Record<string, string> = { Accept: "application/json" };
     if (auth) {
-      headers['Authorization'] = `Bearer ${auth.access_token}`;
+      headers["Authorization"] = `Bearer ${auth.access_token}`;
     }
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await fetch(url, { method: "GET", headers });
     if (!response.ok) return null;
     return await response.json();
   } catch {
@@ -37,7 +37,7 @@ export async function fetchPlans(planTypeId: string, auth: ContentProviderAuthDa
 export async function fetchVenueFeed(venueId: string): Promise<FeedVenueInterface | null> {
   try {
     const url = `${LESSONS_API_BASE}/venues/public/feed/${venueId}`;
-    const response = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });
+    const response = await fetch(url, { method: "GET", headers: { Accept: "application/json" } });
     if (!response.ok) return null;
     return await response.json();
   } catch {
@@ -48,7 +48,7 @@ export async function fetchVenueFeed(venueId: string): Promise<FeedVenueInterfac
 export async function fetchArrangementKey(churchId: string, arrangementId: string): Promise<ArrangementKeyResponse | null> {
   try {
     const url = `${CONTENT_API_BASE}/arrangementKeys/presenter/${churchId}/${arrangementId}`;
-    const response = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });
+    const response = await fetch(url, { method: "GET", headers: { Accept: "application/json" } });
     if (!response.ok) return null;
     return await response.json();
   } catch {

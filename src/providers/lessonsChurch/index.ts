@@ -1,1 +1,1 @@
-export { LessonsChurchProvider } from './LessonsChurchProvider';
+export { LessonsChurchProvider } from "./LessonsChurchProvider";

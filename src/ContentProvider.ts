@@ -1,7 +1,7 @@
-import { ContentProviderAuthData, ContentProviderConfig, ContentItem, ContentFolder, ContentFile, DeviceAuthorizationResponse, DeviceFlowPollResult, ProviderLogos, AuthType, Plan, Instructions, ProviderCapabilities, MediaLicenseResult, IContentProvider, IAuthProvider } from './interfaces';
-import { detectMediaType } from './utils';
-import * as Converters from './FormatConverters';
-import { OAuthHelper, TokenHelper, DeviceFlowHelper, ApiHelper } from './helpers';
+import { ContentProviderAuthData, ContentProviderConfig, ContentItem, ContentFolder, ContentFile, DeviceAuthorizationResponse, DeviceFlowPollResult, ProviderLogos, AuthType, Plan, Instructions, ProviderCapabilities, MediaLicenseResult, IContentProvider, IAuthProvider } from "./interfaces";
+import { detectMediaType } from "./utils";
+import * as Converters from "./FormatConverters";
+import { OAuthHelper, TokenHelper, DeviceFlowHelper, ApiHelper } from "./helpers";
 
 /**
  * @deprecated Use IProvider interface instead. Providers should implement IProvider directly
@@ -72,9 +72,9 @@ export abstract class ContentProvider implements IContentProvider, IAuthProvider
   }
 
   getAuthTypes(): AuthType[] {
-    if (!this.requiresAuth()) return ['none'];
-    const types: AuthType[] = ['oauth_pkce'];
-    if (this.supportsDeviceFlow()) types.push('device_flow');
+    if (!this.requiresAuth()) return ["none"];
+    const types: AuthType[] = ["oauth_pkce"];
+    if (this.supportsDeviceFlow()) types.push("device_flow");
     return types;
   }
 
@@ -130,16 +130,16 @@ export abstract class ContentProvider implements IContentProvider, IAuthProvider
     return this.apiHelper.createAuthHeaders(auth);
   }
 
-  protected async apiRequest<T>(path: string, auth?: ContentProviderAuthData | null, method: 'GET' | 'POST' = 'GET', body?: unknown): Promise<T | null> {
+  protected async apiRequest<T>(path: string, auth?: ContentProviderAuthData | null, method: "GET" | "POST" = "GET", body?: unknown): Promise<T | null> {
     return this.apiHelper.apiRequest<T>(this.config, this.id, path, auth, method, body);
   }
 
   // Content factories
   protected createFolder(id: string, title: string, path: string, image?: string, providerData?: Record<string, unknown>, isLeaf?: boolean): ContentFolder {
-    return { type: 'folder', id, title, path, image, isLeaf, providerData };
+    return { type: "folder", id, title, path, image, isLeaf, providerData };
   }
 
-  protected createFile(id: string, title: string, url: string, options?: { mediaType?: 'video' | 'image'; image?: string; muxPlaybackId?: string; providerData?: Record<string, unknown>; }): ContentFile {
-    return { type: 'file', id, title, url, mediaType: options?.mediaType ?? detectMediaType(url), image: options?.image, muxPlaybackId: options?.muxPlaybackId, providerData: options?.providerData };
+  protected createFile(id: string, title: string, url: string, options?: { mediaType?: "video" | "image"; image?: string; muxPlaybackId?: string; providerData?: Record<string, unknown>; }): ContentFile {
+    return { type: "file", id, title, url, mediaType: options?.mediaType ?? detectMediaType(url), image: options?.image, muxPlaybackId: options?.muxPlaybackId, providerData: options?.providerData };
   }
 }

@@ -1,1 +1,1 @@
-export { APlayProvider } from './APlayProvider';
+export { APlayProvider } from "./APlayProvider";

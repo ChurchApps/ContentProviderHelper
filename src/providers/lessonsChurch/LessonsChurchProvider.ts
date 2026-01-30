@@ -1,6 +1,6 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, FeedVenueInterface, Instructions, InstructionItem, VenueActionsResponseInterface, ProviderCapabilities, IProvider, AuthType } from '../../interfaces';
-import { detectMediaType } from '../../utils';
-import { parsePath, getSegment } from '../../pathUtils';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, FeedVenueInterface, Instructions, InstructionItem, VenueActionsResponseInterface, ProviderCapabilities, IProvider, AuthType } from "../../interfaces";
+import { detectMediaType } from "../../utils";
+import { parsePath, getSegment } from "../../pathUtils";
 
 /**
  * LessonsChurch Provider
@@ -16,15 +16,15 @@ import { parsePath, getSegment } from '../../pathUtils';
  *   /addons/{category}                                  -> add-on files
  */
 export class LessonsChurchProvider implements IProvider {
-  readonly id = 'lessonschurch';
-  readonly name = 'Lessons.church';
+  readonly id = "lessonschurch";
+  readonly name = "Lessons.church";
 
-  readonly logos: ProviderLogos = { light: 'https://lessons.church/images/logo.png', dark: 'https://lessons.church/images/logo-dark.png' };
+  readonly logos: ProviderLogos = { light: "https://lessons.church/images/logo.png", dark: "https://lessons.church/images/logo-dark.png" };
 
-  readonly config: ContentProviderConfig = { id: 'lessonschurch', name: 'Lessons.church', apiBase: 'https://api.lessons.church', oauthBase: '', clientId: '', scopes: [], endpoints: { programs: '/programs/public', studies: (programId: string) => `/studies/public/program/${programId}`, lessons: (studyId: string) => `/lessons/public/study/${studyId}`, venues: (lessonId: string) => `/venues/public/lesson/${lessonId}`, playlist: (venueId: string) => `/venues/playlist/${venueId}`, feed: (venueId: string) => `/venues/public/feed/${venueId}`, addOns: '/addOns/public', addOnDetail: (id: string) => `/addOns/public/${id}` } };
+  readonly config: ContentProviderConfig = { id: "lessonschurch", name: "Lessons.church", apiBase: "https://api.lessons.church", oauthBase: "", clientId: "", scopes: [], endpoints: { programs: "/programs/public", studies: (programId: string) => `/studies/public/program/${programId}`, lessons: (studyId: string) => `/lessons/public/study/${studyId}`, venues: (lessonId: string) => `/venues/public/lesson/${lessonId}`, playlist: (venueId: string) => `/venues/playlist/${venueId}`, feed: (venueId: string) => `/venues/public/feed/${venueId}`, addOns: "/addOns/public", addOnDetail: (id: string) => `/addOns/public/${id}` } };
 
   readonly requiresAuth = false;
-  readonly authTypes: AuthType[] = ['none'];
+  readonly authTypes: AuthType[] = ["none"];
   readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: true, instructions: true, expandedInstructions: true, mediaLicensing: false };
 
   async getPlaylist(path: string, _auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null> {
@@ -50,7 +50,7 @@ export class LessonsChurchProvider implements IProvider {
         const url = f.url as string;
         const fileId = (f.id as string) || `playlist-${fileIndex++}`;
 
-        files.push({ type: 'file', id: fileId, title: (f.name || msg.name) as string, mediaType: detectMediaType(url, f.fileType as string | undefined), image: response.lessonImage as string | undefined, url, providerData: { seconds: f.seconds, loop: f.loop, loopVideo: f.loopVideo } });
+        files.push({ type: "file", id: fileId, title: (f.name || msg.name) as string, mediaType: detectMediaType(url, f.fileType as string | undefined), image: response.lessonImage as string | undefined, url, providerData: { seconds: f.seconds, loop: f.loop, loopVideo: f.loopVideo } });
       }
     }
 
@@ -60,7 +60,7 @@ export class LessonsChurchProvider implements IProvider {
   private async apiRequest<T>(path: string): Promise<T | null> {
     try {
       const url = `${this.config.apiBase}${path}`;
-      const response = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });
+      const response = await fetch(url, { method: "GET", headers: { Accept: "application/json" } });
       if (!response.ok) return null;
       return await response.json();
     } catch {
@@ -70,18 +70,18 @@ export class LessonsChurchProvider implements IProvider {
 
   async browse(path?: string | null, _auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const { segments, depth } = parsePath(path);
-    console.log('[LessonsChurchProvider.browse] path:', path, 'depth:', depth, 'segments:', segments);
+    console.log("[LessonsChurchProvider.browse] path:", path, "depth:", depth, "segments:", segments);
 
     if (depth === 0) {
       return [
-        { type: 'folder' as const, id: 'lessons-root', title: 'Lessons', path: '/lessons' },
-        { type: 'folder' as const, id: 'addons-root', title: 'Add-Ons', path: '/addons' }
+        { type: "folder" as const, id: "lessons-root", title: "Lessons", path: "/lessons" },
+        { type: "folder" as const, id: "addons-root", title: "Add-Ons", path: "/addons" }
       ];
     }
 
     const root = segments[0];
-    if (root === 'lessons') return this.browseLessons(path!, segments);
-    if (root === 'addons') return this.browseAddOns(path!, segments);
+    if (root === "lessons") return this.browseLessons(path!, segments);
+    if (root === "addons") return this.browseAddOns(path!, segments);
     return [];
   }
 
@@ -109,7 +109,7 @@ export class LessonsChurchProvider implements IProvider {
 
     const programs = Array.isArray(response) ? response : [];
     return programs.map((p) => ({
-      type: 'folder' as const,
+      type: "folder" as const,
       id: p.id as string,
       title: p.name as string,
       image: p.image as string | undefined,
@@ -124,7 +124,7 @@ export class LessonsChurchProvider implements IProvider {
 
     const studies = Array.isArray(response) ? response : [];
     return studies.map((s) => ({
-      type: 'folder' as const,
+      type: "folder" as const,
       id: s.id as string,
       title: s.name as string,
       image: s.image as string | undefined,
@@ -139,7 +139,7 @@ export class LessonsChurchProvider implements IProvider {
 
     const lessons = Array.isArray(response) ? response : [];
     return lessons.map((l) => ({
-      type: 'folder' as const,
+      type: "folder" as const,
       id: l.id as string,
       title: (l.name || l.title) as string,
       image: l.image as string | undefined,
@@ -159,14 +159,14 @@ export class LessonsChurchProvider implements IProvider {
 
     const venues = Array.isArray(response) ? response : [];
     const result = venues.map((v) => ({
-      type: 'folder' as const,
+      type: "folder" as const,
       id: v.id as string,
       title: v.name as string,
       image: lessonImage,
       isLeaf: true,
       path: `${currentPath}/${v.id}`
     }));
-    console.log('[LessonsChurchProvider.getVenues] returning:', result.map(r => ({ id: r.id, title: r.title, isLeaf: r.isLeaf })));
+    console.log("[LessonsChurchProvider.getVenues] returning:", result.map(r => ({ id: r.id, title: r.title, isLeaf: r.isLeaf })));
     return result;
   }
 
@@ -195,7 +195,7 @@ export class LessonsChurchProvider implements IProvider {
     const categories = Array.from(new Set(addOns.map((a) => a.category as string).filter(Boolean)));
 
     return categories.sort().map((category) => ({
-      type: 'folder' as const,
+      type: "folder" as const,
       id: `category-${category}`,
       title: category,
       path: `/addons/${encodeURIComponent(category)}`
@@ -227,8 +227,8 @@ export class LessonsChurchProvider implements IProvider {
     const detail = await this.apiRequest<Record<string, unknown>>(apiPath);
     if (!detail) return null;
 
-    let url = '';
-    let mediaType: 'video' | 'image' = 'video';
+    let url = "";
+    let mediaType: "video" | "image" = "video";
     let seconds = (addOn.seconds as number) || 10;
 
     const video = detail.video as Record<string, unknown> | undefined;
@@ -240,12 +240,12 @@ export class LessonsChurchProvider implements IProvider {
     } else if (file) {
       url = file.contentPath as string;
       const fileType = file.fileType as string | undefined;
-      mediaType = fileType?.startsWith('video/') ? 'video' : 'image';
+      mediaType = fileType?.startsWith("video/") ? "video" : "image";
     } else {
       return null;
     }
 
-    return { type: 'file', id: addOn.id as string, title: addOn.name as string, mediaType, image: addOn.image as string | undefined, url, embedUrl: `https://lessons.church/embed/addon/${addOn.id}`, providerData: { seconds, loopVideo: (video as Record<string, unknown> | undefined)?.loopVideo || false } };
+    return { type: "file", id: addOn.id as string, title: addOn.name as string, mediaType, image: addOn.image as string | undefined, url, embedUrl: `https://lessons.church/embed/addon/${addOn.id}`, providerData: { seconds, loopVideo: (video as Record<string, unknown> | undefined)?.loopVideo || false } };
   }
 
   async getPresentations(path: string, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
@@ -290,8 +290,8 @@ export class LessonsChurchProvider implements IProvider {
       for (const section of actionsResponse.sections) {
         if (section.id && section.actions) {
           sectionActionsMap.set(section.id, section.actions.map(action => {
-            const embedUrl = this.getEmbedUrl('action', action.id);
-            return { id: action.id, itemType: 'action', relatedId: action.id, label: action.name, description: action.actionType, seconds: action.seconds, children: [{ id: action.id + '-file', itemType: 'file', label: action.name, seconds: action.seconds, embedUrl }] };
+            const embedUrl = this.getEmbedUrl("action", action.id);
+            return { id: action.id, itemType: "action", relatedId: action.id, label: action.name, description: action.actionType, seconds: action.seconds, children: [{ id: action.id + "-file", itemType: "file", label: action.name, seconds: action.seconds, embedUrl }] };
           }));
         }
       }
@@ -322,20 +322,20 @@ export class LessonsChurchProvider implements IProvider {
   }
 
   private normalizeItemType(type?: string): string | undefined {
-    if (type === 'lessonSection') return 'section';
-    if (type === 'lessonAction') return 'action';
-    if (type === 'lessonAddOn') return 'addon';
+    if (type === "lessonSection") return "section";
+    if (type === "lessonAction") return "action";
+    if (type === "lessonAddOn") return "addon";
     return type;
   }
 
   private getEmbedUrl(itemType?: string, relatedId?: string): string | undefined {
     if (!relatedId) return undefined;
 
-    const baseUrl = 'https://lessons.church';
+    const baseUrl = "https://lessons.church";
     switch (itemType) {
-      case 'action': return `${baseUrl}/embed/action/${relatedId}`;
-      case 'addon': return `${baseUrl}/embed/addon/${relatedId}`;
-      case 'section': return `${baseUrl}/embed/section/${relatedId}`;
+      case "action": return `${baseUrl}/embed/action/${relatedId}`;
+      case "addon": return `${baseUrl}/embed/addon/${relatedId}`;
+      case "section": return `${baseUrl}/embed/section/${relatedId}`;
       default: return undefined;
     }
   }
@@ -348,8 +348,8 @@ export class LessonsChurchProvider implements IProvider {
       const presentations: PlanPresentation[] = [];
 
       for (const action of section.actions || []) {
-        const actionType = (action.actionType?.toLowerCase() || 'other') as 'play' | 'add-on' | 'other';
-        if (actionType !== 'play' && actionType !== 'add-on') continue;
+        const actionType = (action.actionType?.toLowerCase() || "other") as "play" | "add-on" | "other";
+        if (actionType !== "play" && actionType !== "add-on") continue;
 
         const files: ContentFile[] = [];
 
@@ -358,22 +358,22 @@ export class LessonsChurchProvider implements IProvider {
 
           const embedUrl = action.id ? `https://lessons.church/embed/action/${action.id}` : undefined;
 
-          const contentFile: ContentFile = { type: 'file', id: file.id || '', title: file.name || '', mediaType: detectMediaType(file.url, file.fileType), image: venue.lessonImage, url: file.url, embedUrl, providerData: { seconds: file.seconds, streamUrl: file.streamUrl } };
+          const contentFile: ContentFile = { type: "file", id: file.id || "", title: file.name || "", mediaType: detectMediaType(file.url, file.fileType), image: venue.lessonImage, url: file.url, embedUrl, providerData: { seconds: file.seconds, streamUrl: file.streamUrl } };
 
           files.push(contentFile);
           allFiles.push(contentFile);
         }
 
         if (files.length > 0) {
-          presentations.push({ id: action.id || '', name: action.content || section.name || 'Untitled', actionType, files });
+          presentations.push({ id: action.id || "", name: action.content || section.name || "Untitled", actionType, files });
         }
       }
 
       if (presentations.length > 0) {
-        sections.push({ id: section.id || '', name: section.name || 'Untitled Section', presentations });
+        sections.push({ id: section.id || "", name: section.name || "Untitled Section", presentations });
       }
     }
 
-    return { id: venue.id || '', name: venue.lessonName || venue.name || 'Plan', description: venue.lessonDescription, image: venue.lessonImage, sections, allFiles };
+    return { id: venue.id || "", name: venue.lessonName || venue.name || "Plan", description: venue.lessonDescription, image: venue.lessonImage, sections, allFiles };
   }
 }

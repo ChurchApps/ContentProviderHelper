@@ -1,1 +1,1 @@
-export { SignPresenterProvider } from './SignPresenterProvider';
+export { SignPresenterProvider } from "./SignPresenterProvider";

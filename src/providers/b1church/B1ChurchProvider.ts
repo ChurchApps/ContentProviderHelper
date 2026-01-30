@@ -1,10 +1,10 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, Instructions, ProviderCapabilities, DeviceAuthorizationResponse, DeviceFlowPollResult, IProvider, AuthType } from '../../interfaces';
-import { parsePath } from '../../pathUtils';
-import { ApiHelper } from '../../helpers';
-import { B1PlanItem } from './types';
-import * as auth from './auth';
-import { fetchMinistries, fetchPlanTypes, fetchPlans, fetchVenueFeed, API_BASE } from './api';
-import { ministryToFolder, planTypeToFolder, planToFolder, planItemToPresentation, planItemToInstruction, getFilesFromVenueFeed } from './converters';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, Instructions, ProviderCapabilities, DeviceAuthorizationResponse, DeviceFlowPollResult, IProvider, AuthType } from "../../interfaces";
+import { parsePath } from "../../pathUtils";
+import { ApiHelper } from "../../helpers";
+import { B1PlanItem } from "./types";
+import * as auth from "./auth";
+import { fetchMinistries, fetchPlanTypes, fetchPlans, fetchVenueFeed, API_BASE } from "./api";
+import { ministryToFolder, planTypeToFolder, planToFolder, planItemToPresentation, planItemToInstruction, getFilesFromVenueFeed } from "./converters";
 
 export class B1ChurchProvider implements IProvider {
   private readonly apiHelper = new ApiHelper();
@@ -12,17 +12,17 @@ export class B1ChurchProvider implements IProvider {
   private async apiRequest<T>(path: string, authData?: ContentProviderAuthData | null): Promise<T | null> {
     return this.apiHelper.apiRequest<T>(this.config, this.id, path, authData);
   }
-  readonly id = 'b1church';
-  readonly name = 'B1.Church';
+  readonly id = "b1church";
+  readonly name = "B1.Church";
 
-  readonly logos: ProviderLogos = { light: 'https://b1.church/b1-church-logo.png', dark: 'https://b1.church/b1-church-logo.png' };
+  readonly logos: ProviderLogos = { light: "https://b1.church/b1-church-logo.png", dark: "https://b1.church/b1-church-logo.png" };
 
-  readonly config: ContentProviderConfig = { id: 'b1church', name: 'B1.Church', apiBase: `${API_BASE}/doing`, oauthBase: `${API_BASE}/membership/oauth`, clientId: '', scopes: ['plans'], supportsDeviceFlow: true, deviceAuthEndpoint: '/device/authorize', endpoints: { planItems: (churchId: string, planId: string) => `/planItems/presenter/${churchId}/${planId}` } };
+  readonly config: ContentProviderConfig = { id: "b1church", name: "B1.Church", apiBase: `${API_BASE}/doing`, oauthBase: `${API_BASE}/membership/oauth`, clientId: "", scopes: ["plans"], supportsDeviceFlow: true, deviceAuthEndpoint: "/device/authorize", endpoints: { planItems: (churchId: string, planId: string) => `/planItems/presenter/${churchId}/${planId}` } };
 
-  private appBase = 'https://admin.b1.church';
+  private appBase = "https://admin.b1.church";
 
   readonly requiresAuth = true;
-  readonly authTypes: AuthType[] = ['oauth_pkce', 'device_flow'];
+  readonly authTypes: AuthType[] = ["oauth_pkce", "device_flow"];
   readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: true, instructions: true, expandedInstructions: true, mediaLicensing: false };
 
   async buildAuthUrl(_codeVerifier: string, redirectUri: string, state?: string): Promise<{ url: string; challengeMethod: string }> {
@@ -50,15 +50,15 @@ export class B1ChurchProvider implements IProvider {
 
     if (depth === 0) {
       return [{
-        type: 'folder' as const,
-        id: 'ministries-root',
-        title: 'Ministries',
-        path: '/ministries'
+        type: "folder" as const,
+        id: "ministries-root",
+        title: "Ministries",
+        path: "/ministries"
       }];
     }
 
     const root = segments[0];
-    if (root !== 'ministries') return [];
+    if (root !== "ministries") return [];
 
     // /ministries -> list all ministries
     if (depth === 1) {
@@ -103,7 +103,7 @@ export class B1ChurchProvider implements IProvider {
   async getPresentations(path: string, authData?: ContentProviderAuthData | null): Promise<Plan | null> {
     const { segments, depth } = parsePath(path);
 
-    if (depth < 4 || segments[0] !== 'ministries') return null;
+    if (depth < 4 || segments[0] !== "ministries") return null;
 
     const planId = segments[3];
     const planTypeId = segments[2];
@@ -120,7 +120,7 @@ export class B1ChurchProvider implements IProvider {
     const providerData = folder.providerData as Record<string, unknown>;
     const churchId = providerData?.churchId as string;
     const venueId = providerData?.contentId as string | undefined;
-    const planTitle = folder.title || 'Plan';
+    const planTitle = folder.title || "Plan";
 
     if (!churchId) return null;
 
@@ -145,7 +145,7 @@ export class B1ChurchProvider implements IProvider {
       }
 
       if (presentations.length > 0 || sectionItem.label) {
-        sections.push({ id: sectionItem.id, name: sectionItem.label || 'Section', presentations });
+        sections.push({ id: sectionItem.id, name: sectionItem.label || "Section", presentations });
       }
     }
 
@@ -155,7 +155,7 @@ export class B1ChurchProvider implements IProvider {
   async getInstructions(path: string, authData?: ContentProviderAuthData | null): Promise<Instructions | null> {
     const { segments, depth } = parsePath(path);
 
-    if (depth < 4 || segments[0] !== 'ministries') return null;
+    if (depth < 4 || segments[0] !== "ministries") return null;
 
     const planId = segments[3];
     const planTypeId = segments[2];
@@ -171,7 +171,7 @@ export class B1ChurchProvider implements IProvider {
     const folder = planToFolder(planFolder);
     const providerData = folder.providerData as Record<string, unknown>;
     const churchId = providerData?.churchId as string;
-    const planTitle = folder.title || 'Plan';
+    const planTitle = folder.title || "Plan";
 
     if (!churchId) return null;
 
@@ -185,7 +185,7 @@ export class B1ChurchProvider implements IProvider {
   async getPlaylist(path: string, authData?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
     const { segments, depth } = parsePath(path);
 
-    if (depth < 4 || segments[0] !== 'ministries') return [];
+    if (depth < 4 || segments[0] !== "ministries") return [];
 
     const planId = segments[3];
     const planTypeId = segments[2];
@@ -215,9 +215,9 @@ export class B1ChurchProvider implements IProvider {
     for (const sectionItem of planItems) {
       for (const child of sectionItem.children || []) {
         const itemType = child.itemType;
-        if ((itemType === 'lessonSection' || itemType === 'section' ||
-             itemType === 'lessonAction' || itemType === 'action' ||
-             itemType === 'lessonAddOn' || itemType === 'addon') && venueFeed) {
+        if ((itemType === "lessonSection" || itemType === "section" ||
+             itemType === "lessonAction" || itemType === "action" ||
+             itemType === "lessonAddOn" || itemType === "addon") && venueFeed) {
           const itemFiles = getFilesFromVenueFeed(venueFeed, itemType, child.relatedId);
           files.push(...itemFiles);
         }

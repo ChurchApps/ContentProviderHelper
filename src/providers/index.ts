@@ -1,19 +1,19 @@
-import { ProviderInfo, ProviderLogos, IProvider } from '../interfaces';
-import { APlayProvider } from './aPlay';
-import { B1ChurchProvider } from './b1Church';
-import { BibleProjectProvider } from './bibleProject';
-import { HighVoltageKidsProvider } from './highVoltage';
-import { LessonsChurchProvider } from './lessonsChurch';
-import { PlanningCenterProvider } from './planningCenter';
-import { SignPresenterProvider } from './signPresenter';
+import { ProviderInfo, ProviderLogos, IProvider } from "../interfaces";
+import { APlayProvider } from "./aPlay";
+import { B1ChurchProvider } from "./b1Church";
+import { BibleProjectProvider } from "./bibleProject";
+import { HighVoltageKidsProvider } from "./highVoltage";
+import { LessonsChurchProvider } from "./lessonsChurch";
+import { PlanningCenterProvider } from "./planningCenter";
+import { SignPresenterProvider } from "./signPresenter";
 
-export { APlayProvider } from './aPlay';
-export { B1ChurchProvider } from './b1Church';
-export { BibleProjectProvider } from './bibleProject';
-export { HighVoltageKidsProvider } from './highVoltage';
-export { LessonsChurchProvider } from './lessonsChurch';
-export { PlanningCenterProvider } from './planningCenter';
-export { SignPresenterProvider } from './signPresenter';
+export { APlayProvider } from "./aPlay";
+export { B1ChurchProvider } from "./b1Church";
+export { BibleProjectProvider } from "./bibleProject";
+export { HighVoltageKidsProvider } from "./highVoltage";
+export { LessonsChurchProvider } from "./lessonsChurch";
+export { PlanningCenterProvider } from "./planningCenter";
+export { SignPresenterProvider } from "./signPresenter";
 
 // Provider registry - singleton instances
 const providerRegistry: Map<string, IProvider> = new Map();
@@ -27,51 +27,51 @@ interface UnimplementedProvider {
 
 const unimplementedProviders: UnimplementedProvider[] = [
   {
-    id: 'awana',
-    name: 'Awana',
+    id: "awana",
+    name: "Awana",
     logos: {
-      light: 'https://www.awana.org/wp-content/uploads/2025/04/awana-logo-black.svg',
-      dark: 'https://www.awana.org/wp-content/uploads/2025/04/awana-logo-white.svg',
+      light: "https://www.awana.org/wp-content/uploads/2025/04/awana-logo-black.svg",
+      dark: "https://www.awana.org/wp-content/uploads/2025/04/awana-logo-white.svg",
     },
   },
   {
-    id: 'freeshow',
-    name: 'FreeShow',
+    id: "freeshow",
+    name: "FreeShow",
     logos: {
-      light: 'https://freeshow.app/images/favicon.png',
-      dark: 'https://freeshow.app/images/favicon.png',
+      light: "https://freeshow.app/images/favicon.png",
+      dark: "https://freeshow.app/images/favicon.png",
     },
   },
   {
-    id: 'gocurriculum',
-    name: 'Go Curriculum',
+    id: "gocurriculum",
+    name: "Go Curriculum",
     logos: {
-      light: 'https://gocurriculum.com/wp-content/uploads/go-logo-curriculum-v2.png',
-      dark: 'https://gocurriculum.com/wp-content/uploads/go-logo-curriculum-v2.png',
+      light: "https://gocurriculum.com/wp-content/uploads/go-logo-curriculum-v2.png",
+      dark: "https://gocurriculum.com/wp-content/uploads/go-logo-curriculum-v2.png",
     },
   },
   {
-    id: 'iteachchurch',
-    name: 'iTeachChurch',
+    id: "iteachchurch",
+    name: "iTeachChurch",
     logos: {
-      light: 'https://iteachchurch.com/wp-content/uploads/2022/05/iTeachChurch_Artboard-1-copy-3@2x.png',
-      dark: 'https://iteachchurch.com/wp-content/uploads/2022/05/iTeachChurch_Artboard-1-copy-3@2x.png',
+      light: "https://iteachchurch.com/wp-content/uploads/2022/05/iTeachChurch_Artboard-1-copy-3@2x.png",
+      dark: "https://iteachchurch.com/wp-content/uploads/2022/05/iTeachChurch_Artboard-1-copy-3@2x.png",
     },
   },
   {
-    id: 'lifechurch',
-    name: 'LifeChurch',
+    id: "lifechurch",
+    name: "LifeChurch",
     logos: {
-      light: 'https://cdn.brandfetch.io/idRrA6pM45/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1668042253613',
-      dark: 'https://cdn.brandfetch.io/idRrA6pM45/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1668042253613',
+      light: "https://cdn.brandfetch.io/idRrA6pM45/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1668042253613",
+      dark: "https://cdn.brandfetch.io/idRrA6pM45/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1668042253613",
     },
   },
   {
-    id: 'ministrystuff',
-    name: 'MinistryStuff',
+    id: "ministrystuff",
+    name: "MinistryStuff",
     logos: {
-      light: '',
-      dark: '',
+      light: "",
+      dark: "",
     },
   },
 ];

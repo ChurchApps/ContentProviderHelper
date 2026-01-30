@@ -1,8 +1,8 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, ProviderCapabilities, Instructions, InstructionItem, IProvider, AuthType } from '../../interfaces';
-import { createFile } from '../../utils';
-import { parsePath } from '../../pathUtils';
-import highVoltageData from './data.json';
-import { HighVoltageData } from './HighVoltageKidsInterfaces';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, ProviderCapabilities, Instructions, InstructionItem, IProvider, AuthType } from "../../interfaces";
+import { createFile } from "../../utils";
+import { parsePath } from "../../pathUtils";
+import highVoltageData from "./data.json";
+import { HighVoltageData } from "./HighVoltageKidsInterfaces";
 
 /**
  * HighVoltageKids Provider
@@ -14,30 +14,30 @@ import { HighVoltageData } from './HighVoltageKidsInterfaces';
  *   /{collectionSlug}/{studyId}/{lessonId}     -> lesson files (leaf)
  */
 export class HighVoltageKidsProvider implements IProvider {
-  readonly id = 'highvoltagekids';
-  readonly name = 'High Voltage Kids';
+  readonly id = "highvoltagekids";
+  readonly name = "High Voltage Kids";
 
   readonly logos: ProviderLogos = {
-    light: 'https://highvoltagekids.com/wp-content/uploads/2023/10/logo-300x300-1.webp',
-    dark: 'https://highvoltagekids.com/wp-content/uploads/2023/10/logo-300x300-1.webp'
+    light: "https://highvoltagekids.com/wp-content/uploads/2023/10/logo-300x300-1.webp",
+    dark: "https://highvoltagekids.com/wp-content/uploads/2023/10/logo-300x300-1.webp"
   };
 
   readonly config: ContentProviderConfig = {
-    id: 'highvoltagekids',
-    name: 'High Voltage Kids',
-    apiBase: 'https://highvoltagekids.com',
-    oauthBase: '',
-    clientId: '',
+    id: "highvoltagekids",
+    name: "High Voltage Kids",
+    apiBase: "https://highvoltagekids.com",
+    oauthBase: "",
+    clientId: "",
     scopes: [],
     endpoints: {
-      downloads: '/membership-downloads/'
+      downloads: "/membership-downloads/"
     }
   };
 
   private data: HighVoltageData = highVoltageData;
 
   readonly requiresAuth = false;
-  readonly authTypes: AuthType[] = ['none'];
+  readonly authTypes: AuthType[] = ["none"];
   readonly capabilities: ProviderCapabilities = {
     browse: true,
     presentations: true,
@@ -83,7 +83,7 @@ export class HighVoltageKidsProvider implements IProvider {
     return this.data.collections
       .filter(collection => collection.folders.length > 0)
       .map(collection => ({
-        type: 'folder' as const,
+        type: "folder" as const,
         id: this.slugify(collection.name),
         title: collection.name,
         path: `/${this.slugify(collection.name)}`
@@ -95,7 +95,7 @@ export class HighVoltageKidsProvider implements IProvider {
     if (!collection) return [];
 
     return collection.folders.map(study => ({
-      type: 'folder' as const,
+      type: "folder" as const,
       id: study.id,
       title: study.name,
       image: study.image || undefined,
@@ -112,7 +112,7 @@ export class HighVoltageKidsProvider implements IProvider {
     if (!study) return [];
 
     return study.lessons.map(lesson => ({
-      type: 'folder' as const,
+      type: "folder" as const,
       id: lesson.id,
       title: lesson.name,
       image: lesson.image || undefined,
@@ -132,7 +132,7 @@ export class HighVoltageKidsProvider implements IProvider {
     const lesson = study.lessons.find(l => l.id === lessonId);
     if (!lesson?.files) return [];
 
-    return lesson.files.map(file => createFile(file.id, file.title, file.url, { mediaType: file.mediaType as 'video' | 'image' }));
+    return lesson.files.map(file => createFile(file.id, file.title, file.url, { mediaType: file.mediaType as "video" | "image" }));
   }
 
   async getPresentations(path: string, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
@@ -154,11 +154,11 @@ export class HighVoltageKidsProvider implements IProvider {
       const allFiles: ContentFile[] = [];
       const sections: PlanSection[] = study.lessons.map(lesson => {
         const files: ContentFile[] = lesson.files.map(file => {
-          const contentFile: ContentFile = { type: 'file', id: file.id, title: file.title, mediaType: file.mediaType as 'video' | 'image', url: file.url, image: lesson.image };
+          const contentFile: ContentFile = { type: "file", id: file.id, title: file.title, mediaType: file.mediaType as "video" | "image", url: file.url, image: lesson.image };
           allFiles.push(contentFile);
           return contentFile;
         });
-        const presentation: PlanPresentation = { id: lesson.id, name: lesson.name, actionType: 'play', files };
+        const presentation: PlanPresentation = { id: lesson.id, name: lesson.name, actionType: "play", files };
         return { id: lesson.id, name: lesson.name, presentations: [presentation] };
       });
 
@@ -171,9 +171,9 @@ export class HighVoltageKidsProvider implements IProvider {
       const lesson = study.lessons.find(l => l.id === lessonId);
       if (!lesson?.files) return null;
 
-      const files: ContentFile[] = lesson.files.map(file => ({ type: 'file' as const, id: file.id, title: file.title, mediaType: file.mediaType as 'video' | 'image', url: file.url, image: lesson.image }));
-      const presentation: PlanPresentation = { id: lesson.id, name: lesson.name, actionType: 'play', files };
-      return { id: lesson.id, name: lesson.name, image: lesson.image, sections: [{ id: 'main', name: 'Content', presentations: [presentation] }], allFiles: files };
+      const files: ContentFile[] = lesson.files.map(file => ({ type: "file" as const, id: file.id, title: file.title, mediaType: file.mediaType as "video" | "image", url: file.url, image: lesson.image }));
+      const presentation: PlanPresentation = { id: lesson.id, name: lesson.name, actionType: "play", files };
+      return { id: lesson.id, name: lesson.name, image: lesson.image, sections: [{ id: "main", name: "Content", presentations: [presentation] }], allFiles: files };
     }
 
     return null;
@@ -198,7 +198,7 @@ export class HighVoltageKidsProvider implements IProvider {
       const allFiles: ContentFile[] = [];
       for (const lesson of study.lessons) {
         for (const file of lesson.files) {
-          allFiles.push({ type: 'file', id: file.id, title: file.title, mediaType: file.mediaType as 'video' | 'image', url: file.url, image: lesson.image });
+          allFiles.push({ type: "file", id: file.id, title: file.title, mediaType: file.mediaType as "video" | "image", url: file.url, image: lesson.image });
         }
       }
       return allFiles;
@@ -209,7 +209,7 @@ export class HighVoltageKidsProvider implements IProvider {
       const lessonId = segments[2];
       const lesson = study.lessons.find(l => l.id === lessonId);
       if (!lesson?.files) return null;
-      return lesson.files.map(file => ({ type: 'file' as const, id: file.id, title: file.title, mediaType: file.mediaType as 'video' | 'image', url: file.url, image: lesson.image }));
+      return lesson.files.map(file => ({ type: "file" as const, id: file.id, title: file.title, mediaType: file.mediaType as "video" | "image", url: file.url, image: lesson.image }));
     }
 
     return null;
@@ -232,11 +232,11 @@ export class HighVoltageKidsProvider implements IProvider {
     // For study level
     if (depth === 2) {
       const lessonItems: InstructionItem[] = study.lessons.map(lesson => {
-        const fileItems: InstructionItem[] = lesson.files.map(file => ({ id: file.id, itemType: 'file', label: file.title, embedUrl: file.url }));
-        return { id: lesson.id, itemType: 'action', label: lesson.name, description: 'play', children: fileItems };
+        const fileItems: InstructionItem[] = lesson.files.map(file => ({ id: file.id, itemType: "file", label: file.title, embedUrl: file.url }));
+        return { id: lesson.id, itemType: "action", label: lesson.name, description: "play", children: fileItems };
       });
 
-      return { venueName: study.name, items: [{ id: study.id, itemType: 'header', label: study.name, children: [{ id: 'main', itemType: 'section', label: 'Content', children: lessonItems }] }] };
+      return { venueName: study.name, items: [{ id: study.id, itemType: "header", label: study.name, children: [{ id: "main", itemType: "section", label: "Content", children: lessonItems }] }] };
     }
 
     // For lesson level
@@ -247,7 +247,7 @@ export class HighVoltageKidsProvider implements IProvider {
 
       const headerLabel = `${study.name} - ${lesson.name}`;
       const actionItems = this.groupFilesIntoActions(lesson.files);
-      return { venueName: lesson.name, items: [{ id: lesson.id, itemType: 'header', label: headerLabel, children: [{ id: 'main', itemType: 'section', label: lesson.name, children: actionItems }] }] };
+      return { venueName: lesson.name, items: [{ id: lesson.id, itemType: "header", label: headerLabel, children: [{ id: "main", itemType: "section", label: lesson.name, children: actionItems }] }] };
     }
 
     return null;
@@ -256,8 +256,8 @@ export class HighVoltageKidsProvider implements IProvider {
   private slugify(text: string): string {
     return text
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
   }
 
   private groupFilesIntoActions(files: { id: string; title: string; url: string }[]): InstructionItem[] {
@@ -270,17 +270,17 @@ export class HighVoltageKidsProvider implements IProvider {
       if (currentGroup.length === 0) return;
       const children: InstructionItem[] = currentGroup.map(file => ({
         id: file.id,
-        itemType: 'file' as const,
+        itemType: "file" as const,
         label: file.title,
         embedUrl: file.url
       }));
       // Use base name as label only if multiple files were grouped
       const label = (currentGroup.length > 1 && currentBaseName) ? currentBaseName : currentGroup[0].title;
       actionItems.push({
-        id: currentGroup[0].id + '-action',
-        itemType: 'action',
+        id: currentGroup[0].id + "-action",
+        itemType: "action",
         label,
-        description: 'play',
+        description: "play",
         children
       });
       currentGroup = [];

@@ -15,10 +15,10 @@ export interface ParsedPath {
  * @returns Object with segments array and depth count
  */
 export function parsePath(path: string | null | undefined): ParsedPath {
-  if (!path || path === '/' || path === '') {
+  if (!path || path === "/" || path === "") {
     return { segments: [], depth: 0 };
   }
-  const segments = path.replace(/^\//, '').split('/').filter(Boolean);
+  const segments = path.replace(/^\//, "").split("/").filter(Boolean);
   return { segments, depth: segments.length };
 }
 
@@ -39,8 +39,8 @@ export function getSegment(path: string | null | undefined, index: number): stri
  * @returns Path string with leading slash
  */
 export function buildPath(segments: string[]): string {
-  if (segments.length === 0) return '';
-  return '/' + segments.join('/');
+  if (segments.length === 0) return "";
+  return "/" + segments.join("/");
 }
 
 /**
@@ -50,9 +50,9 @@ export function buildPath(segments: string[]): string {
  * @returns New path with segment appended
  */
 export function appendToPath(basePath: string | null | undefined, segment: string): string {
-  if (!basePath || basePath === '/' || basePath === '') {
-    return '/' + segment;
+  if (!basePath || basePath === "/" || basePath === "") {
+    return "/" + segment;
   }
-  const cleanBase = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
-  return cleanBase + '/' + segment;
+  const cleanBase = basePath.endsWith("/") ? basePath.slice(0, -1) : basePath;
+  return cleanBase + "/" + segment;
 }

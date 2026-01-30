@@ -1,1 +1,1 @@
-export { BibleProjectProvider } from './BibleProjectProvider';
+export { BibleProjectProvider } from "./BibleProjectProvider";

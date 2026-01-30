@@ -29,13 +29,13 @@ export interface DeviceAuthorizationResponse {
 }
 
 export interface DeviceFlowState {
-  status: 'loading' | 'awaiting_user' | 'polling' | 'success' | 'error' | 'expired';
+  status: "loading" | "awaiting_user" | "polling" | "success" | "error" | "expired";
   deviceAuth?: DeviceAuthorizationResponse;
   error?: string;
   pollCount?: number;
 }
 
-export type AuthType = 'none' | 'oauth_pkce' | 'device_flow' | 'form_login';
+export type AuthType = "none" | "oauth_pkce" | "device_flow" | "form_login";
 
 export interface ProviderLogos {
   light: string;
@@ -53,7 +53,7 @@ export interface ProviderInfo {
 }
 
 export interface ContentFolder {
-  type: 'folder';
+  type: "folder";
   id: string;
   title: string;
   image?: string;
@@ -63,10 +63,10 @@ export interface ContentFolder {
 }
 
 export interface ContentFile {
-  type: 'file';
+  type: "file";
   id: string;
   title: string;
-  mediaType: 'video' | 'image';
+  mediaType: "video" | "image";
   image?: string;
   url: string;
   embedUrl?: string;
@@ -80,11 +80,11 @@ export interface ContentFile {
 export type ContentItem = ContentFolder | ContentFile;
 
 export function isContentFolder(item: ContentItem): item is ContentFolder {
-  return item.type === 'folder';
+  return item.type === "folder";
 }
 
 export function isContentFile(item: ContentItem): item is ContentFile {
-  return item.type === 'file';
+  return item.type === "file";
 }
 
 export type DeviceFlowPollResult =
@@ -95,7 +95,7 @@ export type DeviceFlowPollResult =
 export interface PlanPresentation {
   id: string;
   name: string;
-  actionType: 'play' | 'add-on' | 'other';
+  actionType: "play" | "add-on" | "other";
   files: ContentFile[];
 }
 
@@ -189,7 +189,7 @@ export interface ProviderCapabilities {
   mediaLicensing: boolean;
 }
 
-export type MediaLicenseStatus = 'valid' | 'expired' | 'not_licensed' | 'unknown';
+export type MediaLicenseStatus = "valid" | "expired" | "not_licensed" | "unknown";
 
 export interface MediaLicenseResult {
   mediaId: string;
