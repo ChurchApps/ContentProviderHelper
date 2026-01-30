@@ -19,40 +19,40 @@ export abstract class ContentProvider implements IContentProvider, IAuthProvider
   protected readonly deviceFlowHelper = new DeviceFlowHelper();
   protected readonly apiHelper = new ApiHelper();
 
-  abstract browse(folder?: ContentFolder | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]>;
+  abstract browse(path?: string | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]>;
 
-  abstract getPresentations(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Plan | null>;
+  abstract getPresentations(path: string, auth?: ContentProviderAuthData | null): Promise<Plan | null>;
 
-  async getPlaylist(folder: ContentFolder, auth?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
+  async getPlaylist(path: string, auth?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
     const caps = this.getCapabilities();
     if (caps.presentations) {
-      const plan = await this.getPresentations(folder, auth);
+      const plan = await this.getPresentations(path, auth);
       if (plan) return Converters.presentationsToPlaylist(plan);
     }
     return null;
   }
 
-  async getInstructions(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
+  async getInstructions(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
     const caps = this.getCapabilities();
 
     if (caps.expandedInstructions) {
-      const expanded = await this.getExpandedInstructions(folder, auth);
+      const expanded = await this.getExpandedInstructions(path, auth);
       if (expanded) return Converters.collapseInstructions(expanded);
     }
 
     if (caps.presentations) {
-      const plan = await this.getPresentations(folder, auth);
+      const plan = await this.getPresentations(path, auth);
       if (plan) return Converters.presentationsToInstructions(plan);
     }
 
     return null;
   }
 
-  async getExpandedInstructions(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
+  async getExpandedInstructions(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
     const caps = this.getCapabilities();
 
     if (caps.presentations) {
-      const plan = await this.getPresentations(folder, auth);
+      const plan = await this.getPresentations(path, auth);
       if (plan) return Converters.presentationsToExpandedInstructions(plan);
     }
 
@@ -135,8 +135,8 @@ export abstract class ContentProvider implements IContentProvider, IAuthProvider
   }
 
   // Content factories
-  protected createFolder(id: string, title: string, image?: string, providerData?: Record<string, unknown>, isLeaf?: boolean): ContentFolder {
-    return { type: 'folder', id, title, image, isLeaf, providerData };
+  protected createFolder(id: string, title: string, path: string, image?: string, providerData?: Record<string, unknown>, isLeaf?: boolean): ContentFolder {
+    return { type: 'folder', id, title, path, image, isLeaf, providerData };
   }
 
   protected createFile(id: string, title: string, url: string, options?: { mediaType?: 'video' | 'image'; image?: string; muxPlaybackId?: string; providerData?: Record<string, unknown>; }): ContentFile {

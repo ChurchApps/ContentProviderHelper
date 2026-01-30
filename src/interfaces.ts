@@ -58,6 +58,7 @@ export interface ContentFolder {
   title: string;
   image?: string;
   isLeaf?: boolean;
+  path: string;
   providerData?: Record<string, unknown>;
 }
 
@@ -213,13 +214,13 @@ export interface IProvider {
   readonly authTypes: AuthType[];
 
   // Core methods (required)
-  browse(folder?: ContentFolder | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]>;
-  getPresentations(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Plan | null>;
+  browse(path?: string | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]>;
+  getPresentations(path: string, auth?: ContentProviderAuthData | null): Promise<Plan | null>;
 
   // Optional methods - providers can implement these if they have custom logic
-  getPlaylist?(folder: ContentFolder, auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null>;
-  getInstructions?(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
-  getExpandedInstructions?(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
+  getPlaylist?(path: string, auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null>;
+  getInstructions?(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
+  getExpandedInstructions?(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
   checkMediaLicense?(mediaId: string, auth?: ContentProviderAuthData | null): Promise<MediaLicenseResult | null>;
 }
 
@@ -234,13 +235,13 @@ export interface IContentProvider {
   readonly config: ContentProviderConfig;
 
   // Content browsing
-  browse(folder?: ContentFolder | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]>;
-  getPresentations(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Plan | null>;
+  browse(path?: string | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]>;
+  getPresentations(path: string, auth?: ContentProviderAuthData | null): Promise<Plan | null>;
 
   // Content retrieval
-  getPlaylist(folder: ContentFolder, auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null>;
-  getInstructions(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
-  getExpandedInstructions(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
+  getPlaylist(path: string, auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null>;
+  getInstructions(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
+  getExpandedInstructions(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
 
   // Capability & auth detection
   requiresAuth(): boolean;

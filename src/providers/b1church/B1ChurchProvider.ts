@@ -1,4 +1,5 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, Instructions, ProviderCapabilities, DeviceAuthorizationResponse, DeviceFlowPollResult, IProvider, AuthType } from '../../interfaces';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, Instructions, ProviderCapabilities, DeviceAuthorizationResponse, DeviceFlowPollResult, IProvider, AuthType } from '../../interfaces';
+import { parsePath } from '../../pathUtils';
 import { ApiHelper } from '../../helpers';
 import { B1PlanItem } from './types';
 import * as auth from './auth';
@@ -44,39 +45,84 @@ export class B1ChurchProvider implements IProvider {
     return auth.pollDeviceFlowToken(this.config, deviceCode);
   }
 
-  async browse(folder?: ContentFolder | null, authData?: ContentProviderAuthData | null): Promise<ContentItem[]> {
-    if (!folder) {
+  async browse(path?: string | null, authData?: ContentProviderAuthData | null): Promise<ContentItem[]> {
+    const { segments, depth } = parsePath(path);
+
+    if (depth === 0) {
+      return [{
+        type: 'folder' as const,
+        id: 'ministries-root',
+        title: 'Ministries',
+        path: '/ministries'
+      }];
+    }
+
+    const root = segments[0];
+    if (root !== 'ministries') return [];
+
+    // /ministries -> list all ministries
+    if (depth === 1) {
       const ministries = await fetchMinistries(authData);
-      return ministries.map(ministryToFolder);
+      return ministries.map(m => {
+        const folder = ministryToFolder(m);
+        const ministryId = (folder.providerData as Record<string, unknown>)?.ministryId || folder.id;
+        return { ...folder, path: `/ministries/${ministryId}` };
+      });
     }
 
-    const level = folder.providerData?.level;
-
-    if (level === 'ministry') {
-      const ministryId = folder.providerData?.ministryId as string;
-      if (!ministryId) return [];
+    // /ministries/{ministryId} -> list plan types
+    if (depth === 2) {
+      const ministryId = segments[1];
       const planTypes = await fetchPlanTypes(ministryId, authData);
-      return planTypes.map(pt => planTypeToFolder(pt, ministryId));
+      return planTypes.map(pt => {
+        const folder = planTypeToFolder(pt, ministryId);
+        const planTypeId = (folder.providerData as Record<string, unknown>)?.planTypeId || folder.id;
+        return { ...folder, path: `/ministries/${ministryId}/${planTypeId}` };
+      });
     }
 
-    if (level === 'planType') {
-      const planTypeId = folder.providerData?.planTypeId as string;
-      if (!planTypeId) return [];
+    // /ministries/{ministryId}/{planTypeId} -> list plans
+    if (depth === 3) {
+      const ministryId = segments[1];
+      const planTypeId = segments[2];
       const plans = await fetchPlans(planTypeId, authData);
-      return plans.map(planToFolder);
+      return plans.map(p => {
+        const folder = planToFolder(p);
+        const planId = (folder.providerData as Record<string, unknown>)?.planId || folder.id;
+        return {
+          ...folder,
+          isLeaf: true,
+          path: `/ministries/${ministryId}/${planTypeId}/${planId}`
+        };
+      });
     }
 
     return [];
   }
 
-  async getPresentations(folder: ContentFolder, authData?: ContentProviderAuthData | null): Promise<Plan | null> {
-    const level = folder.providerData?.level;
-    if (level !== 'plan') return null;
+  async getPresentations(path: string, authData?: ContentProviderAuthData | null): Promise<Plan | null> {
+    const { segments, depth } = parsePath(path);
 
-    const planId = folder.providerData?.planId as string;
-    const churchId = folder.providerData?.churchId as string;
-    const venueId = folder.providerData?.contentId as string | undefined;
-    if (!planId || !churchId) return null;
+    if (depth < 4 || segments[0] !== 'ministries') return null;
+
+    const planId = segments[3];
+    const planTypeId = segments[2];
+
+    // Need to fetch plan details to get churchId and contentId
+    const plans = await fetchPlans(planTypeId, authData);
+    const planFolder = plans.find(p => {
+      const folder = planToFolder(p);
+      return (folder.providerData as Record<string, unknown>)?.planId === planId || folder.id === planId;
+    });
+    if (!planFolder) return null;
+
+    const folder = planToFolder(planFolder);
+    const providerData = folder.providerData as Record<string, unknown>;
+    const churchId = providerData?.churchId as string;
+    const venueId = providerData?.contentId as string | undefined;
+    const planTitle = folder.title || 'Plan';
+
+    if (!churchId) return null;
 
     const pathFn = this.config.endpoints.planItems as (churchId: string, planId: string) => string;
     const planItems = await this.apiRequest<B1PlanItem[]>(pathFn(churchId, planId), authData);
@@ -103,32 +149,61 @@ export class B1ChurchProvider implements IProvider {
       }
     }
 
-    return { id: planId, name: folder.title, sections, allFiles };
+    return { id: planId, name: planTitle, sections, allFiles };
   }
 
-  async getInstructions(folder: ContentFolder, authData?: ContentProviderAuthData | null): Promise<Instructions | null> {
-    const level = folder.providerData?.level;
-    if (level !== 'plan') return null;
+  async getInstructions(path: string, authData?: ContentProviderAuthData | null): Promise<Instructions | null> {
+    const { segments, depth } = parsePath(path);
 
-    const planId = folder.providerData?.planId as string;
-    const churchId = folder.providerData?.churchId as string;
-    if (!planId || !churchId) return null;
+    if (depth < 4 || segments[0] !== 'ministries') return null;
+
+    const planId = segments[3];
+    const planTypeId = segments[2];
+
+    // Need to fetch plan details to get churchId
+    const plans = await fetchPlans(planTypeId, authData);
+    const planFolder = plans.find(p => {
+      const folder = planToFolder(p);
+      return (folder.providerData as Record<string, unknown>)?.planId === planId || folder.id === planId;
+    });
+    if (!planFolder) return null;
+
+    const folder = planToFolder(planFolder);
+    const providerData = folder.providerData as Record<string, unknown>;
+    const churchId = providerData?.churchId as string;
+    const planTitle = folder.title || 'Plan';
+
+    if (!churchId) return null;
 
     const pathFn = this.config.endpoints.planItems as (churchId: string, planId: string) => string;
     const planItems = await this.apiRequest<B1PlanItem[]>(pathFn(churchId, planId), authData);
     if (!planItems || !Array.isArray(planItems)) return null;
 
-    return { venueName: folder.title, items: planItems.map(planItemToInstruction) };
+    return { venueName: planTitle, items: planItems.map(planItemToInstruction) };
   }
 
-  async getPlaylist(folder: ContentFolder, authData?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
-    const level = folder.providerData?.level;
-    if (level !== 'plan') return [];
+  async getPlaylist(path: string, authData?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
+    const { segments, depth } = parsePath(path);
 
-    const planId = folder.providerData?.planId as string;
-    const churchId = folder.providerData?.churchId as string;
-    const venueId = folder.providerData?.contentId as string | undefined;
-    if (!planId || !churchId) return [];
+    if (depth < 4 || segments[0] !== 'ministries') return [];
+
+    const planId = segments[3];
+    const planTypeId = segments[2];
+
+    // Need to fetch plan details to get churchId and contentId
+    const plans = await fetchPlans(planTypeId, authData);
+    const planFolder = plans.find(p => {
+      const folder = planToFolder(p);
+      return (folder.providerData as Record<string, unknown>)?.planId === planId || folder.id === planId;
+    });
+    if (!planFolder) return [];
+
+    const folder = planToFolder(planFolder);
+    const providerData = folder.providerData as Record<string, unknown>;
+    const churchId = providerData?.churchId as string;
+    const venueId = providerData?.contentId as string | undefined;
+
+    if (!churchId) return [];
 
     const pathFn = this.config.endpoints.planItems as (churchId: string, planId: string) => string;
     const planItems = await this.apiRequest<B1PlanItem[]>(pathFn(churchId, planId), authData);

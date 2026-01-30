@@ -6,8 +6,8 @@ export function detectMediaType(url: string, explicitType?: string): 'video' | '
   return videoPatterns.some(p => url.includes(p)) ? 'video' : 'image';
 }
 
-export function createFolder(id: string, title: string, image?: string, providerData?: Record<string, unknown>, isLeaf?: boolean): ContentFolder {
-  return { type: 'folder', id, title, image, isLeaf, providerData };
+export function createFolder(id: string, title: string, path: string, image?: string, providerData?: Record<string, unknown>, isLeaf?: boolean): ContentFolder {
+  return { type: 'folder', id, title, path, image, isLeaf, providerData };
 }
 
 export function createFile(id: string, title: string, url: string, options?: { mediaType?: 'video' | 'image'; image?: string; muxPlaybackId?: string; providerData?: Record<string, unknown>; }): ContentFile {

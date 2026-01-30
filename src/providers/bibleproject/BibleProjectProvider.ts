@@ -1,8 +1,17 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities, IProvider, AuthType } from '../../interfaces';
-import { createFolder, createFile } from '../../utils';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities, IProvider, AuthType } from '../../interfaces';
+import { createFile } from '../../utils';
+import { parsePath } from '../../pathUtils';
 import bibleProjectData from './data.json';
-import { BibleProjectVideo, BibleProjectData } from './BibleProjectInterfaces';
+import { BibleProjectData } from './BibleProjectInterfaces';
 
+/**
+ * BibleProject Provider
+ *
+ * Path structure:
+ *   /collections                              -> list collections
+ *   /collections/{collectionName}             -> list videos in collection
+ *   /collections/{collectionName}/{videoId}   -> single video
+ */
 export class BibleProjectProvider implements IProvider {
   readonly id = 'bibleproject';
   readonly name = 'The Bible Project';
@@ -37,43 +46,91 @@ export class BibleProjectProvider implements IProvider {
     mediaLicensing: false
   };
 
-  async browse(folder?: ContentFolder | null, _auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
-    if (!folder) {
-      // Return top-level collection folders
-      return this.data.collections
-        .filter(collection => collection.videos.length > 0)
-        .map(collection => createFolder(this.slugify(collection.name), collection.name, collection.image || undefined, { level: 'collection', collectionName: collection.name }));
+  async browse(path?: string | null, _auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
+    const { segments, depth } = parsePath(path);
+
+    if (depth === 0) {
+      // Return top-level collections folder
+      return [{
+        type: 'folder' as const,
+        id: 'collections-root',
+        title: 'Collections',
+        path: '/collections'
+      }];
     }
 
-    const level = folder.providerData?.level;
-    const collectionName = folder.providerData?.collectionName as string;
+    const root = segments[0];
+    if (root !== 'collections') return [];
 
-    if (level === 'collection') {
-      // Return lesson folders (one per video) for all collections
-      return this.getLessonFolders(collectionName);
+    // /collections -> list all collections
+    if (depth === 1) {
+      return this.getCollections();
     }
 
-    if (level === 'lesson') {
-      // Return the single video for this lesson
-      const videoData = folder.providerData?.videoData as BibleProjectVideo;
-      if (videoData) {
-        return [createFile(videoData.id, videoData.title, videoData.videoUrl, { mediaType: 'video', muxPlaybackId: videoData.muxPlaybackId })];
-      }
-      return [];
+    // /collections/{collectionName} -> list videos in collection
+    if (depth === 2) {
+      const collectionName = decodeURIComponent(segments[1]);
+      return this.getLessonFolders(collectionName, path!);
+    }
+
+    // /collections/{collectionName}/{videoId} -> single video file
+    if (depth === 3) {
+      const collectionName = decodeURIComponent(segments[1]);
+      const videoId = segments[2];
+      return this.getVideoFile(collectionName, videoId);
     }
 
     return [];
   }
 
-  async getPresentations(folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
-    const level = folder.providerData?.level;
+  private getCollections(): ContentItem[] {
+    return this.data.collections
+      .filter(collection => collection.videos.length > 0)
+      .map(collection => ({
+        type: 'folder' as const,
+        id: this.slugify(collection.name),
+        title: collection.name,
+        image: collection.image || undefined,
+        path: `/collections/${encodeURIComponent(collection.name)}`
+      }));
+  }
 
-    // For collection level, create a plan with all videos as presentations
-    if (level === 'collection') {
-      const collectionName = folder.providerData?.collectionName as string;
-      const collection = this.data.collections.find(c => c.name === collectionName);
-      if (!collection) return null;
+  private getLessonFolders(collectionName: string, currentPath: string): ContentItem[] {
+    const collection = this.data.collections.find(c => c.name === collectionName);
+    if (!collection) return [];
 
+    return collection.videos.map(video => ({
+      type: 'folder' as const,
+      id: video.id,
+      title: video.title,
+      image: video.thumbnailUrl,
+      isLeaf: true,
+      path: `${currentPath}/${video.id}`,
+      providerData: { videoData: video }
+    }));
+  }
+
+  private getVideoFile(collectionName: string, videoId: string): ContentItem[] {
+    const collection = this.data.collections.find(c => c.name === collectionName);
+    if (!collection) return [];
+
+    const video = collection.videos.find(v => v.id === videoId);
+    if (!video) return [];
+
+    return [createFile(video.id, video.title, video.videoUrl, { mediaType: 'video', muxPlaybackId: video.muxPlaybackId })];
+  }
+
+  async getPresentations(path: string, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
+    const { segments, depth } = parsePath(path);
+
+    if (depth < 2 || segments[0] !== 'collections') return null;
+
+    const collectionName = decodeURIComponent(segments[1]);
+    const collection = this.data.collections.find(c => c.name === collectionName);
+    if (!collection) return null;
+
+    // For collection level (depth 2), create a plan with all videos
+    if (depth === 2) {
       const allFiles: ContentFile[] = [];
       const presentations: PlanPresentation[] = collection.videos.map(video => {
         const file: ContentFile = { type: 'file', id: video.id, title: video.title, mediaType: 'video', url: video.videoUrl, image: video.thumbnailUrl, muxPlaybackId: video.muxPlaybackId };
@@ -84,45 +141,42 @@ export class BibleProjectProvider implements IProvider {
       return { id: this.slugify(collection.name), name: collection.name, image: collection.image || undefined, sections: [{ id: 'videos', name: 'Videos', presentations }], allFiles };
     }
 
-    // For lesson level (single video), create a simple plan
-    if (level === 'lesson') {
-      const videoData = folder.providerData?.videoData as BibleProjectVideo;
-      if (!videoData) return null;
+    // For lesson level (depth 3, single video), create a simple plan
+    if (depth === 3) {
+      const videoId = segments[2];
+      const video = collection.videos.find(v => v.id === videoId);
+      if (!video) return null;
 
-      const file: ContentFile = { type: 'file', id: videoData.id, title: videoData.title, mediaType: 'video', url: videoData.videoUrl, image: videoData.thumbnailUrl, muxPlaybackId: videoData.muxPlaybackId };
-      return { id: videoData.id, name: videoData.title, image: videoData.thumbnailUrl, sections: [{ id: 'main', name: 'Content', presentations: [{ id: videoData.id, name: videoData.title, actionType: 'play', files: [file] }] }], allFiles: [file] };
+      const file: ContentFile = { type: 'file', id: video.id, title: video.title, mediaType: 'video', url: video.videoUrl, image: video.thumbnailUrl, muxPlaybackId: video.muxPlaybackId };
+      return { id: video.id, name: video.title, image: video.thumbnailUrl, sections: [{ id: 'main', name: 'Content', presentations: [{ id: video.id, name: video.title, actionType: 'play', files: [file] }] }], allFiles: [file] };
     }
 
     return null;
   }
 
-  async getPlaylist(folder: ContentFolder, _auth?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
-    const level = folder.providerData?.level;
+  async getPlaylist(path: string, _auth?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
+    const { segments, depth } = parsePath(path);
+
+    if (depth < 2 || segments[0] !== 'collections') return null;
+
+    const collectionName = decodeURIComponent(segments[1]);
+    const collection = this.data.collections.find(c => c.name === collectionName);
+    if (!collection) return null;
 
     // For collection level, return all videos
-    if (level === 'collection') {
-      const collectionName = folder.providerData?.collectionName as string;
-      const collection = this.data.collections.find(c => c.name === collectionName);
-      if (!collection) return null;
-
+    if (depth === 2) {
       return collection.videos.map(video => ({ type: 'file' as const, id: video.id, title: video.title, mediaType: 'video' as const, url: video.videoUrl, image: video.thumbnailUrl, muxPlaybackId: video.muxPlaybackId }));
     }
 
     // For lesson level, return the single video
-    if (level === 'lesson') {
-      const videoData = folder.providerData?.videoData as BibleProjectVideo;
-      if (!videoData) return null;
-      return [{ type: 'file', id: videoData.id, title: videoData.title, mediaType: 'video', url: videoData.videoUrl, image: videoData.thumbnailUrl, muxPlaybackId: videoData.muxPlaybackId }];
+    if (depth === 3) {
+      const videoId = segments[2];
+      const video = collection.videos.find(v => v.id === videoId);
+      if (!video) return null;
+      return [{ type: 'file', id: video.id, title: video.title, mediaType: 'video', url: video.videoUrl, image: video.thumbnailUrl, muxPlaybackId: video.muxPlaybackId }];
     }
 
     return null;
-  }
-
-  private getLessonFolders(collectionName: string): ContentItem[] {
-    const collection = this.data.collections.find(c => c.name === collectionName);
-    if (!collection) return [];
-
-    return collection.videos.map(video => createFolder(video.id, video.title, video.thumbnailUrl, { level: 'lesson', collectionName, videoData: video }, true));
   }
 
   private slugify(text: string): string {

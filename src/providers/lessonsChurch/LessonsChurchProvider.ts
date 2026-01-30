@@ -1,6 +1,20 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, FeedVenueInterface, Instructions, InstructionItem, VenueActionsResponseInterface, ProviderCapabilities, IProvider, AuthType } from '../../interfaces';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, FeedVenueInterface, Instructions, InstructionItem, VenueActionsResponseInterface, ProviderCapabilities, IProvider, AuthType } from '../../interfaces';
 import { detectMediaType } from '../../utils';
+import { parsePath, getSegment } from '../../pathUtils';
 
+/**
+ * LessonsChurch Provider
+ *
+ * Path structure:
+ *   /lessons                                            -> programs
+ *   /lessons/{programId}                                -> studies
+ *   /lessons/{programId}/{studyId}                      -> lessons
+ *   /lessons/{programId}/{studyId}/{lessonId}           -> venues
+ *   /lessons/{programId}/{studyId}/{lessonId}/{venueId} -> playlist files
+ *
+ *   /addons                                             -> categories
+ *   /addons/{category}                                  -> add-on files
+ */
 export class LessonsChurchProvider implements IProvider {
   readonly id = 'lessonschurch';
   readonly name = 'Lessons.church';
@@ -13,14 +27,14 @@ export class LessonsChurchProvider implements IProvider {
   readonly authTypes: AuthType[] = ['none'];
   readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: true, instructions: true, expandedInstructions: true, mediaLicensing: false };
 
-  async getPlaylist(folder: ContentFolder, _auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null> {
-    const venueId = folder.providerData?.venueId as string | undefined;
+  async getPlaylist(path: string, _auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null> {
+    const venueId = getSegment(path, 4); // /lessons/{0}/{1}/{2}/{3}/{4=venueId}
     if (!venueId) return null;
 
-    let path = `/venues/playlist/${venueId}`;
-    if (resolution) path += `?resolution=${resolution}`;
+    let apiPath = `/venues/playlist/${venueId}`;
+    if (resolution) apiPath += `?resolution=${resolution}`;
 
-    const response = await this.apiRequest<Record<string, unknown>>(path);
+    const response = await this.apiRequest<Record<string, unknown>>(apiPath);
     if (!response) return null;
 
     const files: ContentFile[] = [];
@@ -34,7 +48,6 @@ export class LessonsChurchProvider implements IProvider {
         if (!f.url) continue;
 
         const url = f.url as string;
-        // Generate a unique id if not provided by API
         const fileId = (f.id as string) || `playlist-${fileIndex++}`;
 
         files.push({ type: 'file', id: fileId, title: (f.name || msg.name) as string, mediaType: detectMediaType(url, f.fileType as string | undefined), image: response.lessonImage as string | undefined, url, providerData: { seconds: f.seconds, loop: f.loop, loopVideo: f.loopVideo } });
@@ -55,100 +68,151 @@ export class LessonsChurchProvider implements IProvider {
     }
   }
 
-  async browse(folder?: ContentFolder | null, _auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
-    console.log('[LessonsChurchProvider.browse] folder:', folder ? { id: folder.id, title: folder.title, level: folder.providerData?.level, isLeaf: folder.isLeaf } : null);
-    if (!folder) {
-      // Return top-level folders: Lessons and Add-Ons
-      return [{ type: 'folder' as const, id: 'lessons-root', title: 'Lessons', providerData: { level: 'programs' } }, { type: 'folder' as const, id: 'addons-root', title: 'Add-Ons', providerData: { level: 'addOnCategories' } }];
+  async browse(path?: string | null, _auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
+    const { segments, depth } = parsePath(path);
+    console.log('[LessonsChurchProvider.browse] path:', path, 'depth:', depth, 'segments:', segments);
+
+    if (depth === 0) {
+      return [
+        { type: 'folder' as const, id: 'lessons-root', title: 'Lessons', path: '/lessons' },
+        { type: 'folder' as const, id: 'addons-root', title: 'Add-Ons', path: '/addons' }
+      ];
     }
 
-    const level = folder.providerData?.level;
-    switch (level) {
-      // Lessons hierarchy
-      case 'programs': return this.getPrograms();
-      case 'studies': return this.getStudies(folder);
-      case 'lessons': return this.getLessons(folder);
-      case 'venues': return this.getVenues(folder);
-      case 'playlist': return this.getPlaylistFiles(folder);
-      // Add-ons hierarchy
-      case 'addOnCategories': return this.getAddOnCategories();
-      case 'addOns': return this.getAddOnsByCategory(folder);
-      default: return [];
-    }
+    const root = segments[0];
+    if (root === 'lessons') return this.browseLessons(path!, segments);
+    if (root === 'addons') return this.browseAddOns(path!, segments);
+    return [];
+  }
+
+  private async browseLessons(currentPath: string, segments: string[]): Promise<ContentItem[]> {
+    const depth = segments.length;
+
+    // /lessons -> programs
+    if (depth === 1) return this.getPrograms();
+    // /lessons/{programId} -> studies
+    if (depth === 2) return this.getStudies(segments[1], currentPath);
+    // /lessons/{programId}/{studyId} -> lessons
+    if (depth === 3) return this.getLessons(segments[2], currentPath);
+    // /lessons/{programId}/{studyId}/{lessonId} -> venues
+    if (depth === 4) return this.getVenues(segments[3], currentPath);
+    // /lessons/{programId}/{studyId}/{lessonId}/{venueId} -> playlist files
+    if (depth === 5) return this.getPlaylistFiles(segments[4]);
+
+    return [];
   }
 
   private async getPrograms(): Promise<ContentItem[]> {
-    const path = this.config.endpoints.programs as string;
-    const response = await this.apiRequest<Record<string, unknown>[]>(path);
+    const apiPath = this.config.endpoints.programs as string;
+    const response = await this.apiRequest<Record<string, unknown>[]>(apiPath);
     if (!response) return [];
 
     const programs = Array.isArray(response) ? response : [];
-    return programs.map((p) => ({ type: 'folder' as const, id: p.id as string, title: p.name as string, image: p.image as string | undefined, providerData: { level: 'studies', programId: p.id } }));
+    return programs.map((p) => ({
+      type: 'folder' as const,
+      id: p.id as string,
+      title: p.name as string,
+      image: p.image as string | undefined,
+      path: `/lessons/${p.id}`
+    }));
   }
 
-  private async getStudies(folder: ContentFolder): Promise<ContentItem[]> {
-    const programId = folder.providerData?.programId as string | undefined;
-    if (!programId) return [];
-
+  private async getStudies(programId: string, currentPath: string): Promise<ContentItem[]> {
     const pathFn = this.config.endpoints.studies as (id: string) => string;
     const response = await this.apiRequest<Record<string, unknown>[]>(pathFn(programId));
     if (!response) return [];
 
     const studies = Array.isArray(response) ? response : [];
-    return studies.map((s) => ({ type: 'folder' as const, id: s.id as string, title: s.name as string, image: s.image as string | undefined, providerData: { level: 'lessons', studyId: s.id } }));
+    return studies.map((s) => ({
+      type: 'folder' as const,
+      id: s.id as string,
+      title: s.name as string,
+      image: s.image as string | undefined,
+      path: `${currentPath}/${s.id}`
+    }));
   }
 
-  private async getLessons(folder: ContentFolder): Promise<ContentItem[]> {
-    const studyId = folder.providerData?.studyId as string | undefined;
-    if (!studyId) return [];
-
+  private async getLessons(studyId: string, currentPath: string): Promise<ContentItem[]> {
     const pathFn = this.config.endpoints.lessons as (id: string) => string;
     const response = await this.apiRequest<Record<string, unknown>[]>(pathFn(studyId));
     if (!response) return [];
 
     const lessons = Array.isArray(response) ? response : [];
-    return lessons.map((l) => ({ type: 'folder' as const, id: l.id as string, title: (l.name || l.title) as string, image: l.image as string | undefined, providerData: { level: 'venues', lessonId: l.id, lessonImage: l.image } }));
+    return lessons.map((l) => ({
+      type: 'folder' as const,
+      id: l.id as string,
+      title: (l.name || l.title) as string,
+      image: l.image as string | undefined,
+      path: `${currentPath}/${l.id}`,
+      providerData: { lessonImage: l.image } // Keep for display on venues
+    }));
   }
 
-  private async getVenues(folder: ContentFolder): Promise<ContentItem[]> {
-    const lessonId = folder.providerData?.lessonId as string | undefined;
-    if (!lessonId) return [];
-
+  private async getVenues(lessonId: string, currentPath: string): Promise<ContentItem[]> {
     const pathFn = this.config.endpoints.venues as (id: string) => string;
     const response = await this.apiRequest<Record<string, unknown>[]>(pathFn(lessonId));
     if (!response) return [];
 
+    // Fetch lesson details for image
+    const lessonResponse = await this.apiRequest<Record<string, unknown>>(`/lessons/public/${lessonId}`);
+    const lessonImage = lessonResponse?.image as string | undefined;
+
     const venues = Array.isArray(response) ? response : [];
-    const result = venues.map((v) => ({ type: 'folder' as const, id: v.id as string, title: v.name as string, image: folder.providerData?.lessonImage as string | undefined, isLeaf: true, providerData: { level: 'playlist', venueId: v.id } }));
+    const result = venues.map((v) => ({
+      type: 'folder' as const,
+      id: v.id as string,
+      title: v.name as string,
+      image: lessonImage,
+      isLeaf: true,
+      path: `${currentPath}/${v.id}`
+    }));
     console.log('[LessonsChurchProvider.getVenues] returning:', result.map(r => ({ id: r.id, title: r.title, isLeaf: r.isLeaf })));
     return result;
   }
 
-  private async getPlaylistFiles(folder: ContentFolder): Promise<ContentItem[]> {
-    const files = await this.getPlaylist(folder, null);
+  private async getPlaylistFiles(venueId: string): Promise<ContentItem[]> {
+    const files = await this.getPlaylist(`/lessons/_/_/_/${venueId}`, null);
     return files || [];
   }
 
+  private async browseAddOns(_currentPath: string, segments: string[]): Promise<ContentItem[]> {
+    const depth = segments.length;
+
+    // /addons -> categories
+    if (depth === 1) return this.getAddOnCategories();
+    // /addons/{category} -> add-on files
+    if (depth === 2) return this.getAddOnsByCategory(segments[1]);
+
+    return [];
+  }
+
   private async getAddOnCategories(): Promise<ContentItem[]> {
-    const path = this.config.endpoints.addOns as string;
-    const response = await this.apiRequest<Record<string, unknown>[]>(path);
+    const apiPath = this.config.endpoints.addOns as string;
+    const response = await this.apiRequest<Record<string, unknown>[]>(apiPath);
     if (!response) return [];
 
     const addOns = Array.isArray(response) ? response : [];
-
-    // Extract unique categories
     const categories = Array.from(new Set(addOns.map((a) => a.category as string).filter(Boolean)));
 
-    return categories.sort().map((category) => ({ type: 'folder' as const, id: `category-${category}`, title: category, providerData: { level: 'addOns', category: category, allAddOns: addOns } }));
+    return categories.sort().map((category) => ({
+      type: 'folder' as const,
+      id: `category-${category}`,
+      title: category,
+      path: `/addons/${encodeURIComponent(category)}`
+    }));
   }
 
-  private async getAddOnsByCategory(folder: ContentFolder): Promise<ContentItem[]> {
-    const category = folder.providerData?.category as string | undefined;
-    const allAddOns = (folder.providerData?.allAddOns || []) as Record<string, unknown>[];
+  private async getAddOnsByCategory(category: string): Promise<ContentItem[]> {
+    const decodedCategory = decodeURIComponent(category);
 
-    const filtered = allAddOns.filter((a) => a.category === category);
+    // Fetch add-ons fresh each time
+    const apiPath = this.config.endpoints.addOns as string;
+    const response = await this.apiRequest<Record<string, unknown>[]>(apiPath);
+    if (!response) return [];
 
-    // Convert to playable files
+    const allAddOns = Array.isArray(response) ? response : [];
+    const filtered = allAddOns.filter((a) => a.category === decodedCategory);
+
     const files: ContentFile[] = [];
     for (const addOn of filtered) {
       const file = await this.convertAddOnToFile(addOn);
@@ -159,8 +223,8 @@ export class LessonsChurchProvider implements IProvider {
 
   private async convertAddOnToFile(addOn: Record<string, unknown>): Promise<ContentFile | null> {
     const pathFn = this.config.endpoints.addOnDetail as (id: string) => string;
-    const path = pathFn(addOn.id as string);
-    const detail = await this.apiRequest<Record<string, unknown>>(path);
+    const apiPath = pathFn(addOn.id as string);
+    const detail = await this.apiRequest<Record<string, unknown>>(apiPath);
     if (!detail) return null;
 
     let url = '';
@@ -171,11 +235,9 @@ export class LessonsChurchProvider implements IProvider {
     const file = detail.file as Record<string, unknown> | undefined;
 
     if (video) {
-      // External video (Vimeo) - use download endpoint
       url = `${this.config.apiBase}/externalVideos/download/${video.id}`;
       seconds = (video.seconds as number) || seconds;
     } else if (file) {
-      // File-based add-on
       url = file.contentPath as string;
       const fileType = file.fileType as string | undefined;
       mediaType = fileType?.startsWith('video/') ? 'video' : 'image';
@@ -186,19 +248,19 @@ export class LessonsChurchProvider implements IProvider {
     return { type: 'file', id: addOn.id as string, title: addOn.name as string, mediaType, image: addOn.image as string | undefined, url, embedUrl: `https://lessons.church/embed/addon/${addOn.id}`, providerData: { seconds, loopVideo: (video as Record<string, unknown> | undefined)?.loopVideo || false } };
   }
 
-  async getPresentations(folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
-    const venueId = folder.providerData?.venueId as string | undefined;
+  async getPresentations(path: string, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
+    const venueId = getSegment(path, 4); // /lessons/{0}/{1}/{2}/{3}/{4=venueId}
     if (!venueId) return null;
 
-    const path = `/venues/public/feed/${venueId}`;
-    const venueData = await this.apiRequest<FeedVenueInterface>(path);
+    const apiPath = `/venues/public/feed/${venueId}`;
+    const venueData = await this.apiRequest<FeedVenueInterface>(apiPath);
     if (!venueData) return null;
 
     return this.convertVenueToPlan(venueData);
   }
 
-  async getInstructions(folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
-    const venueId = folder.providerData?.venueId as string | undefined;
+  async getInstructions(path: string, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
+    const venueId = getSegment(path, 4);
     if (!venueId) return null;
 
     const response = await this.apiRequest<{ venueName?: string; items?: Record<string, unknown>[] }>(`/venues/public/planItems/${venueId}`);
@@ -208,8 +270,8 @@ export class LessonsChurchProvider implements IProvider {
     return { venueName: response.venueName, items: (response.items || []).map(processItem) };
   }
 
-  async getExpandedInstructions(folder: ContentFolder, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
-    const venueId = folder.providerData?.venueId as string | undefined;
+  async getExpandedInstructions(path: string, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
+    const venueId = getSegment(path, 4);
     if (!venueId) return null;
 
     const [planItemsResponse, actionsResponse] = await Promise.all([
@@ -292,7 +354,6 @@ export class LessonsChurchProvider implements IProvider {
         for (const file of action.files || []) {
           if (!file.url) continue;
 
-          // Use action embed URL for preview (shows full action context)
           const embedUrl = action.id ? `https://lessons.church/embed/action/${action.id}` : undefined;
 
           const contentFile: ContentFile = { type: 'file', id: file.id || '', title: file.name || '', mediaType: detectMediaType(file.url, file.fileType), image: venue.lessonImage, url: file.url, embedUrl, providerData: { seconds: file.seconds, streamUrl: file.streamUrl } };

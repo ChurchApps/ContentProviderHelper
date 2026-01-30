@@ -2,7 +2,6 @@ import chalk from 'chalk';
 import Table from 'cli-table3';
 import {
   ContentItem,
-  ContentFolder,
   ContentFile,
   Plan,
   Instructions,
@@ -183,8 +182,8 @@ export function displayJson(data: unknown, title: string): void {
 /**
  * Display the current navigation breadcrumb
  */
-export function displayBreadcrumb(providerName: string, folderStack: ContentFolder[]): void {
-  const path = [providerName, ...folderStack.map((f) => f.title)].join(' > ');
+export function displayBreadcrumb(providerName: string, breadcrumbTitles: string[]): void {
+  const path = [providerName, ...breadcrumbTitles].join(' > ');
   console.log(chalk.dim(`\n📍 ${path}\n`));
 }
 

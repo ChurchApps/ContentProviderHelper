@@ -1,8 +1,17 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFolder, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, ProviderCapabilities, IProvider, AuthType } from '../../interfaces';
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, ProviderCapabilities, IProvider, AuthType } from '../../interfaces';
 import { detectMediaType } from '../../utils';
+import { parsePath } from '../../pathUtils';
 import { ApiHelper } from '../../helpers';
 import { PCOServiceType, PCOPlan, PCOPlanItem, PCOSong, PCOArrangement, PCOSection, PCOAttachment } from './PlanningCenterInterfaces';
 
+/**
+ * PlanningCenter Provider
+ *
+ * Path structure:
+ *   /serviceTypes                            -> list service types
+ *   /serviceTypes/{serviceTypeId}            -> list plans
+ *   /serviceTypes/{serviceTypeId}/{planId}   -> plan items (leaf)
+ */
 export class PlanningCenterProvider implements IProvider {
   private readonly apiHelper = new ApiHelper();
 
@@ -15,7 +24,6 @@ export class PlanningCenterProvider implements IProvider {
 
   readonly logos: ProviderLogos = { light: 'https://www.planningcenter.com/icons/icon-512x512.png', dark: 'https://www.planningcenter.com/icons/icon-512x512.png' };
 
-  // Planning Center uses OAuth 2.0 with PKCE (handled by base ContentProvider class)
   readonly config: ContentProviderConfig = { id: 'planningcenter', name: 'Planning Center', apiBase: 'https://api.planningcenteronline.com', oauthBase: 'https://api.planningcenteronline.com/oauth', clientId: '', scopes: ['services'], endpoints: { serviceTypes: '/services/v2/service_types', plans: (serviceTypeId: string) => `/services/v2/service_types/${serviceTypeId}/plans`, planItems: (serviceTypeId: string, planId: string) => `/services/v2/service_types/${serviceTypeId}/plans/${planId}/items`, song: (itemId: string) => `/services/v2/songs/${itemId}`, arrangement: (songId: string, arrangementId: string) => `/services/v2/songs/${songId}/arrangements/${arrangementId}`, arrangementSections: (songId: string, arrangementId: string) => `/services/v2/songs/${songId}/arrangements/${arrangementId}/sections`, media: (mediaId: string) => `/services/v2/media/${mediaId}`, mediaAttachments: (mediaId: string) => `/services/v2/media/${mediaId}/attachments` } };
 
   private readonly ONE_WEEK_MS = 604800000;
@@ -24,34 +32,59 @@ export class PlanningCenterProvider implements IProvider {
   readonly authTypes: AuthType[] = ['oauth_pkce'];
   readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: false, instructions: false, expandedInstructions: false, mediaLicensing: false };
 
-  async browse(folder?: ContentFolder | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
-    if (!folder) {
-      const response = await this.apiRequest<{ data: PCOServiceType[] }>(
-        this.config.endpoints.serviceTypes as string,
-        auth
-      );
+  async browse(path?: string | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
+    const { segments, depth } = parsePath(path);
 
-      if (!response?.data) return [];
-
-      return response.data.map((serviceType) => ({ type: 'folder' as const, id: serviceType.id, title: serviceType.attributes.name, providerData: { level: 'serviceType', serviceTypeId: serviceType.id } }));
+    if (depth === 0) {
+      return [{
+        type: 'folder' as const,
+        id: 'serviceTypes-root',
+        title: 'Service Types',
+        path: '/serviceTypes'
+      }];
     }
 
-    const level = folder.providerData?.level;
+    const root = segments[0];
+    if (root !== 'serviceTypes') return [];
 
-    switch (level) {
-      case 'serviceType':
-        return this.getPlans(folder, auth);
-      case 'plan':
-        return this.getPlanItems(folder, auth);
-      default:
-        return [];
+    // /serviceTypes -> list all service types
+    if (depth === 1) {
+      return this.getServiceTypes(auth);
     }
+
+    // /serviceTypes/{serviceTypeId} -> list plans
+    if (depth === 2) {
+      const serviceTypeId = segments[1];
+      return this.getPlans(serviceTypeId, path!, auth);
+    }
+
+    // /serviceTypes/{serviceTypeId}/{planId} -> plan items
+    if (depth === 3) {
+      const serviceTypeId = segments[1];
+      const planId = segments[2];
+      return this.getPlanItems(serviceTypeId, planId, auth);
+    }
+
+    return [];
   }
 
-  private async getPlans(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
-    const serviceTypeId = folder.providerData?.serviceTypeId as string;
-    if (!serviceTypeId) return [];
+  private async getServiceTypes(auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
+    const response = await this.apiRequest<{ data: PCOServiceType[] }>(
+      this.config.endpoints.serviceTypes as string,
+      auth
+    );
 
+    if (!response?.data) return [];
+
+    return response.data.map((serviceType) => ({
+      type: 'folder' as const,
+      id: serviceType.id,
+      title: serviceType.attributes.name,
+      path: `/serviceTypes/${serviceType.id}`
+    }));
+  }
+
+  private async getPlans(serviceTypeId: string, currentPath: string, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const pathFn = this.config.endpoints.plans as (id: string) => string;
     const response = await this.apiRequest<{ data: PCOPlan[] }>(
       `${pathFn(serviceTypeId)}?filter=future&order=sort_date`,
@@ -67,14 +100,17 @@ export class PlanningCenterProvider implements IProvider {
       return planDate < now + this.ONE_WEEK_MS;
     });
 
-    return filteredPlans.map((plan) => ({ type: 'folder' as const, id: plan.id, title: plan.attributes.title || this.formatDate(plan.attributes.sort_date), providerData: { level: 'plan', serviceTypeId, planId: plan.id, sortDate: plan.attributes.sort_date } }));
+    return filteredPlans.map((plan) => ({
+      type: 'folder' as const,
+      id: plan.id,
+      title: plan.attributes.title || this.formatDate(plan.attributes.sort_date),
+      isLeaf: true,
+      path: `${currentPath}/${plan.id}`,
+      providerData: { sortDate: plan.attributes.sort_date }
+    }));
   }
 
-  private async getPlanItems(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
-    const serviceTypeId = folder.providerData?.serviceTypeId as string;
-    const planId = folder.providerData?.planId as string;
-    if (!serviceTypeId || !planId) return [];
-
+  private async getPlanItems(serviceTypeId: string, planId: string, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const pathFn = this.config.endpoints.planItems as (stId: string, pId: string) => string;
     const response = await this.apiRequest<{ data: PCOPlanItem[] }>(
       `${pathFn(serviceTypeId, planId)}?per_page=100`,
@@ -86,13 +122,13 @@ export class PlanningCenterProvider implements IProvider {
     return response.data.map((item) => ({ type: 'file' as const, id: item.id, title: item.attributes.title || '', mediaType: 'image' as const, url: '', providerData: { itemType: item.attributes.item_type, description: item.attributes.description, length: item.attributes.length, songId: item.relationships?.song?.data?.id, arrangementId: item.relationships?.arrangement?.data?.id } }));
   }
 
-  async getPresentations(folder: ContentFolder, auth?: ContentProviderAuthData | null): Promise<Plan | null> {
-    const level = folder.providerData?.level;
-    if (level !== 'plan') return null;
+  async getPresentations(path: string, auth?: ContentProviderAuthData | null): Promise<Plan | null> {
+    const { segments, depth } = parsePath(path);
 
-    const serviceTypeId = folder.providerData?.serviceTypeId as string;
-    const planId = folder.providerData?.planId as string;
-    if (!serviceTypeId || !planId) return null;
+    if (depth < 3 || segments[0] !== 'serviceTypes') return null;
+
+    const serviceTypeId = segments[1];
+    const planId = segments[2];
 
     const pathFn = this.config.endpoints.planItems as (stId: string, pId: string) => string;
     const response = await this.apiRequest<{ data: PCOPlanItem[] }>(
@@ -101,6 +137,11 @@ export class PlanningCenterProvider implements IProvider {
     );
 
     if (!response?.data) return null;
+
+    // Get plan title
+    const plans = await this.getPlans(serviceTypeId, `/serviceTypes/${serviceTypeId}`, auth);
+    const plan = plans.find(p => p.id === planId);
+    const planTitle = plan?.title || 'Plan';
 
     const sections: PlanSection[] = [];
     const allFiles: ContentFile[] = [];
@@ -130,7 +171,7 @@ export class PlanningCenterProvider implements IProvider {
       sections.push(currentSection);
     }
 
-    return { id: planId, name: folder.title, sections, allFiles };
+    return { id: planId, name: planTitle as string, sections, allFiles };
   }
 
   private async convertToPresentation(item: PCOPlanItem, auth?: ContentProviderAuthData | null): Promise<PlanPresentation | null> {

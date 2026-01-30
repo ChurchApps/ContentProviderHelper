@@ -33,7 +33,8 @@ interface AppState {
   currentView: 'providers' | 'browser' | 'plan' | 'instructions';
   currentProvider: IProvider | null;
   currentAuth: ContentProviderAuthData | null;
-  folderStack: ContentFolder[];
+  currentPath: string;
+  breadcrumbTitles: string[];
   connectedProviders: Map<string, ContentProviderAuthData | null>;
   deviceFlowActive: boolean;
   deviceFlowData: DeviceAuthorizationResponse | null;
@@ -48,7 +49,8 @@ const state: AppState = {
   currentView: 'providers',
   currentProvider: null,
   currentAuth: null,
-  folderStack: [],
+  currentPath: '',
+  breadcrumbTitles: [],
   connectedProviders: new Map(),
   deviceFlowActive: false,
   deviceFlowData: null,
@@ -593,7 +595,8 @@ function retryAuth() {
 
 async function navigateToBrowser() {
   state.currentView = 'browser';
-  state.folderStack = [];
+  state.currentPath = '';
+  state.breadcrumbTitles = [];
 
   providersView.classList.add('hidden');
   browserView.classList.remove('hidden');
@@ -606,7 +609,8 @@ async function navigateToBrowser() {
 function navigateToProviders() {
   state.currentView = 'providers';
   state.currentProvider = null;
-  state.folderStack = [];
+  state.currentPath = '';
+  state.breadcrumbTitles = [];
 
   browserView.classList.add('hidden');
   breadcrumb.classList.add('hidden');
@@ -615,9 +619,21 @@ function navigateToProviders() {
   renderProviders();
 }
 
+function goBack() {
+  if (!state.currentPath) return;
+
+  // Remove last segment from path
+  const segments = state.currentPath.split('/').filter(Boolean);
+  segments.pop();
+  state.currentPath = segments.length > 0 ? '/' + segments.join('/') : '';
+
+  // Remove last breadcrumb title
+  state.breadcrumbTitles.pop();
+}
+
 function handleBack() {
-  if (state.folderStack.length > 0) {
-    state.folderStack.pop();
+  if (state.currentPath) {
+    goBack();
     updateBreadcrumb();
     loadContent();
   } else {
@@ -627,16 +643,16 @@ function handleBack() {
 
 function updateBreadcrumb() {
   const parts: string[] = [state.currentProvider?.name || 'Unknown'];
-  state.folderStack.forEach(folder => {
-    parts.push(folder.title);
+  state.breadcrumbTitles.forEach(title => {
+    parts.push(title);
   });
 
   breadcrumbPath.innerHTML = parts
     .map((part, i) => i === parts.length - 1 ? `<span>${part}</span>` : part)
     .join(' / ');
 
-  browserTitle.textContent = state.folderStack.length > 0
-    ? state.folderStack[state.folderStack.length - 1].title
+  browserTitle.textContent = state.breadcrumbTitles.length > 0
+    ? state.breadcrumbTitles[state.breadcrumbTitles.length - 1]
     : state.currentProvider?.name || 'Content';
 }
 
@@ -648,10 +664,7 @@ async function loadContent() {
   emptyEl.classList.add('hidden');
 
   try {
-    const currentFolder = state.folderStack.length > 0
-      ? state.folderStack[state.folderStack.length - 1]
-      : null;
-    const items = await state.currentProvider.browse(currentFolder, state.currentAuth);
+    const items = await state.currentProvider.browse(state.currentPath || null, state.currentAuth);
 
     showLoading(false);
 
@@ -743,15 +756,14 @@ function renderFile(file: ContentItem & { type: 'file' }): string {
 function handleFolderClick(folder: ContentFolder) {
   // Check if this is a leaf folder (offers view modes)
   // Providers set isLeaf: true to indicate the bottom of the browse tree
-  // Legacy fallback: venueId or level === 'playlist' for older providers
-  const isLeafFolder = folder.isLeaf
-    || folder.providerData?.venueId
-    || folder.providerData?.level === 'playlist';
+  const isLeafFolder = folder.isLeaf;
 
   if (isLeafFolder && state.currentProvider) {
     showVenueChoiceModal(folder);
   } else {
-    state.folderStack.push(folder);
+    // Navigate into the folder using its path
+    state.currentPath = folder.path;
+    state.breadcrumbTitles.push(folder.title);
     updateBreadcrumb();
     loadContent();
   }
@@ -847,11 +859,12 @@ async function viewAsPlaylist(folder: ContentFolder) {
 
   try {
     const resolver = new FormatResolver(state.currentProvider);
-    const { data: playlist, meta } = await resolver.getPlaylistWithMeta(folder, state.currentAuth);
+    const { data: playlist, meta } = await resolver.getPlaylistWithMeta(folder.path, state.currentAuth);
 
     if (!playlist || playlist.length === 0) {
       // Fallback to regular browse if no playlist
-      state.folderStack.push(folder);
+      state.currentPath = folder.path;
+      state.breadcrumbTitles.push(folder.title);
       updateBreadcrumb();
       showLoading(false);
       loadContent();
@@ -859,7 +872,8 @@ async function viewAsPlaylist(folder: ContentFolder) {
     }
 
     state.currentVenueFolder = folder;
-    state.folderStack.push(folder);
+    state.currentPath = folder.path;
+    state.breadcrumbTitles.push(folder.title);
     updateBreadcrumb();
 
     showLoading(false);
@@ -878,7 +892,7 @@ async function viewAsPresentations(folder: ContentFolder) {
 
   try {
     const resolver = new FormatResolver(state.currentProvider);
-    const { data: plan, meta } = await resolver.getPresentationsWithMeta(folder, state.currentAuth);
+    const { data: plan, meta } = await resolver.getPresentationsWithMeta(folder.path, state.currentAuth);
 
     if (!plan) {
       showStatus('This provider does not support presentations view', 'error');
@@ -890,7 +904,8 @@ async function viewAsPresentations(folder: ContentFolder) {
     state.currentVenueFolder = folder;
     state.currentView = 'plan';
 
-    state.folderStack.push(folder);
+    state.currentPath = folder.path;
+    state.breadcrumbTitles.push(folder.title);
     updateBreadcrumb();
 
     showLoading(false);
@@ -909,7 +924,7 @@ async function viewAsInstructions(folder: ContentFolder) {
 
   try {
     const resolver = new FormatResolver(state.currentProvider);
-    const { data: instructions, meta } = await resolver.getInstructionsWithMeta(folder, state.currentAuth);
+    const { data: instructions, meta } = await resolver.getInstructionsWithMeta(folder.path, state.currentAuth);
 
     if (!instructions) {
       showStatus('This provider does not support instructions view', 'error');
@@ -921,7 +936,8 @@ async function viewAsInstructions(folder: ContentFolder) {
     state.currentVenueFolder = folder;
     state.currentView = 'instructions';
 
-    state.folderStack.push(folder);
+    state.currentPath = folder.path;
+    state.breadcrumbTitles.push(folder.title);
     updateBreadcrumb();
 
     showLoading(false);
@@ -940,7 +956,7 @@ async function viewAsExpandedInstructions(folder: ContentFolder) {
 
   try {
     const resolver = new FormatResolver(state.currentProvider);
-    const { data: instructions, meta } = await resolver.getExpandedInstructionsWithMeta(folder, state.currentAuth);
+    const { data: instructions, meta } = await resolver.getExpandedInstructionsWithMeta(folder.path, state.currentAuth);
 
     if (!instructions) {
       showStatus('This provider does not support expanded instructions view', 'error');
@@ -952,7 +968,8 @@ async function viewAsExpandedInstructions(folder: ContentFolder) {
     state.currentVenueFolder = folder;
     state.currentView = 'instructions';
 
-    state.folderStack.push(folder);
+    state.currentPath = folder.path;
+    state.breadcrumbTitles.push(folder.title);
     updateBreadcrumb();
 
     showLoading(false);

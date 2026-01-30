@@ -4,19 +4,19 @@ import { B1Ministry, B1PlanType, B1Plan, B1PlanItem, ArrangementKeyResponse } fr
 import { fetchArrangementKey } from './api';
 
 export function ministryToFolder(ministry: B1Ministry): ContentItem {
-  return { type: 'folder' as const, id: ministry.id, title: ministry.name, image: ministry.photoUrl, providerData: { level: 'ministry', ministryId: ministry.id, churchId: ministry.churchId } };
+  return { type: 'folder' as const, id: ministry.id, title: ministry.name, path: '', image: ministry.photoUrl, providerData: { level: 'ministry', ministryId: ministry.id, churchId: ministry.churchId } };
 }
 
 export function planTypeToFolder(planType: B1PlanType, ministryId: string): ContentItem {
-  return { type: 'folder' as const, id: planType.id, title: planType.name, providerData: { level: 'planType', planTypeId: planType.id, ministryId: ministryId, churchId: planType.churchId } };
+  return { type: 'folder' as const, id: planType.id, title: planType.name, path: '', providerData: { level: 'planType', planTypeId: planType.id, ministryId: ministryId, churchId: planType.churchId } };
 }
 
 export function planToFolder(plan: B1Plan): ContentItem {
-  return { type: 'folder' as const, id: plan.id, title: plan.name, isLeaf: true, providerData: { level: 'plan', planId: plan.id, planTypeId: plan.planTypeId, ministryId: plan.ministryId, churchId: plan.churchId, serviceDate: plan.serviceDate, contentType: plan.contentType, contentId: plan.contentId } };
+  return { type: 'folder' as const, id: plan.id, title: plan.name, path: '', isLeaf: true, providerData: { level: 'plan', planId: plan.id, planTypeId: plan.planTypeId, ministryId: plan.ministryId, churchId: plan.churchId, serviceDate: plan.serviceDate, contentType: plan.contentType, contentId: plan.contentId } };
 }
 
 export function sectionToFolder(section: B1PlanItem): ContentItem {
-  return { type: 'folder' as const, id: section.id, title: section.label || 'Section', providerData: { level: 'section', itemType: 'section', description: section.description, seconds: section.seconds } };
+  return { type: 'folder' as const, id: section.id, title: section.label || 'Section', path: '', providerData: { level: 'section', itemType: 'section', description: section.description, seconds: section.seconds } };
 }
 
 export function planItemToContentItem(item: B1PlanItem, venueId: string | undefined): ContentItem | null {

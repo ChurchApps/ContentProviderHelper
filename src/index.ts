@@ -10,6 +10,7 @@ export * from './interfaces';
 
 // Utilities
 export { detectMediaType, createFolder, createFile } from './utils';
+export { parsePath, getSegment, buildPath, appendToPath } from './pathUtils';
 
 // Format conversion utilities
 export * as FormatConverters from './FormatConverters';

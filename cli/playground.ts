@@ -34,14 +34,16 @@ import {
 interface CliState {
   currentProvider: ContentProvider | null;
   currentAuth: ContentProviderAuthData | null;
-  folderStack: ContentFolder[];
+  currentPath: string;
+  breadcrumbTitles: string[];
   connectedProviders: Map<string, ContentProviderAuthData | null>;
 }
 
 const state: CliState = {
   currentProvider: null,
   currentAuth: null,
-  folderStack: [],
+  currentPath: '',
+  breadcrumbTitles: [],
   connectedProviders: new Map(),
 };
 
@@ -134,7 +136,8 @@ async function handleProviderSelection(providerId: string): Promise<void> {
   if (state.connectedProviders.has(providerId)) {
     state.currentProvider = provider;
     state.currentAuth = state.connectedProviders.get(providerId) || null;
-    state.folderStack = [];
+    state.currentPath = '';
+    state.breadcrumbTitles = [];
     showSuccess(`Connected to ${provider.name}`);
     await browseContent();
     return;
@@ -146,7 +149,8 @@ async function handleProviderSelection(providerId: string): Promise<void> {
     state.currentProvider = provider;
     state.currentAuth = null;
     state.connectedProviders.set(providerId, null);
-    state.folderStack = [];
+    state.currentPath = '';
+    state.breadcrumbTitles = [];
     showSuccess(`Connected to ${provider.name} (public API)`);
     await browseContent();
     return;
@@ -159,7 +163,8 @@ async function handleProviderSelection(providerId: string): Promise<void> {
       state.currentProvider = provider;
       state.currentAuth = auth;
       state.connectedProviders.set(providerId, auth);
-      state.folderStack = [];
+      state.currentPath = '';
+      state.breadcrumbTitles = [];
       showSuccess(`Authenticated with ${provider.name}`);
       await browseContent();
     }
@@ -173,7 +178,8 @@ async function handleProviderSelection(providerId: string): Promise<void> {
       state.currentProvider = provider;
       state.currentAuth = auth;
       state.connectedProviders.set(providerId, auth);
-      state.folderStack = [];
+      state.currentPath = '';
+      state.breadcrumbTitles = [];
       showSuccess(`Logged in to ${provider.name}`);
       await browseContent();
     }
@@ -291,9 +297,25 @@ function disconnect(): void {
     state.connectedProviders.delete(state.currentProvider.id);
     state.currentProvider = null;
     state.currentAuth = null;
-    state.folderStack = [];
+    state.currentPath = '';
+    state.breadcrumbTitles = [];
     showInfo(`Disconnected from ${name}`);
   }
+}
+
+/**
+ * Go back one level in the path
+ */
+function goBack(): void {
+  if (!state.currentPath) return;
+
+  // Remove last segment from path
+  const segments = state.currentPath.split('/').filter(Boolean);
+  segments.pop();
+  state.currentPath = segments.length > 0 ? '/' + segments.join('/') : '';
+
+  // Remove last breadcrumb title
+  state.breadcrumbTitles.pop();
 }
 
 /**
@@ -305,25 +327,21 @@ async function browseContent(): Promise<void> {
     return;
   }
 
-  const currentFolder = state.folderStack.length > 0
-    ? state.folderStack[state.folderStack.length - 1]
-    : undefined;
-
   const spinner = ora('Loading content...').start();
 
   try {
-    const items = await state.currentProvider.browse(currentFolder, state.currentAuth);
+    const items = await state.currentProvider.browse(state.currentPath || null, state.currentAuth);
     spinner.stop();
 
     if (!items || items.length === 0) {
       showInfo('No content found');
-      if (state.folderStack.length > 0) {
+      if (state.currentPath) {
         await handleBackOrMenu();
       }
       return;
     }
 
-    displayBreadcrumb(state.currentProvider.name, state.folderStack);
+    displayBreadcrumb(state.currentProvider.name, state.breadcrumbTitles);
     displayContentTable(items);
 
     await handleContentSelection(items);
@@ -342,7 +360,7 @@ async function handleContentSelection(items: ContentItem[]): Promise<void> {
     value: String(i),
   }));
 
-  if (state.folderStack.length > 0) {
+  if (state.currentPath) {
     choices.push({ name: '← Back', value: 'back' });
   }
   choices.push({ name: '🏠 Main Menu', value: 'menu' });
@@ -354,7 +372,7 @@ async function handleContentSelection(items: ContentItem[]): Promise<void> {
   });
 
   if (selection === 'back') {
-    state.folderStack.pop();
+    goBack();
     await browseContent();
     return;
   }
@@ -384,15 +402,14 @@ async function handleContentSelection(items: ContentItem[]): Promise<void> {
 async function handleFolderSelection(folder: ContentFolder): Promise<void> {
   // Check if this is a leaf folder (offers view modes)
   // Providers set isLeaf: true to indicate the bottom of the browse tree
-  // Legacy fallback: venueId or level === 'playlist' for older providers
-  const isLeafFolder = folder.providerData?.isLeaf
-    || folder.providerData?.venueId
-    || folder.providerData?.level === 'playlist';
+  const isLeafFolder = folder.isLeaf;
 
   if (isLeafFolder && state.currentProvider) {
     await showViewModeMenu(folder);
   } else {
-    state.folderStack.push(folder);
+    // Navigate into the folder using its path
+    state.currentPath = folder.path;
+    state.breadcrumbTitles.push(folder.title);
     await browseContent();
   }
 }
@@ -404,6 +421,8 @@ async function showViewModeMenu(folder: ContentFolder): Promise<void> {
   if (!state.currentProvider) return;
 
   const caps = state.currentProvider.getCapabilities();
+  const path = folder.path;
+  const title = folder.title;
 
   const choices: Array<{ name: string; value: string; disabled?: string | boolean }> = [
     {
@@ -430,22 +449,22 @@ async function showViewModeMenu(folder: ContentFolder): Promise<void> {
   ];
 
   const viewMode = await select({
-    message: `Choose view mode for "${folder.title}":`,
+    message: `Choose view mode for "${title}":`,
     choices,
   });
 
   switch (viewMode) {
     case 'playlist':
-      await showPlaylistView(folder);
+      await showPlaylistView(path, title);
       break;
     case 'presentations':
-      await showPresentationsView(folder);
+      await showPresentationsView(path, title);
       break;
     case 'instructions':
-      await showInstructionsView(folder, false);
+      await showInstructionsView(path, title, false);
       break;
     case 'expanded':
-      await showInstructionsView(folder, true);
+      await showInstructionsView(path, title, true);
       break;
     case 'cancel':
       await browseContent();
@@ -456,7 +475,7 @@ async function showViewModeMenu(folder: ContentFolder): Promise<void> {
 /**
  * Show playlist view
  */
-async function showPlaylistView(folder: ContentFolder): Promise<void> {
+async function showPlaylistView(path: string, title: string): Promise<void> {
   if (!state.currentProvider) return;
 
   const spinner = ora('Loading playlist...').start();
@@ -466,12 +485,12 @@ async function showPlaylistView(folder: ContentFolder): Promise<void> {
     let files: ContentFile[] | null = null;
 
     if (state.currentProvider.getCapabilities().playlist) {
-      files = await state.currentProvider.getPlaylist(folder, state.currentAuth);
+      files = await state.currentProvider.getPlaylist(path, state.currentAuth);
     }
 
     if (!files) {
       // Fall back to browse and filter files
-      const items = await state.currentProvider.browse(folder, state.currentAuth);
+      const items = await state.currentProvider.browse(path, state.currentAuth);
       files = items?.filter(isContentFile) || [];
     }
 
@@ -480,8 +499,9 @@ async function showPlaylistView(folder: ContentFolder): Promise<void> {
     if (files.length === 0) {
       showInfo('No files in playlist');
     } else {
-      state.folderStack.push(folder);
-      displayBreadcrumb(state.currentProvider.name, state.folderStack);
+      state.currentPath = path;
+      state.breadcrumbTitles.push(title);
+      displayBreadcrumb(state.currentProvider.name, state.breadcrumbTitles);
       displayPlaylist(files);
     }
 
@@ -514,7 +534,7 @@ async function handlePlaylistMenu(files: ContentFile[]): Promise<void> {
   }
 
   if (action === 'back') {
-    state.folderStack.pop();
+    goBack();
     await browseContent();
     return;
   }
@@ -525,13 +545,13 @@ async function handlePlaylistMenu(files: ContentFile[]): Promise<void> {
 /**
  * Show presentations view
  */
-async function showPresentationsView(folder: ContentFolder): Promise<void> {
+async function showPresentationsView(path: string, title: string): Promise<void> {
   if (!state.currentProvider) return;
 
   const spinner = ora('Loading presentations...').start();
 
   try {
-    const plan = await state.currentProvider.getPresentations(folder, state.currentAuth);
+    const plan = await state.currentProvider.getPresentations(path, state.currentAuth);
     spinner.stop();
 
     if (!plan) {
@@ -539,8 +559,9 @@ async function showPresentationsView(folder: ContentFolder): Promise<void> {
       return;
     }
 
-    state.folderStack.push(folder);
-    displayBreadcrumb(state.currentProvider.name, state.folderStack);
+    state.currentPath = path;
+    state.breadcrumbTitles.push(title);
+    displayBreadcrumb(state.currentProvider.name, state.breadcrumbTitles);
     displayPlan(plan);
 
     await handlePlanMenu(plan);
@@ -572,7 +593,7 @@ async function handlePlanMenu(plan: any): Promise<void> {
   }
 
   if (action === 'back') {
-    state.folderStack.pop();
+    goBack();
     await browseContent();
     return;
   }
@@ -583,15 +604,15 @@ async function handlePlanMenu(plan: any): Promise<void> {
 /**
  * Show instructions view
  */
-async function showInstructionsView(folder: ContentFolder, expanded: boolean): Promise<void> {
+async function showInstructionsView(path: string, title: string, expanded: boolean): Promise<void> {
   if (!state.currentProvider) return;
 
   const spinner = ora(`Loading ${expanded ? 'expanded ' : ''}instructions...`).start();
 
   try {
     const instructions = expanded
-      ? await state.currentProvider.getExpandedInstructions(folder, state.currentAuth)
-      : await state.currentProvider.getInstructions(folder, state.currentAuth);
+      ? await state.currentProvider.getExpandedInstructions(path, state.currentAuth)
+      : await state.currentProvider.getInstructions(path, state.currentAuth);
 
     spinner.stop();
 
@@ -600,8 +621,9 @@ async function showInstructionsView(folder: ContentFolder, expanded: boolean): P
       return;
     }
 
-    state.folderStack.push(folder);
-    displayBreadcrumb(state.currentProvider.name, state.folderStack);
+    state.currentPath = path;
+    state.breadcrumbTitles.push(title);
+    displayBreadcrumb(state.currentProvider.name, state.breadcrumbTitles);
     displayInstructions(instructions, expanded);
 
     await handleInstructionsMenu(instructions, expanded);
@@ -633,7 +655,7 @@ async function handleInstructionsMenu(instructions: any, expanded: boolean): Pro
   }
 
   if (action === 'back') {
-    state.folderStack.pop();
+    goBack();
     await browseContent();
     return;
   }
@@ -677,7 +699,7 @@ async function handleFileSelection(file: ContentFile): Promise<void> {
 async function handleBackOrMenu(): Promise<void> {
   const choices = [];
 
-  if (state.folderStack.length > 0) {
+  if (state.currentPath) {
     choices.push({ name: '← Back', value: 'back' });
   }
   choices.push({ name: '🏠 Main Menu', value: 'menu' });
@@ -688,7 +710,7 @@ async function handleBackOrMenu(): Promise<void> {
   });
 
   if (action === 'back') {
-    state.folderStack.pop();
+    goBack();
     await browseContent();
   }
   // else return to main menu
