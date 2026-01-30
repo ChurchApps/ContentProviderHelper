@@ -9,8 +9,8 @@ import { BibleProjectData } from './BibleProjectInterfaces';
  *
  * Path structure:
  *   /                              -> list collections
- *   /{collectionName}              -> list videos in collection
- *   /{collectionName}/{videoId}    -> single video
+ *   /{collectionSlug}              -> list videos in collection
+ *   /{collectionSlug}/{videoId}    -> single video
  */
 export class BibleProjectProvider implements IProvider {
   readonly id = 'bibleproject';
@@ -54,17 +54,17 @@ export class BibleProjectProvider implements IProvider {
       return this.getCollections();
     }
 
-    // /{collectionName} -> list videos in collection
+    // /{collectionSlug} -> list videos in collection
     if (depth === 1) {
-      const collectionName = decodeURIComponent(segments[0]);
-      return this.getLessonFolders(collectionName, path!);
+      const collectionSlug = segments[0];
+      return this.getLessonFolders(collectionSlug, path!);
     }
 
-    // /{collectionName}/{videoId} -> single video file
+    // /{collectionSlug}/{videoId} -> single video file
     if (depth === 2) {
-      const collectionName = decodeURIComponent(segments[0]);
+      const collectionSlug = segments[0];
       const videoId = segments[1];
-      return this.getVideoFile(collectionName, videoId);
+      return this.getVideoFile(collectionSlug, videoId);
     }
 
     return [];
@@ -78,12 +78,12 @@ export class BibleProjectProvider implements IProvider {
         id: this.slugify(collection.name),
         title: collection.name,
         image: collection.image || undefined,
-        path: `/${encodeURIComponent(collection.name)}`
+        path: `/${this.slugify(collection.name)}`
       }));
   }
 
-  private getLessonFolders(collectionName: string, currentPath: string): ContentItem[] {
-    const collection = this.data.collections.find(c => c.name === collectionName);
+  private getLessonFolders(collectionSlug: string, currentPath: string): ContentItem[] {
+    const collection = this.data.collections.find(c => this.slugify(c.name) === collectionSlug);
     if (!collection) return [];
 
     return collection.videos.map(video => ({
@@ -97,8 +97,8 @@ export class BibleProjectProvider implements IProvider {
     }));
   }
 
-  private getVideoFile(collectionName: string, videoId: string): ContentItem[] {
-    const collection = this.data.collections.find(c => c.name === collectionName);
+  private getVideoFile(collectionSlug: string, videoId: string): ContentItem[] {
+    const collection = this.data.collections.find(c => this.slugify(c.name) === collectionSlug);
     if (!collection) return [];
 
     const video = collection.videos.find(v => v.id === videoId);
@@ -112,8 +112,8 @@ export class BibleProjectProvider implements IProvider {
 
     if (depth < 1) return null;
 
-    const collectionName = decodeURIComponent(segments[0]);
-    const collection = this.data.collections.find(c => c.name === collectionName);
+    const collectionSlug = segments[0];
+    const collection = this.data.collections.find(c => this.slugify(c.name) === collectionSlug);
     if (!collection) return null;
 
     // For collection level (depth 1), create a plan with all videos
@@ -146,8 +146,8 @@ export class BibleProjectProvider implements IProvider {
 
     if (depth < 1) return null;
 
-    const collectionName = decodeURIComponent(segments[0]);
-    const collection = this.data.collections.find(c => c.name === collectionName);
+    const collectionSlug = segments[0];
+    const collection = this.data.collections.find(c => this.slugify(c.name) === collectionSlug);
     if (!collection) return null;
 
     // For collection level, return all videos

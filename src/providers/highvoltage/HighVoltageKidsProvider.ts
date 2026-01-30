@@ -9,9 +9,9 @@ import { HighVoltageData } from './HighVoltageKidsInterfaces';
  *
  * Path structure:
  *   /                                          -> list collections (Elementary, Preschool)
- *   /{collectionName}                          -> list studies
- *   /{collectionName}/{studyId}                -> list lessons
- *   /{collectionName}/{studyId}/{lessonId}     -> lesson files (leaf)
+ *   /{collectionSlug}                          -> list studies
+ *   /{collectionSlug}/{studyId}                -> list lessons
+ *   /{collectionSlug}/{studyId}/{lessonId}     -> lesson files (leaf)
  */
 export class HighVoltageKidsProvider implements IProvider {
   readonly id = 'highvoltagekids';
@@ -55,25 +55,25 @@ export class HighVoltageKidsProvider implements IProvider {
       return this.getCollections();
     }
 
-    // /{collectionName} -> list studies
+    // /{collectionSlug} -> list studies
     if (depth === 1) {
-      const collectionName = decodeURIComponent(segments[0]);
-      return this.getStudyFolders(collectionName, path!);
+      const collectionSlug = segments[0];
+      return this.getStudyFolders(collectionSlug, path!);
     }
 
-    // /{collectionName}/{studyId} -> list lessons
+    // /{collectionSlug}/{studyId} -> list lessons
     if (depth === 2) {
-      const collectionName = decodeURIComponent(segments[0]);
+      const collectionSlug = segments[0];
       const studyId = segments[1];
-      return this.getLessonFolders(collectionName, studyId, path!);
+      return this.getLessonFolders(collectionSlug, studyId, path!);
     }
 
-    // /{collectionName}/{studyId}/{lessonId} -> lesson files
+    // /{collectionSlug}/{studyId}/{lessonId} -> lesson files
     if (depth === 3) {
-      const collectionName = decodeURIComponent(segments[0]);
+      const collectionSlug = segments[0];
       const studyId = segments[1];
       const lessonId = segments[2];
-      return this.getLessonFiles(collectionName, studyId, lessonId);
+      return this.getLessonFiles(collectionSlug, studyId, lessonId);
     }
 
     return [];
@@ -86,12 +86,12 @@ export class HighVoltageKidsProvider implements IProvider {
         type: 'folder' as const,
         id: this.slugify(collection.name),
         title: collection.name,
-        path: `/${encodeURIComponent(collection.name)}`
+        path: `/${this.slugify(collection.name)}`
       }));
   }
 
-  private getStudyFolders(collectionName: string, currentPath: string): ContentItem[] {
-    const collection = this.data.collections.find(c => c.name === collectionName);
+  private getStudyFolders(collectionSlug: string, currentPath: string): ContentItem[] {
+    const collection = this.data.collections.find(c => this.slugify(c.name) === collectionSlug);
     if (!collection) return [];
 
     return collection.folders.map(study => ({
@@ -104,8 +104,8 @@ export class HighVoltageKidsProvider implements IProvider {
     }));
   }
 
-  private getLessonFolders(collectionName: string, studyId: string, currentPath: string): ContentItem[] {
-    const collection = this.data.collections.find(c => c.name === collectionName);
+  private getLessonFolders(collectionSlug: string, studyId: string, currentPath: string): ContentItem[] {
+    const collection = this.data.collections.find(c => this.slugify(c.name) === collectionSlug);
     if (!collection) return [];
 
     const study = collection.folders.find(s => s.id === studyId);
@@ -122,8 +122,8 @@ export class HighVoltageKidsProvider implements IProvider {
     }));
   }
 
-  private getLessonFiles(collectionName: string, studyId: string, lessonId: string): ContentItem[] {
-    const collection = this.data.collections.find(c => c.name === collectionName);
+  private getLessonFiles(collectionSlug: string, studyId: string, lessonId: string): ContentItem[] {
+    const collection = this.data.collections.find(c => this.slugify(c.name) === collectionSlug);
     if (!collection) return [];
 
     const study = collection.folders.find(s => s.id === studyId);
@@ -140,10 +140,10 @@ export class HighVoltageKidsProvider implements IProvider {
 
     if (depth < 2) return null;
 
-    const collectionName = decodeURIComponent(segments[0]);
+    const collectionSlug = segments[0];
     const studyId = segments[1];
 
-    const collection = this.data.collections.find(c => c.name === collectionName);
+    const collection = this.data.collections.find(c => this.slugify(c.name) === collectionSlug);
     if (!collection) return null;
 
     const study = collection.folders.find(s => s.id === studyId);
@@ -184,10 +184,10 @@ export class HighVoltageKidsProvider implements IProvider {
 
     if (depth < 2) return null;
 
-    const collectionName = decodeURIComponent(segments[0]);
+    const collectionSlug = segments[0];
     const studyId = segments[1];
 
-    const collection = this.data.collections.find(c => c.name === collectionName);
+    const collection = this.data.collections.find(c => this.slugify(c.name) === collectionSlug);
     if (!collection) return null;
 
     const study = collection.folders.find(s => s.id === studyId);
@@ -220,10 +220,10 @@ export class HighVoltageKidsProvider implements IProvider {
 
     if (depth < 2) return null;
 
-    const collectionName = decodeURIComponent(segments[0]);
+    const collectionSlug = segments[0];
     const studyId = segments[1];
 
-    const collection = this.data.collections.find(c => c.name === collectionName);
+    const collection = this.data.collections.find(c => this.slugify(c.name) === collectionSlug);
     if (!collection) return null;
 
     const study = collection.folders.find(s => s.id === studyId);
