@@ -95,7 +95,7 @@ export class LessonsChurchProvider extends ContentProvider {
     }
   }
 
-  async browse(folder?: ContentFolder | null, _auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentItem[]> {
+  async browse(folder?: ContentFolder | null, _auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     console.log('[LessonsChurchProvider.browse] folder:', folder ? { id: folder.id, title: folder.title, level: folder.providerData?.level, isLeaf: folder.isLeaf } : null);
     if (!folder) {
       // Return top-level folders: Lessons and Add-Ons
@@ -122,7 +122,7 @@ export class LessonsChurchProvider extends ContentProvider {
       case 'studies': return this.getStudies(folder);
       case 'lessons': return this.getLessons(folder);
       case 'venues': return this.getVenues(folder);
-      case 'playlist': return this.getPlaylistFiles(folder, resolution);
+      case 'playlist': return this.getPlaylistFiles(folder);
       // Add-ons hierarchy
       case 'addOnCategories': return this.getAddOnCategories();
       case 'addOns': return this.getAddOnsByCategory(folder);
@@ -202,8 +202,8 @@ export class LessonsChurchProvider extends ContentProvider {
     return result;
   }
 
-  private async getPlaylistFiles(folder: ContentFolder, resolution?: number): Promise<ContentItem[]> {
-    const files = await this.getPlaylist(folder, null, resolution);
+  private async getPlaylistFiles(folder: ContentFolder): Promise<ContentItem[]> {
+    const files = await this.getPlaylist(folder, null);
     return files || [];
   }
 
