@@ -1,4 +1,4 @@
-import { getAvailableProviders, getProvider, ContentProvider, ContentFolder, ContentItem, ContentProviderAuthData, DeviceAuthorizationResponse, isContentFolder, isContentFile, Plan, PlanPresentation, Instructions, InstructionItem, B1ChurchProvider, PlanningCenterProvider, FormatResolver, ProviderCapabilities, ContentFile } from "../src";
+import { getAvailableProviders, getProvider, IProvider, ContentFolder, ContentItem, ContentProviderAuthData, DeviceAuthorizationResponse, isContentFolder, isContentFile, Plan, PlanPresentation, Instructions, InstructionItem, B1ChurchProvider, PlanningCenterProvider, FormatResolver, ProviderCapabilities, ContentFile, OAuthHelper, DeviceFlowHelper } from "../src";
 import type { ResolvedFormatMeta } from "../src";
 
 const OAUTH_REDIRECT_URI = `${window.location.origin}${window.location.pathname}`;
@@ -7,8 +7,7 @@ const STORAGE_KEY_PROVIDER = 'oauth_provider_id';
 
 // Configure client IDs for OAuth providers (using FreeShow's registered app credentials for testing)
 const PCO_CLIENT_ID = '35d1112d839d678ce3f1de730d2cff0b81038c2944b11c5e2edf03f8b43abc05';
-const B1_CLIENT_ID = 'nEgWOCjpj3p';
-const B1_CLIENT_SECRET = 'raEFO2kT0Lc';
+const B1_CLIENT_ID = 'nsowldn58dk';
 
 // Configure providers with client IDs
 function configureProviders() {
@@ -25,11 +24,16 @@ function configureProviders() {
 
 configureProviders();
 
+// Auth helpers (used instead of methods on provider)
+const oauthHelper = new OAuthHelper();
+const deviceFlowHelper = new DeviceFlowHelper();
+
 interface AppState {
   currentView: 'providers' | 'browser' | 'plan' | 'instructions';
-  currentProvider: ContentProvider | null;
+  currentProvider: IProvider | null;
   currentAuth: ContentProviderAuthData | null;
-  folderStack: ContentFolder[];
+  currentPath: string;
+  breadcrumbTitles: string[];
   connectedProviders: Map<string, ContentProviderAuthData | null>;
   deviceFlowActive: boolean;
   deviceFlowData: DeviceAuthorizationResponse | null;
@@ -44,7 +48,8 @@ const state: AppState = {
   currentView: 'providers',
   currentProvider: null,
   currentAuth: null,
-  folderStack: [],
+  currentPath: '',
+  breadcrumbTitles: [],
   connectedProviders: new Map(),
   deviceFlowActive: false,
   deviceFlowData: null,
@@ -87,6 +92,11 @@ const oauthSection = document.getElementById('oauth-flow-section')!;
 const oauthSigninBtn = document.getElementById('oauth-signin-btn')!;
 const oauthProcessing = document.getElementById('oauth-processing')!;
 
+// Auth choice elements
+const authChoiceSection = document.getElementById('auth-choice-section')!;
+const authChoiceDeviceBtn = document.getElementById('auth-choice-device')!;
+const authChoiceOAuthBtn = document.getElementById('auth-choice-oauth')!;
+
 // Form login elements
 const formLoginSection = document.getElementById('form-login-section')!;
 const loginEmail = document.getElementById('login-email')! as HTMLInputElement;
@@ -107,6 +117,8 @@ function setupEventListeners() {
   retryBtn.addEventListener('click', retryAuth);
   oauthSigninBtn.addEventListener('click', startOAuthRedirect);
   formLoginBtn.addEventListener('click', handleFormLoginSubmit);
+  authChoiceDeviceBtn.addEventListener('click', () => startDeviceFlow());
+  authChoiceOAuthBtn.addEventListener('click', () => showOAuthModal());
 
   // Handle Enter key in form login fields
   loginEmail.addEventListener('keydown', (e) => {
@@ -263,10 +275,16 @@ async function handleProviderClick(providerId: string) {
     return;
   }
 
-  if (provider.requiresAuth()) {
-    if (provider.supportsDeviceFlow()) {
+  if (provider.requiresAuth) {
+    const supportsDeviceFlow = deviceFlowHelper.supportsDeviceFlow(provider.config);
+    const supportsOAuth = provider.authTypes.includes('oauth_pkce');
+
+    // Show choice if both OAuth and Device Flow are supported
+    if (supportsDeviceFlow && supportsOAuth) {
+      showAuthChoiceModal();
+    } else if (supportsDeviceFlow) {
       await startDeviceFlow();
-    } else if (provider.getAuthTypes().includes('form_login')) {
+    } else if (provider.authTypes.includes('form_login')) {
       showFormLoginModal();
     } else {
       showOAuthModal();
@@ -277,6 +295,12 @@ async function handleProviderClick(providerId: string) {
   state.connectedProviders.set(providerId, null);
   state.currentAuth = null;
   await navigateToBrowser();
+}
+
+function showAuthChoiceModal() {
+  if (!state.currentProvider) return;
+  modalTitle.textContent = `Connect to ${state.currentProvider.name}`;
+  showModal('auth_choice');
 }
 
 function showOAuthModal() {
@@ -345,10 +369,21 @@ async function startOAuthRedirect() {
   if (!state.currentProvider) return;
 
   try {
-    const codeVerifier = state.currentProvider.generateCodeVerifier();
+    const codeVerifier = oauthHelper.generateCodeVerifier();
     sessionStorage.setItem(STORAGE_KEY_VERIFIER, codeVerifier);
     sessionStorage.setItem(STORAGE_KEY_PROVIDER, state.currentProvider.id);
-    const { url } = await state.currentProvider.buildAuthUrl(codeVerifier, OAUTH_REDIRECT_URI);
+
+    let url: string;
+    // B1Church has its own OAuth URL format
+    if (state.currentProvider.id === 'b1church') {
+      const b1Provider = state.currentProvider as B1ChurchProvider;
+      const result = await b1Provider.buildAuthUrl(codeVerifier, OAUTH_REDIRECT_URI);
+      url = result.url;
+    } else {
+      const result = await oauthHelper.buildAuthUrl(state.currentProvider.config, codeVerifier, OAUTH_REDIRECT_URI);
+      url = result.url;
+    }
+
     window.location.href = url;
   } catch (error) {
     showModal('error');
@@ -395,12 +430,12 @@ async function handleOAuthCallback() {
   try {
     let authData: ContentProviderAuthData | null;
 
-    // B1Church uses standard OAuth with client_secret (not PKCE)
+    // B1Church now uses PKCE
     if (provider.id === 'b1church') {
       const b1Provider = provider as B1ChurchProvider;
-      authData = await b1Provider.exchangeCodeForTokensWithSecret(code, OAUTH_REDIRECT_URI, B1_CLIENT_SECRET);
+      authData = await b1Provider.exchangeCodeForTokensWithPKCE(code, OAUTH_REDIRECT_URI, codeVerifier);
     } else {
-      authData = await provider.exchangeCodeForTokens(code, codeVerifier, OAUTH_REDIRECT_URI);
+      authData = await oauthHelper.exchangeCodeForTokens(provider.config, provider.id, code, codeVerifier, OAUTH_REDIRECT_URI);
     }
 
     if (!authData) {
@@ -432,7 +467,7 @@ async function startDeviceFlow() {
   modalTitle.textContent = `Connect to ${state.currentProvider.name}`;
 
   try {
-    const deviceAuth = await state.currentProvider.initiateDeviceFlow();
+    const deviceAuth = await deviceFlowHelper.initiateDeviceFlow(state.currentProvider.config);
 
     if (!deviceAuth) {
       showModal('error');
@@ -479,7 +514,7 @@ function startPolling(deviceAuth: DeviceAuthorizationResponse) {
     }
 
     try {
-      const result = await state.currentProvider.pollDeviceFlowToken(state.deviceFlowData.device_code);
+      const result = await deviceFlowHelper.pollDeviceFlowToken(state.currentProvider.config, state.deviceFlowData.device_code);
 
       if (result === null) {
         state.deviceFlowActive = false;
@@ -493,7 +528,7 @@ function startPolling(deviceAuth: DeviceAuthorizationResponse) {
           state.slowDownCount++;
         }
 
-        const delay = state.currentProvider.calculatePollDelay(baseInterval, state.slowDownCount);
+        const delay = deviceFlowHelper.calculatePollDelay(baseInterval, state.slowDownCount);
         state.pollingInterval = window.setTimeout(poll, delay);
         return;
       }
@@ -512,16 +547,16 @@ function startPolling(deviceAuth: DeviceAuthorizationResponse) {
 
     } catch (error) {
       console.error('Polling error:', error);
-      const delay = state.currentProvider!.calculatePollDelay(baseInterval, state.slowDownCount);
+      const delay = deviceFlowHelper.calculatePollDelay(baseInterval, state.slowDownCount);
       state.pollingInterval = window.setTimeout(poll, delay);
     }
   };
 
-  const initialDelay = state.currentProvider.calculatePollDelay(baseInterval, 0);
+  const initialDelay = deviceFlowHelper.calculatePollDelay(baseInterval, 0);
   state.pollingInterval = window.setTimeout(poll, initialDelay);
 }
 
-function showModal(view: 'loading' | 'code' | 'success' | 'error' | 'oauth' | 'processing' | 'form_login') {
+function showModal(view: 'loading' | 'code' | 'success' | 'error' | 'oauth' | 'processing' | 'form_login' | 'auth_choice') {
   modal.classList.remove('hidden');
   modalLoading.classList.add('hidden');
   modalCode.classList.add('hidden');
@@ -530,6 +565,7 @@ function showModal(view: 'loading' | 'code' | 'success' | 'error' | 'oauth' | 'p
   oauthSection.classList.add('hidden');
   oauthProcessing.classList.add('hidden');
   formLoginSection.classList.add('hidden');
+  authChoiceSection.classList.add('hidden');
 
   switch (view) {
     case 'loading':
@@ -552,6 +588,9 @@ function showModal(view: 'loading' | 'code' | 'success' | 'error' | 'oauth' | 'p
       break;
     case 'form_login':
       formLoginSection.classList.remove('hidden');
+      break;
+    case 'auth_choice':
+      authChoiceSection.classList.remove('hidden');
       break;
   }
 }
@@ -580,7 +619,13 @@ function retryAuth() {
     return;
   }
 
-  if (state.currentProvider.supportsDeviceFlow()) {
+  const supportsDeviceFlow = deviceFlowHelper.supportsDeviceFlow(state.currentProvider.config);
+  const supportsOAuth = state.currentProvider.authTypes.includes('oauth_pkce');
+
+  // Show choice if both OAuth and Device Flow are supported
+  if (supportsDeviceFlow && supportsOAuth) {
+    showAuthChoiceModal();
+  } else if (supportsDeviceFlow) {
     startDeviceFlow();
   } else {
     showOAuthModal();
@@ -589,7 +634,8 @@ function retryAuth() {
 
 async function navigateToBrowser() {
   state.currentView = 'browser';
-  state.folderStack = [];
+  state.currentPath = '';
+  state.breadcrumbTitles = [];
 
   providersView.classList.add('hidden');
   browserView.classList.remove('hidden');
@@ -602,7 +648,8 @@ async function navigateToBrowser() {
 function navigateToProviders() {
   state.currentView = 'providers';
   state.currentProvider = null;
-  state.folderStack = [];
+  state.currentPath = '';
+  state.breadcrumbTitles = [];
 
   browserView.classList.add('hidden');
   breadcrumb.classList.add('hidden');
@@ -611,9 +658,21 @@ function navigateToProviders() {
   renderProviders();
 }
 
+function goBack() {
+  if (!state.currentPath) return;
+
+  // Remove last segment from path
+  const segments = state.currentPath.split('/').filter(Boolean);
+  segments.pop();
+  state.currentPath = segments.length > 0 ? '/' + segments.join('/') : '';
+
+  // Remove last breadcrumb title
+  state.breadcrumbTitles.pop();
+}
+
 function handleBack() {
-  if (state.folderStack.length > 0) {
-    state.folderStack.pop();
+  if (state.currentPath) {
+    goBack();
     updateBreadcrumb();
     loadContent();
   } else {
@@ -623,16 +682,16 @@ function handleBack() {
 
 function updateBreadcrumb() {
   const parts: string[] = [state.currentProvider?.name || 'Unknown'];
-  state.folderStack.forEach(folder => {
-    parts.push(folder.title);
+  state.breadcrumbTitles.forEach(title => {
+    parts.push(title);
   });
 
   breadcrumbPath.innerHTML = parts
     .map((part, i) => i === parts.length - 1 ? `<span>${part}</span>` : part)
     .join(' / ');
 
-  browserTitle.textContent = state.folderStack.length > 0
-    ? state.folderStack[state.folderStack.length - 1].title
+  browserTitle.textContent = state.breadcrumbTitles.length > 0
+    ? state.breadcrumbTitles[state.breadcrumbTitles.length - 1]
     : state.currentProvider?.name || 'Content';
 }
 
@@ -644,10 +703,7 @@ async function loadContent() {
   emptyEl.classList.add('hidden');
 
   try {
-    const currentFolder = state.folderStack.length > 0
-      ? state.folderStack[state.folderStack.length - 1]
-      : null;
-    const items = await state.currentProvider.browse(currentFolder, state.currentAuth);
+    const items = await state.currentProvider.browse(state.currentPath || null, state.currentAuth);
 
     showLoading(false);
 
@@ -739,15 +795,14 @@ function renderFile(file: ContentItem & { type: 'file' }): string {
 function handleFolderClick(folder: ContentFolder) {
   // Check if this is a leaf folder (offers view modes)
   // Providers set isLeaf: true to indicate the bottom of the browse tree
-  // Legacy fallback: venueId or level === 'playlist' for older providers
-  const isLeafFolder = folder.isLeaf
-    || folder.providerData?.venueId
-    || folder.providerData?.level === 'playlist';
+  const isLeafFolder = folder.isLeaf;
 
   if (isLeafFolder && state.currentProvider) {
     showVenueChoiceModal(folder);
   } else {
-    state.folderStack.push(folder);
+    // Navigate into the folder using its path
+    state.currentPath = folder.path;
+    state.breadcrumbTitles.push(folder.title);
     updateBreadcrumb();
     loadContent();
   }
@@ -757,7 +812,7 @@ function showVenueChoiceModal(folder: ContentFolder) {
   state.currentVenueFolder = folder;
 
   // Get provider capabilities to determine native vs derived
-  const caps = state.currentProvider?.getCapabilities();
+  const caps = state.currentProvider?.capabilities;
 
   // Helper to create format button with native/derived indicator
   const formatBtn = (id: string, icon: string, name: string, desc: string, isNative: boolean, sourceFormat?: string) => {
@@ -843,11 +898,12 @@ async function viewAsPlaylist(folder: ContentFolder) {
 
   try {
     const resolver = new FormatResolver(state.currentProvider);
-    const { data: playlist, meta } = await resolver.getPlaylistWithMeta(folder, state.currentAuth);
+    const { data: playlist, meta } = await resolver.getPlaylistWithMeta(folder.path, state.currentAuth);
 
     if (!playlist || playlist.length === 0) {
       // Fallback to regular browse if no playlist
-      state.folderStack.push(folder);
+      state.currentPath = folder.path;
+      state.breadcrumbTitles.push(folder.title);
       updateBreadcrumb();
       showLoading(false);
       loadContent();
@@ -855,7 +911,8 @@ async function viewAsPlaylist(folder: ContentFolder) {
     }
 
     state.currentVenueFolder = folder;
-    state.folderStack.push(folder);
+    state.currentPath = folder.path;
+    state.breadcrumbTitles.push(folder.title);
     updateBreadcrumb();
 
     showLoading(false);
@@ -874,7 +931,7 @@ async function viewAsPresentations(folder: ContentFolder) {
 
   try {
     const resolver = new FormatResolver(state.currentProvider);
-    const { data: plan, meta } = await resolver.getPresentationsWithMeta(folder, state.currentAuth);
+    const { data: plan, meta } = await resolver.getPresentationsWithMeta(folder.path, state.currentAuth);
 
     if (!plan) {
       showStatus('This provider does not support presentations view', 'error');
@@ -886,7 +943,8 @@ async function viewAsPresentations(folder: ContentFolder) {
     state.currentVenueFolder = folder;
     state.currentView = 'plan';
 
-    state.folderStack.push(folder);
+    state.currentPath = folder.path;
+    state.breadcrumbTitles.push(folder.title);
     updateBreadcrumb();
 
     showLoading(false);
@@ -905,7 +963,7 @@ async function viewAsInstructions(folder: ContentFolder) {
 
   try {
     const resolver = new FormatResolver(state.currentProvider);
-    const { data: instructions, meta } = await resolver.getInstructionsWithMeta(folder, state.currentAuth);
+    const { data: instructions, meta } = await resolver.getInstructionsWithMeta(folder.path, state.currentAuth);
 
     if (!instructions) {
       showStatus('This provider does not support instructions view', 'error');
@@ -917,7 +975,8 @@ async function viewAsInstructions(folder: ContentFolder) {
     state.currentVenueFolder = folder;
     state.currentView = 'instructions';
 
-    state.folderStack.push(folder);
+    state.currentPath = folder.path;
+    state.breadcrumbTitles.push(folder.title);
     updateBreadcrumb();
 
     showLoading(false);
@@ -936,7 +995,7 @@ async function viewAsExpandedInstructions(folder: ContentFolder) {
 
   try {
     const resolver = new FormatResolver(state.currentProvider);
-    const { data: instructions, meta } = await resolver.getExpandedInstructionsWithMeta(folder, state.currentAuth);
+    const { data: instructions, meta } = await resolver.getExpandedInstructionsWithMeta(folder.path, state.currentAuth);
 
     if (!instructions) {
       showStatus('This provider does not support expanded instructions view', 'error');
@@ -948,7 +1007,8 @@ async function viewAsExpandedInstructions(folder: ContentFolder) {
     state.currentVenueFolder = folder;
     state.currentView = 'instructions';
 
-    state.folderStack.push(folder);
+    state.currentPath = folder.path;
+    state.breadcrumbTitles.push(folder.title);
     updateBreadcrumb();
 
     showLoading(false);

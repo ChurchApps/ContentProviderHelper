@@ -1,14 +1,14 @@
 // Main provider
-export { B1ChurchProvider } from './B1ChurchProvider';
+export { B1ChurchProvider } from "./B1ChurchProvider";
 
 // Types
-export * from './types';
+export * from "./types";
 
 // Auth helpers (for advanced usage)
-export * as b1Auth from './auth';
+export * as b1Auth from "./auth";
 
 // API helpers (for advanced usage)
-export * as b1Api from './api';
+export * as b1Api from "./api";
 
 // Converters (for advanced usage)
-export * as b1Converters from './converters';
+export * as b1Converters from "./converters";

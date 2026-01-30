@@ -1,23 +1,22 @@
-import { ContentProvider } from '../ContentProvider';
-import { ProviderInfo, ProviderLogos } from '../interfaces';
-import { APlayProvider } from './APlayProvider';
-import { B1ChurchProvider } from './b1church';
-import { BibleProjectProvider } from './bibleproject';
-import { HighVoltageKidsProvider } from './HighVoltageKidsProvider';
-import { LessonsChurchProvider } from './LessonsChurchProvider';
-import { PlanningCenterProvider } from './PlanningCenterProvider';
-import { SignPresenterProvider } from './SignPresenterProvider';
+import { ProviderInfo, ProviderLogos, IProvider } from "../interfaces";
+import { APlayProvider } from "./aPlay";
+import { B1ChurchProvider } from "./b1Church";
+import { BibleProjectProvider } from "./bibleProject";
+import { HighVoltageKidsProvider } from "./highVoltage";
+import { LessonsChurchProvider } from "./lessonsChurch";
+import { PlanningCenterProvider } from "./planningCenter";
+import { SignPresenterProvider } from "./signPresenter";
 
-export { APlayProvider } from './APlayProvider';
-export { B1ChurchProvider } from './b1church';
-export { BibleProjectProvider } from './bibleproject';
-export { HighVoltageKidsProvider } from './HighVoltageKidsProvider';
-export { LessonsChurchProvider } from './LessonsChurchProvider';
-export { PlanningCenterProvider } from './PlanningCenterProvider';
-export { SignPresenterProvider } from './SignPresenterProvider';
+export { APlayProvider } from "./aPlay";
+export { B1ChurchProvider } from "./b1Church";
+export { BibleProjectProvider } from "./bibleProject";
+export { HighVoltageKidsProvider } from "./highVoltage";
+export { LessonsChurchProvider } from "./lessonsChurch";
+export { PlanningCenterProvider } from "./planningCenter";
+export { SignPresenterProvider } from "./signPresenter";
 
 // Provider registry - singleton instances
-const providerRegistry: Map<string, ContentProvider> = new Map();
+const providerRegistry: Map<string, IProvider> = new Map();
 
 // Unimplemented providers (coming soon)
 interface UnimplementedProvider {
@@ -28,51 +27,51 @@ interface UnimplementedProvider {
 
 const unimplementedProviders: UnimplementedProvider[] = [
   {
-    id: 'awana',
-    name: 'Awana',
+    id: "awana",
+    name: "Awana",
     logos: {
-      light: 'https://www.awana.org/wp-content/uploads/2025/04/awana-logo-black.svg',
-      dark: 'https://www.awana.org/wp-content/uploads/2025/04/awana-logo-white.svg',
+      light: "https://www.awana.org/wp-content/uploads/2025/04/awana-logo-black.svg",
+      dark: "https://www.awana.org/wp-content/uploads/2025/04/awana-logo-white.svg",
     },
   },
   {
-    id: 'freeshow',
-    name: 'FreeShow',
+    id: "freeshow",
+    name: "FreeShow",
     logos: {
-      light: 'https://freeshow.app/images/favicon.png',
-      dark: 'https://freeshow.app/images/favicon.png',
+      light: "https://freeshow.app/images/favicon.png",
+      dark: "https://freeshow.app/images/favicon.png",
     },
   },
   {
-    id: 'gocurriculum',
-    name: 'Go Curriculum',
+    id: "gocurriculum",
+    name: "Go Curriculum",
     logos: {
-      light: 'https://gocurriculum.com/wp-content/uploads/go-logo-curriculum-v2.png',
-      dark: 'https://gocurriculum.com/wp-content/uploads/go-logo-curriculum-v2.png',
+      light: "https://gocurriculum.com/wp-content/uploads/go-logo-curriculum-v2.png",
+      dark: "https://gocurriculum.com/wp-content/uploads/go-logo-curriculum-v2.png",
     },
   },
   {
-    id: 'iteachchurch',
-    name: 'iTeachChurch',
+    id: "iteachchurch",
+    name: "iTeachChurch",
     logos: {
-      light: 'https://iteachchurch.com/wp-content/uploads/2022/05/iTeachChurch_Artboard-1-copy-3@2x.png',
-      dark: 'https://iteachchurch.com/wp-content/uploads/2022/05/iTeachChurch_Artboard-1-copy-3@2x.png',
+      light: "https://iteachchurch.com/wp-content/uploads/2022/05/iTeachChurch_Artboard-1-copy-3@2x.png",
+      dark: "https://iteachchurch.com/wp-content/uploads/2022/05/iTeachChurch_Artboard-1-copy-3@2x.png",
     },
   },
   {
-    id: 'lifechurch',
-    name: 'LifeChurch',
+    id: "lifechurch",
+    name: "LifeChurch",
     logos: {
-      light: 'https://cdn.brandfetch.io/idRrA6pM45/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1668042253613',
-      dark: 'https://cdn.brandfetch.io/idRrA6pM45/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1668042253613',
+      light: "https://cdn.brandfetch.io/idRrA6pM45/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1668042253613",
+      dark: "https://cdn.brandfetch.io/idRrA6pM45/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1668042253613",
     },
   },
   {
-    id: 'ministrystuff',
-    name: 'MinistryStuff',
+    id: "ministrystuff",
+    name: "MinistryStuff",
     logos: {
-      light: '',
-      dark: '',
+      light: "",
+      dark: "",
     },
   },
 ];
@@ -102,21 +101,21 @@ initializeProviders();
 /**
  * Get a provider by ID.
  */
-export function getProvider(providerId: string): ContentProvider | null {
+export function getProvider(providerId: string): IProvider | null {
   return providerRegistry.get(providerId) || null;
 }
 
 /**
  * Get all registered providers.
  */
-export function getAllProviders(): ContentProvider[] {
+export function getAllProviders(): IProvider[] {
   return Array.from(providerRegistry.values());
 }
 
 /**
  * Register a custom provider.
  */
-export function registerProvider(provider: ContentProvider): void {
+export function registerProvider(provider: IProvider): void {
   providerRegistry.set(provider.id, provider);
 }
 
@@ -131,17 +130,18 @@ export function getProviderConfig(providerId: string) {
 /**
  * Get list of available providers with their info including logos and auth types.
  * Includes both implemented providers and coming soon providers.
+ * @param ids - Optional array of provider IDs to filter the results. If provided, only providers with matching IDs will be returned.
  */
-export function getAvailableProviders(): ProviderInfo[] {
+export function getAvailableProviders(ids?: string[]): ProviderInfo[] {
   // Implemented providers
   const implemented: ProviderInfo[] = getAllProviders().map((provider) => ({
     id: provider.id,
     name: provider.name,
     logos: provider.logos,
     implemented: true,
-    requiresAuth: provider.requiresAuth(),
-    authTypes: provider.getAuthTypes(),
-    capabilities: provider.getCapabilities(),
+    requiresAuth: provider.requiresAuth,
+    authTypes: provider.authTypes,
+    capabilities: provider.capabilities,
   }));
 
   // Coming soon providers
@@ -155,5 +155,13 @@ export function getAvailableProviders(): ProviderInfo[] {
     capabilities: { browse: false, presentations: false, playlist: false, instructions: false, expandedInstructions: false, mediaLicensing: false },
   }));
 
-  return [...implemented, ...comingSoon];
+  const all = [...implemented, ...comingSoon];
+
+  // Filter by IDs if provided
+  if (ids && ids.length > 0) {
+    const idSet = new Set(ids);
+    return all.filter((provider) => idSet.has(provider.id));
+  }
+
+  return all;
 }
