@@ -266,7 +266,11 @@ export class LessonsChurchProvider implements IProvider {
     const response = await this.apiRequest<{ venueName?: string; items?: Record<string, unknown>[] }>(`/venues/public/planItems/${venueId}`);
     if (!response) return null;
 
-    const processItem = (item: Record<string, unknown>): InstructionItem => ({ id: item.id as string | undefined, itemType: item.itemType as string | undefined, relatedId: item.relatedId as string | undefined, label: item.label as string | undefined, description: item.description as string | undefined, seconds: item.seconds as number | undefined, children: (item.children as Record<string, unknown>[] | undefined)?.map(processItem), embedUrl: this.getEmbedUrl(item.itemType as string | undefined, item.relatedId as string | undefined) });
+    const processItem = (item: Record<string, unknown>): InstructionItem => {
+      const itemType = this.normalizeItemType(item.itemType as string | undefined);
+      const relatedId = item.relatedId as string | undefined;
+      return { id: item.id as string | undefined, itemType, relatedId, label: item.label as string | undefined, description: item.description as string | undefined, seconds: item.seconds as number | undefined, children: (item.children as Record<string, unknown>[] | undefined)?.map(processItem), embedUrl: this.getEmbedUrl(itemType, relatedId) };
+    };
     return { venueName: response.venueName, items: (response.items || []).map(processItem) };
   }
 
@@ -293,17 +297,9 @@ export class LessonsChurchProvider implements IProvider {
       }
     }
 
-    const normalizeItemType = (type?: string): string | undefined => {
-      if (type === 'lessonSection') return 'section';
-      if (type === 'lessonAction') return 'action';
-      if (type === 'lessonAddOn') return 'addon';
-      return type;
-    };
-
     const processItem = (item: Record<string, unknown>): InstructionItem => {
       const relatedId = item.relatedId as string | undefined;
-      const rawItemType = item.itemType as string | undefined;
-      const itemType = normalizeItemType(rawItemType);
+      const itemType = this.normalizeItemType(item.itemType as string | undefined);
       const children = item.children as Record<string, unknown>[] | undefined;
 
       let processedChildren: InstructionItem[] | undefined;
@@ -311,8 +307,7 @@ export class LessonsChurchProvider implements IProvider {
       if (children) {
         processedChildren = children.map(child => {
           const childRelatedId = child.relatedId as string | undefined;
-          const childRawItemType = child.itemType as string | undefined;
-          const childItemType = normalizeItemType(childRawItemType);
+          const childItemType = this.normalizeItemType(child.itemType as string | undefined);
           if (childRelatedId && sectionActionsMap.has(childRelatedId)) {
             return { id: child.id as string | undefined, itemType: childItemType, relatedId: childRelatedId, label: child.label as string | undefined, description: child.description as string | undefined, seconds: child.seconds as number | undefined, children: sectionActionsMap.get(childRelatedId), embedUrl: this.getEmbedUrl(childItemType, childRelatedId) };
           }
@@ -324,6 +319,13 @@ export class LessonsChurchProvider implements IProvider {
     };
 
     return { venueName: planItemsResponse.venueName, items: (planItemsResponse.items || []).map(processItem) };
+  }
+
+  private normalizeItemType(type?: string): string | undefined {
+    if (type === 'lessonSection') return 'section';
+    if (type === 'lessonAction') return 'action';
+    if (type === 'lessonAddOn') return 'addon';
+    return type;
   }
 
   private getEmbedUrl(itemType?: string, relatedId?: string): string | undefined {
