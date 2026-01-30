@@ -25,8 +25,12 @@ export class B1ChurchProvider implements IProvider {
   readonly authTypes: AuthType[] = ["oauth_pkce", "device_flow"];
   readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: true, instructions: true, expandedInstructions: true, mediaLicensing: false };
 
-  async buildAuthUrl(_codeVerifier: string, redirectUri: string, state?: string): Promise<{ url: string; challengeMethod: string }> {
-    return auth.buildB1AuthUrl(this.config, this.appBase, redirectUri, state);
+  async buildAuthUrl(codeVerifier: string, redirectUri: string, state?: string): Promise<{ url: string; challengeMethod: string }> {
+    return auth.buildB1AuthUrl(this.config, this.appBase, redirectUri, codeVerifier, state);
+  }
+
+  async exchangeCodeForTokensWithPKCE(code: string, redirectUri: string, codeVerifier: string): Promise<ContentProviderAuthData | null> {
+    return auth.exchangeCodeForTokensWithPKCE(this.config, code, redirectUri, codeVerifier);
   }
 
   async exchangeCodeForTokensWithSecret(code: string, redirectUri: string, clientSecret: string): Promise<ContentProviderAuthData | null> {

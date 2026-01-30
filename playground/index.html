@@ -385,6 +385,23 @@
             <button id="retry-btn" class="retry-btn">Try Again</button>
           </div>
 
+          <!-- Auth Method Choice section -->
+          <div id="auth-choice-section" class="auth-choice-section hidden">
+            <p>Choose your preferred connection method:</p>
+            <div class="auth-choice-buttons">
+              <button id="auth-choice-device" class="auth-choice-btn">
+                <span class="auth-choice-icon">📱</span>
+                <span class="auth-choice-title">Device Flow</span>
+                <span class="auth-choice-desc">Scan QR code or enter code on another device</span>
+              </button>
+              <button id="auth-choice-oauth" class="auth-choice-btn">
+                <span class="auth-choice-icon">🔐</span>
+                <span class="auth-choice-title">Browser Sign In</span>
+                <span class="auth-choice-desc">Sign in directly in this browser</span>
+              </button>
+            </div>
+          </div>
+
           <!-- OAuth PKCE flow section -->
           <div id="oauth-flow-section" class="oauth-section hidden">
             <p>Click the button below to sign in with your account:</p>

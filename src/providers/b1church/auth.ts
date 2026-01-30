@@ -1,11 +1,61 @@
 import { ContentProviderAuthData, ContentProviderConfig, DeviceAuthorizationResponse, DeviceFlowPollResult } from "../../interfaces";
 
-export function buildB1AuthUrl(config: ContentProviderConfig, appBase: string, redirectUri: string, state?: string): { url: string; challengeMethod: string } {
-  const oauthParams = new URLSearchParams({ client_id: config.clientId, redirect_uri: redirectUri, response_type: "code", scope: config.scopes.join(" ") });
-  if (state) oauthParams.set("state", state);
-  const returnUrl = `/oauth?${oauthParams.toString()}`;
-  const url = `${appBase}/login?returnUrl=${encodeURIComponent(returnUrl)}`;
-  return { url, challengeMethod: "none" };
+async function generateCodeChallenge(verifier: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(verifier);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = new Uint8Array(hashBuffer);
+
+  let binary = "";
+  for (let i = 0; i < hashArray.length; i++) {
+    binary += String.fromCharCode(hashArray[i]);
+  }
+  const base64 = btoa(binary);
+  return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+export async function buildB1AuthUrl(config: ContentProviderConfig, appBase: string, redirectUri: string, codeVerifier: string, state?: string): Promise<{ url: string; challengeMethod: string }> {
+  const codeChallenge = await generateCodeChallenge(codeVerifier);
+  const oauthParams = new URLSearchParams({
+    response_type: "code",
+    client_id: config.clientId,
+    redirect_uri: redirectUri,
+    scope: config.scopes.join(" "),
+    code_challenge: codeChallenge,
+    code_challenge_method: "S256",
+    state: state || ""
+  });
+  const url = `${appBase}/oauth?${oauthParams.toString()}`;
+  return { url, challengeMethod: "S256" };
+}
+
+export async function exchangeCodeForTokensWithPKCE(config: ContentProviderConfig, code: string, redirectUri: string, codeVerifier: string): Promise<ContentProviderAuthData | null> {
+  try {
+    const params = { grant_type: "authorization_code", code, client_id: config.clientId, code_verifier: codeVerifier, redirect_uri: redirectUri };
+
+    const tokenUrl = `${config.oauthBase}/token`;
+    console.log(`B1Church PKCE token exchange request to: ${tokenUrl}`);
+    console.log(`  - client_id: ${config.clientId}`);
+    console.log(`  - redirect_uri: ${redirectUri}`);
+    console.log(`  - code: ${code.substring(0, 10)}...`);
+
+    const response = await fetch(tokenUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(params) });
+
+    console.log(`B1Church token response status: ${response.status}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`B1Church token exchange failed: ${response.status} - ${errorText}`);
+      return null;
+    }
+
+    const data = await response.json();
+    console.log(`B1Church token exchange successful, got access_token: ${!!data.access_token}`);
+    return { access_token: data.access_token, refresh_token: data.refresh_token, token_type: data.token_type || "Bearer", created_at: Math.floor(Date.now() / 1000), expires_in: data.expires_in, scope: data.scope || config.scopes.join(" ") };
+  } catch (error) {
+    console.error("B1Church token exchange error:", error);
+    return null;
+  }
 }
 
 export async function exchangeCodeForTokensWithSecret(config: ContentProviderConfig, code: string, redirectUri: string, clientSecret: string): Promise<ContentProviderAuthData | null> {
