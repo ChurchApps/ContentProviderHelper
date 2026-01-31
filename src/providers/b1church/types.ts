@@ -34,6 +34,7 @@ export interface B1PlanItem {
   churchId?: string;
   providerId?: string;
   providerPath?: string;
+  providerContentId?: string;
   children?: B1PlanItem[];
 }
 

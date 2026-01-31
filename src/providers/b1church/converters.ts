@@ -108,3 +108,47 @@ export function planItemToInstruction(item: B1PlanItem): InstructionItem {
 
   return { id: item.id, itemType, relatedId: item.relatedId, label: item.label, description: item.description, seconds: item.seconds, children: item.children?.map(planItemToInstruction) };
 }
+
+/**
+ * Generate default plan items from a venue feed when no plan items exist.
+ * Creates a structure with one header containing all venue sections as children.
+ */
+export function venueFeedToDefaultPlanItems(venueFeed: FeedVenueInterface): B1PlanItem[] {
+  const headerItem: B1PlanItem = {
+    id: "default-header",
+    label: venueFeed.lessonName || venueFeed.name || "Lesson",
+    itemType: "header",
+    children: []
+  };
+
+  for (const section of venueFeed.sections || []) {
+    const sectionItem: B1PlanItem = {
+      id: section.id || `section-${headerItem.children!.length}`,
+      label: section.name || "Section",
+      itemType: "section",
+      relatedId: section.id,
+      children: []
+    };
+
+    for (const action of section.actions || []) {
+      const actionType = action.actionType?.toLowerCase();
+      // Only include play and add-on actions
+      if (actionType === "play" || actionType === "add-on") {
+        const actionItem: B1PlanItem = {
+          id: action.id || `action-${sectionItem.children!.length}`,
+          label: action.content || "Action",
+          itemType: actionType === "add-on" ? "addon" : "action",
+          relatedId: action.id
+        };
+        sectionItem.children!.push(actionItem);
+      }
+    }
+
+    // Only add sections that have actions
+    if (sectionItem.children!.length > 0) {
+      headerItem.children!.push(sectionItem);
+    }
+  }
+
+  return headerItem.children!.length > 0 ? [headerItem] : [];
+}

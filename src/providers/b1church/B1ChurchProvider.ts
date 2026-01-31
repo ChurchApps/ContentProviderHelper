@@ -25,9 +25,9 @@ export class B1ChurchProvider implements IProvider {
 
   readonly logos: ProviderLogos = { light: "https://b1.church/b1-church-logo.png", dark: "https://b1.church/b1-church-logo.png" };
 
-  readonly config: ContentProviderConfig = { id: "b1church", name: "B1.Church", apiBase: `${API_BASE}/doing`, oauthBase: `${API_BASE}/membership/oauth`, clientId: "nsowldn58dk", scopes: ["plans"], supportsDeviceFlow: true, deviceAuthEndpoint: "/device/authorize", endpoints: { planItems: (churchId: string, planId: string) => `/planItems/presenter/${churchId}/${planId}` } };
+  readonly config: ContentProviderConfig = { id: "b1church", name: "B1.Church", apiBase: `${API_BASE}/doing`, oauthBase: `${API_BASE}/membership/oauth`, clientId: "nsowldn58dk", scopes: ["plans"], supportsDeviceFlow: true, deviceAuthEndpoint: "/device/authorize", endpoints: { planItems: (churchId: string, planId: string) => `/planFeed/presenter/${churchId}/${planId}` } };
 
-  private appBase = "https://admin.b1.church";
+  private appBase = "http://localhost:3101"; // TODO: revert to https://admin.b1.church
 
   readonly requiresAuth = true;
   readonly authTypes: AuthType[] = ["oauth_pkce", "device_flow"];
@@ -193,7 +193,7 @@ export class B1ChurchProvider implements IProvider {
     const planId = segments[3];
     const planTypeId = segments[2];
 
-    // Need to fetch plan details to get churchId
+    // Need to fetch plan details to get churchId and contentId
     const plans = await fetchPlans(planTypeId, authData);
     const planFolder = plans.find(p => {
       const folder = planToFolder(p);
