@@ -141,6 +141,21 @@ export class B1ChurchProvider implements IProvider {
 
     const pathFn = this.config.endpoints.planItems as (churchId: string, planId: string) => string;
     const planItems = await this.apiRequest<B1PlanItem[]>(pathFn(churchId, planId), authData);
+
+    // If no planItems but plan has associated provider content, fetch from that provider
+    if ((!planItems || planItems.length === 0) && planFolder.providerId && planFolder.providerPlanId) {
+      const externalPlan = await fetchFromProviderProxy(
+        "getPresentations",
+        ministryId,
+        planFolder.providerId,
+        planFolder.providerPlanId,
+        authData
+      );
+      if (externalPlan) {
+        return { id: planId, name: planTitle, sections: externalPlan.sections, allFiles: externalPlan.allFiles };
+      }
+    }
+
     if (!planItems || !Array.isArray(planItems)) return null;
 
     const venueFeed = venueId ? await fetchVenueFeed(venueId) : null;
@@ -221,6 +236,21 @@ export class B1ChurchProvider implements IProvider {
 
     const pathFn = this.config.endpoints.planItems as (churchId: string, planId: string) => string;
     const planItems = await this.apiRequest<B1PlanItem[]>(pathFn(churchId, planId), authData);
+
+    // If no planItems but plan has associated provider content, fetch from that provider
+    if ((!planItems || planItems.length === 0) && planFolder.providerId && planFolder.providerPlanId) {
+      const externalInstructions = await fetchFromProviderProxy(
+        "getExpandedInstructions",
+        ministryId,
+        planFolder.providerId,
+        planFolder.providerPlanId,
+        authData
+      );
+      if (externalInstructions) {
+        return { venueName: planTitle, items: externalInstructions.items };
+      }
+    }
+
     if (!planItems || !Array.isArray(planItems)) return null;
 
     // Process items, handling external providers
@@ -326,6 +356,20 @@ export class B1ChurchProvider implements IProvider {
 
     const pathFn = this.config.endpoints.planItems as (churchId: string, planId: string) => string;
     const planItems = await this.apiRequest<B1PlanItem[]>(pathFn(churchId, planId), authData);
+
+    // If no planItems but plan has associated provider content, fetch from that provider
+    if ((!planItems || planItems.length === 0) && planFolder.providerId && planFolder.providerPlanId) {
+      const externalFiles = await fetchFromProviderProxy(
+        "getPlaylist",
+        ministryId,
+        planFolder.providerId,
+        planFolder.providerPlanId,
+        authData,
+        resolution
+      );
+      return externalFiles || [];
+    }
+
     if (!planItems || !Array.isArray(planItems)) return [];
 
     const venueFeed = venueId ? await fetchVenueFeed(venueId) : null;

@@ -51,6 +51,30 @@ export interface B1PlanItem {
 
 **Code Reference**: [types.ts:27-39](types.ts#L27-L39)
 
+### B1Plan
+
+Plans can have an associated provider content (e.g., a lessons.church venue):
+
+```typescript
+export interface B1Plan {
+  id: string;
+  churchId: string;
+  ministryId?: string;
+  planTypeId?: string;
+  name: string;
+  serviceDate: string;
+  contentType?: string;
+  contentId?: string;
+  providerId?: string;       // Associated provider ID (e.g., "lessonschurch")
+  providerPlanId?: string;   // Content path for associated lesson
+  providerPlanName?: string; // Display name of associated lesson
+}
+```
+
+When a plan has `providerId` and `providerPlanId` set but no planItems, the provider will automatically fetch content from the associated provider.
+
+**Code Reference**: [types.ts:16-28](types.ts#L16-L28)
+
 ## Browse Hierarchy
 
 The provider exposes a hierarchical browse structure:
@@ -76,12 +100,15 @@ The provider exposes a hierarchical browse structure:
 When a consuming application calls `getPresentations()`, `getInstructions()`, or `getPlaylist()`, the provider:
 
 1. Fetches plan items from the B1.Church API
-2. Iterates through each item and its children
-3. Determines if each item is "external" (from another provider)
-4. For external items: proxies the request to the external provider
-   - If `providerContentId` is set: filters to return only that specific content
-   - Otherwise: returns all content from the external provider
-5. For native items: processes directly using venue feed data
+2. **If no planItems exist** but plan has `providerId` and `providerPlanId` set:
+   - Fetches content directly from the associated provider via proxy
+   - Returns the full content from that provider (e.g., all presentations from a lessons.church venue)
+3. Otherwise, iterates through each item and its children:
+   - Determines if each item is "external" (from another provider)
+   - For external items: proxies the request to the external provider
+     - If `providerContentId` is set: filters to return only that specific content
+     - Otherwise: returns all content from the external provider
+   - For native items: processes directly using venue feed data
 
 ### Determining External Provider Items
 
