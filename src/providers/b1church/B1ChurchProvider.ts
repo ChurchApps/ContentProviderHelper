@@ -1,5 +1,6 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, Instructions, ProviderCapabilities, DeviceAuthorizationResponse, DeviceFlowPollResult, IProvider, AuthType } from "../../interfaces";
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, Instructions, ProviderCapabilities, DeviceAuthorizationResponse, DeviceFlowPollResult, IProvider, AuthType, InstructionItem } from "../../interfaces";
 import { parsePath } from "../../pathUtils";
+import { navigateToPath } from "../../instructionPathUtils";
 import { ApiHelper } from "../../helpers";
 import { B1PlanItem } from "./types";
 import * as auth from "./auth";
@@ -177,9 +178,17 @@ export class B1ChurchProvider implements IProvider {
             authData
           );
           if (externalPlan) {
-            if (child.providerContentId) {
+            if (child.providerContentPath) {
+              // Fetch instructions to enable path-based lookup
+              const externalInstructions = await fetchFromProviderProxy(
+                "getExpandedInstructions",
+                ministryId,
+                child.providerId,
+                child.providerPath,
+                authData
+              );
               // Find and use only the specific presentation
-              const matchingPresentation = this.findPresentationById(externalPlan, child.providerContentId);
+              const matchingPresentation = this.findPresentationByPath(externalPlan, externalInstructions, child.providerContentPath);
               if (matchingPresentation) {
                 presentations.push(matchingPresentation);
                 allFiles.push(...matchingPresentation.files);
@@ -277,7 +286,7 @@ export class B1ChurchProvider implements IProvider {
 
       if (isExternalProviderItem(item) && item.providerId && item.providerPath) {
         // Fetch expanded instructions from external provider
-        console.log("Processing external item:", item.providerId, item.providerPath, item.providerContentId);
+        console.log("Processing external item:", item.providerId, item.providerPath, item.providerContentPath);
         const externalInstructions = await fetchFromProviderProxy(
           "getExpandedInstructions",
           ministryId,
@@ -286,9 +295,9 @@ export class B1ChurchProvider implements IProvider {
           authData
         );
         if (externalInstructions) {
-          // If providerContentId is set, find and use only that specific item's children
-          if (item.providerContentId) {
-            const matchingItem = this.findItemById(externalInstructions.items, item.providerContentId);
+          // If providerContentPath is set, find and use only that specific item's children
+          if (item.providerContentPath) {
+            const matchingItem = this.findItemByPath(externalInstructions, item.providerContentPath);
             if (matchingItem?.children) {
               instructionItem.children = matchingItem.children;
             }
@@ -308,23 +317,19 @@ export class B1ChurchProvider implements IProvider {
     return result;
   }
 
-  private findItemById(items: import("../../interfaces").InstructionItem[], id: string): import("../../interfaces").InstructionItem | null {
-    for (const item of items) {
-      if (item.id === id || item.relatedId === id) return item;
-      if (item.children) {
-        const found = this.findItemById(item.children, id);
-        if (found) return found;
-      }
-    }
-    return null;
+  private findItemByPath(instructions: Instructions | null, path?: string): InstructionItem | null {
+    if (!path || !instructions) return null;
+    return navigateToPath(instructions, path);
   }
 
-  private findPresentationById(plan: Plan, id: string): PlanPresentation | null {
+  private findPresentationByPath(plan: Plan, instructions: Instructions | null, path?: string): PlanPresentation | null {
+    if (!path || !instructions) return null;
+    const item = navigateToPath(instructions, path);
+    if (!item?.relatedId && !item?.id) return null;
+    const presentationId = item.relatedId || item.id;
     for (const section of plan.sections) {
       for (const presentation of section.presentations) {
-        if (presentation.id === id) {
-          return presentation;
-        }
+        if (presentation.id === presentationId) return presentation;
       }
     }
     return null;
@@ -379,8 +384,8 @@ export class B1ChurchProvider implements IProvider {
       for (const child of sectionItem.children || []) {
         // Handle external provider items via proxy
         if (isExternalProviderItem(child) && child.providerId && child.providerPath) {
-          if (child.providerContentId) {
-            // Fetch presentations and find the specific one
+          if (child.providerContentPath) {
+            // Fetch presentations and instructions for path-based lookup
             const externalPlan = await fetchFromProviderProxy(
               "getPresentations",
               ministryId,
@@ -388,8 +393,15 @@ export class B1ChurchProvider implements IProvider {
               child.providerPath,
               authData
             );
+            const externalInstructions = await fetchFromProviderProxy(
+              "getExpandedInstructions",
+              ministryId,
+              child.providerId,
+              child.providerPath,
+              authData
+            );
             if (externalPlan) {
-              const matchingPresentation = this.findPresentationById(externalPlan, child.providerContentId);
+              const matchingPresentation = this.findPresentationByPath(externalPlan, externalInstructions, child.providerContentPath);
               if (matchingPresentation) {
                 files.push(...matchingPresentation.files);
               }

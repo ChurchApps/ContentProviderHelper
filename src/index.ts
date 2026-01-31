@@ -11,6 +11,7 @@ export * from "./interfaces";
 // Utilities
 export { detectMediaType, createFolder, createFile } from "./utils";
 export { parsePath, getSegment, buildPath, appendToPath } from "./pathUtils";
+export { navigateToPath, generatePath } from "./instructionPathUtils";
 
 // Format conversion utilities
 export * as FormatConverters from "./FormatConverters";

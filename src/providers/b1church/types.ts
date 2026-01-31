@@ -37,7 +37,7 @@ export interface B1PlanItem {
   churchId?: string;
   providerId?: string;
   providerPath?: string;
-  providerContentId?: string;
+  providerContentPath?: string;
   children?: B1PlanItem[];
 }
 
