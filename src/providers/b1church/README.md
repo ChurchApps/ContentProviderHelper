@@ -79,6 +79,8 @@ When a consuming application calls `getPresentations()`, `getInstructions()`, or
 2. Iterates through each item and its children
 3. Determines if each item is "external" (from another provider)
 4. For external items: proxies the request to the external provider
+   - If `providerContentId` is set: filters to return only that specific content
+   - Otherwise: returns all content from the external provider
 5. For native items: processes directly using venue feed data
 
 ### Determining External Provider Items
@@ -162,14 +164,18 @@ getPresentations(path, authData)
         ├─► isExternalProviderItem(child)?
         │   │
         │   ├─► YES: fetchFromProviderProxy("getPresentations", ...)
-        │   │       └─► Merge external plan sections into presentations
+        │   │       │
+        │   │       ├─► child.providerContentId set?
+        │   │       │   └─► Find matching presentation, use only that one
+        │   │       │
+        │   │       └─► Otherwise merge all external presentations
         │   │
         │   └─► NO: planItemToPresentation(child, venueFeed)
         │
         └─► Return Plan { sections, allFiles }
 ```
 
-**Code Reference**: [B1ChurchProvider.ts:117-187](B1ChurchProvider.ts#L117-L187)
+**Code Reference**: [B1ChurchProvider.ts:117-196](B1ChurchProvider.ts#L117-L196)
 
 ### getInstructions() / getExpandedInstructions()
 
@@ -198,11 +204,13 @@ getInstructions(path, authData)
             └─► Return Instructions { venueName, items }
 ```
 
-**Code Reference**: [B1ChurchProvider.ts:228-270](B1ChurchProvider.ts#L228-L270)
+**Code Reference**: [B1ChurchProvider.ts:237-279](B1ChurchProvider.ts#L237-L279)
 
 ### Using providerContentId
 
-When `providerContentId` is set on a plan item, the provider filters the external content to only include that specific item's children:
+When `providerContentId` is set on a plan item, the provider filters the external content to only include that specific item. This applies to all three methods:
+
+**For getInstructions()**: Finds the matching instruction item and uses only its children:
 
 ```typescript
 if (item.providerContentId) {
@@ -210,13 +218,31 @@ if (item.providerContentId) {
   if (matchingItem?.children) {
     instructionItem.children = matchingItem.children;
   }
-} else {
-  // Use all items from external provider as children
-  instructionItem.children = externalInstructions.items;
 }
 ```
 
-This enables a plan to reference a specific section from an external lesson rather than the entire lesson.
+**For getPresentations() and getPlaylist()**: Finds the matching presentation and uses only that one:
+
+```typescript
+if (child.providerContentId) {
+  const matchingPresentation = this.findPresentationById(externalPlan, child.providerContentId);
+  if (matchingPresentation) {
+    presentations.push(matchingPresentation);
+    allFiles.push(...matchingPresentation.files);
+  }
+}
+```
+
+This enables a plan to reference a specific action/presentation from an external lesson rather than the entire lesson.
+
+### Helper Methods
+
+The provider uses two private helper methods for finding specific items:
+
+- **findItemById()**: Recursively searches instruction items by `id` or `relatedId`
+- **findPresentationById()**: Searches presentations across all sections by `id`
+
+**Code Reference**: [B1ChurchProvider.ts:281-301](B1ChurchProvider.ts#L281-L301)
 
 ### getPlaylist()
 
@@ -229,15 +255,21 @@ getPlaylist(path, authData, resolution?)
         │
         ├─► isExternalProviderItem(child)?
         │   │
-        │   ├─► YES: fetchFromProviderProxy("getPlaylist", ..., resolution)
-        │   │       └─► Merge external files into playlist
+        │   ├─► YES:
+        │   │   │
+        │   │   ├─► child.providerContentId set?
+        │   │   │   └─► fetchFromProviderProxy("getPresentations", ...)
+        │   │   │       └─► Find matching presentation, use its files
+        │   │   │
+        │   │   └─► Otherwise: fetchFromProviderProxy("getPlaylist", ..., resolution)
+        │   │       └─► Merge all external files into playlist
         │   │
         │   └─► NO: getFilesFromVenueFeed(venueFeed, itemType, relatedId)
         │
         └─► Return ContentFile[]
 ```
 
-**Code Reference**: [B1ChurchProvider.ts:283-343](B1ChurchProvider.ts#L283-L343)
+**Code Reference**: [B1ChurchProvider.ts:303-381](B1ChurchProvider.ts#L303-L381)
 
 ## API Endpoints Used
 
