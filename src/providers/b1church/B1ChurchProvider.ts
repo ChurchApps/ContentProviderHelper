@@ -6,10 +6,12 @@ import * as auth from "./auth";
 import { fetchMinistries, fetchPlanTypes, fetchPlans, fetchVenueFeed, fetchFromProviderProxy, API_BASE } from "./api";
 import { ministryToFolder, planTypeToFolder, planToFolder, planItemToPresentation, planItemToInstruction, getFilesFromVenueFeed } from "./converters";
 
-const INTERNAL_PROVIDERS = ["b1church", "lessonschurch"];
-
 function isExternalProviderItem(item: B1PlanItem): boolean {
-  if (!item.providerId || INTERNAL_PROVIDERS.includes(item.providerId)) return false;
+  // An item is external if it has a non-b1church providerId and a providerPath
+  if (!item.providerId || item.providerId === "b1church") return false;
+  // If providerPath is set, it needs proxy expansion regardless of itemType
+  if (item.providerPath) return true;
+  // Otherwise check for provider-prefixed itemType (legacy support)
   const itemType = item.itemType || "";
   return itemType.startsWith("provider");
 }
@@ -231,8 +233,12 @@ export class B1ChurchProvider implements IProvider {
     const result: import("../../interfaces").InstructionItem[] = [];
 
     for (const item of items) {
+      // Convert the item first
+      const instructionItem = planItemToInstruction(item);
+
       if (isExternalProviderItem(item) && item.providerId && item.providerPath) {
         // Fetch expanded instructions from external provider
+        console.log("Processing external item:", item.providerId, item.providerPath, item.providerContentId);
         const externalInstructions = await fetchFromProviderProxy(
           "getExpandedInstructions",
           ministryId,
@@ -241,21 +247,37 @@ export class B1ChurchProvider implements IProvider {
           authData
         );
         if (externalInstructions) {
-          // Add the external instruction items
-          result.push(...externalInstructions.items);
+          // If providerContentId is set, find and use only that specific item's children
+          if (item.providerContentId) {
+            const matchingItem = this.findItemById(externalInstructions.items, item.providerContentId);
+            if (matchingItem?.children) {
+              instructionItem.children = matchingItem.children;
+            }
+          } else {
+            // Use all items from external provider as children
+            instructionItem.children = externalInstructions.items;
+          }
         }
-      } else {
-        // Convert internal item
-        const instructionItem = planItemToInstruction(item);
-        // Recursively process children if they exist
-        if (item.children && item.children.length > 0) {
-          instructionItem.children = await this.processInstructionItems(item.children, ministryId, authData);
-        }
-        result.push(instructionItem);
+      } else if (item.children && item.children.length > 0) {
+        // Recursively process children for internal items
+        instructionItem.children = await this.processInstructionItems(item.children, ministryId, authData);
       }
+
+      result.push(instructionItem);
     }
 
     return result;
+  }
+
+  private findItemById(items: import("../../interfaces").InstructionItem[], id: string): import("../../interfaces").InstructionItem | null {
+    for (const item of items) {
+      if (item.id === id || item.relatedId === id) return item;
+      if (item.children) {
+        const found = this.findItemById(item.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
   }
 
   async getPlaylist(path: string, authData?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null> {
