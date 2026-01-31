@@ -1,6 +1,7 @@
 import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, FeedVenueInterface, Instructions, InstructionItem, VenueActionsResponseInterface, ProviderCapabilities, IProvider, AuthType } from "../../interfaces";
 import { detectMediaType } from "../../utils";
 import { parsePath, getSegment } from "../../pathUtils";
+import { estimateImageDuration } from "../../durationUtils";
 
 /**
  * LessonsChurch Provider
@@ -291,7 +292,8 @@ export class LessonsChurchProvider implements IProvider {
         if (section.id && section.actions) {
           sectionActionsMap.set(section.id, section.actions.map(action => {
             const embedUrl = this.getEmbedUrl("action", action.id);
-            return { id: action.id, itemType: "action", relatedId: action.id, label: action.name, description: action.actionType, seconds: action.seconds, children: [{ id: action.id + "-file", itemType: "file", label: action.name, seconds: action.seconds, embedUrl }] };
+            const seconds = action.seconds ?? estimateImageDuration();
+            return { id: action.id, itemType: "action", relatedId: action.id, label: action.name, description: action.actionType, seconds, children: [{ id: action.id + "-file", itemType: "file", label: action.name, seconds, embedUrl }] };
           }));
         }
       }

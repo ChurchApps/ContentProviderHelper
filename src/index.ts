@@ -12,6 +12,14 @@ export * from "./interfaces";
 export { detectMediaType, createFolder, createFile } from "./utils";
 export { parsePath, getSegment, buildPath, appendToPath } from "./pathUtils";
 export { navigateToPath, generatePath } from "./instructionPathUtils";
+export {
+  estimateDuration,
+  estimateImageDuration,
+  estimateTextDuration,
+  countWords,
+  DEFAULT_DURATION_CONFIG,
+  type DurationEstimationConfig
+} from "./durationUtils";
 
 // Format conversion utilities
 export * as FormatConverters from "./FormatConverters";
