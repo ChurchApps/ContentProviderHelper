@@ -162,11 +162,20 @@ export class B1ChurchProvider implements IProvider {
             authData
           );
           if (externalPlan) {
-            // Add all presentations from the external plan
-            for (const section of externalPlan.sections) {
-              presentations.push(...section.presentations);
+            if (child.providerContentId) {
+              // Find and use only the specific presentation
+              const matchingPresentation = this.findPresentationById(externalPlan, child.providerContentId);
+              if (matchingPresentation) {
+                presentations.push(matchingPresentation);
+                allFiles.push(...matchingPresentation.files);
+              }
+            } else {
+              // Add all presentations from the external plan
+              for (const section of externalPlan.sections) {
+                presentations.push(...section.presentations);
+              }
+              allFiles.push(...externalPlan.allFiles);
             }
-            allFiles.push(...externalPlan.allFiles);
           }
         } else {
           // Handle internal items as before
@@ -280,6 +289,17 @@ export class B1ChurchProvider implements IProvider {
     return null;
   }
 
+  private findPresentationById(plan: Plan, id: string): PlanPresentation | null {
+    for (const section of plan.sections) {
+      for (const presentation of section.presentations) {
+        if (presentation.id === id) {
+          return presentation;
+        }
+      }
+    }
+    return null;
+  }
+
   async getPlaylist(path: string, authData?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null> {
     const { segments, depth } = parsePath(path);
 
@@ -315,16 +335,34 @@ export class B1ChurchProvider implements IProvider {
       for (const child of sectionItem.children || []) {
         // Handle external provider items via proxy
         if (isExternalProviderItem(child) && child.providerId && child.providerPath) {
-          const externalFiles = await fetchFromProviderProxy(
-            "getPlaylist",
-            ministryId,
-            child.providerId,
-            child.providerPath,
-            authData,
-            resolution
-          );
-          if (externalFiles) {
-            files.push(...externalFiles);
+          if (child.providerContentId) {
+            // Fetch presentations and find the specific one
+            const externalPlan = await fetchFromProviderProxy(
+              "getPresentations",
+              ministryId,
+              child.providerId,
+              child.providerPath,
+              authData
+            );
+            if (externalPlan) {
+              const matchingPresentation = this.findPresentationById(externalPlan, child.providerContentId);
+              if (matchingPresentation) {
+                files.push(...matchingPresentation.files);
+              }
+            }
+          } else {
+            // No specific content ID - get all files
+            const externalFiles = await fetchFromProviderProxy(
+              "getPlaylist",
+              ministryId,
+              child.providerId,
+              child.providerPath,
+              authData,
+              resolution
+            );
+            if (externalFiles) {
+              files.push(...externalFiles);
+            }
           }
         } else {
           // Handle internal items as before
