@@ -30,7 +30,7 @@ export class PlanningCenterProvider implements IProvider {
 
   readonly requiresAuth = true;
   readonly authTypes: AuthType[] = ["oauth_pkce"];
-  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: false, instructions: false, expandedInstructions: false, mediaLicensing: false };
+  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: false, expandedInstructions: false, mediaLicensing: false };
 
   async browse(path?: string | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const { segments, depth } = parsePath(path);

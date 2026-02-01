@@ -191,10 +191,9 @@ function renderProviders() {
       const caps = provider.capabilities;
 
       // Determine what formats can be derived
-      const canDerivePlaylist = caps.presentations || caps.expandedInstructions || caps.instructions;
-      const canDerivePresentations = caps.expandedInstructions || caps.instructions || caps.playlist;
-      const canDeriveInstructions = caps.expandedInstructions || caps.presentations || caps.playlist;
-      const canDeriveExpanded = caps.presentations || caps.instructions || caps.playlist;
+      const canDerivePlaylist = caps.presentations || caps.expandedInstructions;
+      const canDerivePresentations = caps.expandedInstructions || caps.playlist;
+      const canDeriveExpanded = caps.presentations || caps.playlist;
 
       // Playlist badge
       if (caps.playlist) {
@@ -208,13 +207,6 @@ function renderProviders() {
         capBadges += '<span class="provider-badge badge-cap-presentations badge-native" title="Native support">Presentations</span>';
       } else if (canDerivePresentations) {
         capBadges += '<span class="provider-badge badge-cap-presentations badge-derived" title="Derived from other formats">Presentations*</span>';
-      }
-
-      // Instructions badge
-      if (caps.instructions) {
-        capBadges += '<span class="provider-badge badge-cap-instructions badge-native" title="Native support">Instructions</span>';
-      } else if (canDeriveInstructions) {
-        capBadges += '<span class="provider-badge badge-cap-instructions badge-derived" title="Derived from other formats">Instructions*</span>';
       }
 
       // Expanded Instructions badge
@@ -829,10 +821,9 @@ function showVenueChoiceModal(folder: ContentFolder) {
   };
 
   // Determine source format for each derived format
-  const getPlaylistSource = () => caps?.presentations ? 'Presentations' : caps?.expandedInstructions ? 'Expanded' : 'Instructions';
-  const getPresentationsSource = () => caps?.expandedInstructions ? 'Expanded' : caps?.instructions ? 'Instructions' : 'Playlist';
-  const getInstructionsSource = () => caps?.expandedInstructions ? 'Expanded' : caps?.presentations ? 'Presentations' : 'Playlist';
-  const getExpandedSource = () => caps?.presentations ? 'Presentations' : caps?.instructions ? 'Instructions' : 'Playlist';
+  const getPlaylistSource = () => caps?.presentations ? 'Presentations' : caps?.expandedInstructions ? 'Expanded' : 'Playlist';
+  const getPresentationsSource = () => caps?.expandedInstructions ? 'Expanded' : 'Playlist';
+  const getExpandedSource = () => caps?.presentations ? 'Presentations' : 'Playlist';
 
   const choiceHtml = `
     <div class="venue-choice-modal" id="venue-choice-modal">
@@ -843,7 +834,6 @@ function showVenueChoiceModal(folder: ContentFolder) {
         <div class="venue-choice-buttons">
           ${formatBtn('view-playlist-btn', '📋', 'Playlist', 'Simple list of media files', !!caps?.playlist, getPlaylistSource())}
           ${formatBtn('view-presentations-btn', '🎬', 'Presentations', 'Structured sections with media files', !!caps?.presentations, getPresentationsSource())}
-          ${formatBtn('view-instructions-btn', '📖', 'Instructions', 'Headers and sections only', !!caps?.instructions, getInstructionsSource())}
           ${formatBtn('view-expanded-btn', '📚', 'Expanded', 'Full hierarchy with all actions', !!caps?.expandedInstructions, getExpandedSource())}
         </div>
         <button id="venue-choice-cancel" class="cancel-btn">Cancel</button>
@@ -864,11 +854,6 @@ function showVenueChoiceModal(folder: ContentFolder) {
   document.getElementById('view-presentations-btn')!.addEventListener('click', () => {
     closeVenueChoiceModal();
     viewAsPresentations(folder);
-  });
-
-  document.getElementById('view-instructions-btn')!.addEventListener('click', () => {
-    closeVenueChoiceModal();
-    viewAsInstructions(folder);
   });
 
   document.getElementById('view-expanded-btn')!.addEventListener('click', () => {
@@ -953,38 +938,6 @@ async function viewAsPresentations(folder: ContentFolder) {
   } catch (error) {
     showLoading(false);
     showStatus(`Failed to load presentations: ${error}`, 'error');
-  }
-}
-
-async function viewAsInstructions(folder: ContentFolder) {
-  if (!state.currentProvider) return;
-
-  showLoading(true);
-
-  try {
-    const resolver = new FormatResolver(state.currentProvider);
-    const { data: instructions, meta } = await resolver.getInstructionsWithMeta(folder.path, state.currentAuth);
-
-    if (!instructions) {
-      showStatus('This provider does not support instructions view', 'error');
-      showLoading(false);
-      return;
-    }
-
-    state.currentInstructions = instructions;
-    state.currentVenueFolder = folder;
-    state.currentView = 'instructions';
-
-    state.currentPath = folder.path;
-    state.breadcrumbTitles.push(folder.title);
-    updateBreadcrumb();
-
-    showLoading(false);
-    renderInstructionsView(instructions, false, meta);
-
-  } catch (error) {
-    showLoading(false);
-    showStatus(`Failed to load instructions: ${error}`, 'error');
   }
 }
 

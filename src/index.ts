@@ -25,13 +25,11 @@ export {
 export * as FormatConverters from "./FormatConverters";
 export {
   presentationsToPlaylist,
-  presentationsToInstructions,
   presentationsToExpandedInstructions,
   instructionsToPlaylist,
   expandedInstructionsToPlaylist,
   instructionsToPresentations,
   expandedInstructionsToPresentations,
-  collapseInstructions,
   playlistToPresentations,
   playlistToInstructions,
   playlistToExpandedInstructions

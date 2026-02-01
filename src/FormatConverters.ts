@@ -45,11 +45,6 @@ export function presentationsToPlaylist(plan: Plan): ContentFile[] {
   return files;
 }
 
-// LOSSLESS: Structure maps directly
-export function presentationsToInstructions(plan: Plan): Instructions {
-  return { venueName: plan.name, items: plan.sections.map(section => ({ id: section.id, itemType: "section", label: section.name, children: section.presentations.map(pres => { const totalSeconds = pres.files.reduce((sum, f) => sum + ((f.providerData?.seconds as number) || 0), 0); return { id: pres.id, itemType: mapActionTypeToItemType(pres.actionType), label: pres.name, seconds: totalSeconds || undefined, embedUrl: pres.files[0]?.embedUrl || pres.files[0]?.url }; }) })) };
-}
-
 // LOSSLESS: All hierarchy and file data preserved
 export function presentationsToExpandedInstructions(plan: Plan): Instructions {
   return { venueName: plan.name, items: plan.sections.map(section => ({ id: section.id, itemType: "section", label: section.name, children: section.presentations.map(pres => ({ id: pres.id, itemType: mapActionTypeToItemType(pres.actionType), label: pres.name, description: pres.actionType !== "other" ? pres.actionType : undefined, seconds: pres.files.reduce((sum, f) => sum + ((f.providerData?.seconds as number) || 0), 0) || undefined, children: pres.files.map(f => ({ id: f.id, itemType: "file", label: f.title, seconds: (f.providerData?.seconds as number) || undefined, embedUrl: f.embedUrl || f.url })) })) })) };
@@ -110,38 +105,6 @@ export function instructionsToPresentations(instructions: Instructions, planId?:
 }
 
 export const expandedInstructionsToPresentations = instructionsToPresentations;
-
-// LOSSY: Deep children collapsed, but structure preserved
-export function collapseInstructions(instructions: Instructions, maxDepth: number = 2): Instructions {
-  function collapseItem(item: InstructionItem, currentDepth: number): InstructionItem {
-    if (currentDepth >= maxDepth || !item.children || item.children.length === 0) {
-      const { children, ...rest } = item;
-      if (children && children.length > 0) {
-        const totalSeconds = children.reduce((sum, c) => sum + (c.seconds || 0), 0);
-        if (totalSeconds > 0) {
-          rest.seconds = totalSeconds;
-        }
-        if (!rest.embedUrl) {
-          const firstWithUrl = children.find(c => c.embedUrl);
-          if (firstWithUrl) {
-            rest.embedUrl = firstWithUrl.embedUrl;
-          }
-        }
-      }
-      return rest;
-    }
-
-    return {
-      ...item,
-      children: item.children.map(child => collapseItem(child, currentDepth + 1))
-    };
-  }
-
-  return {
-    venueName: instructions.venueName,
-    items: instructions.items.map(item => collapseItem(item, 0))
-  };
-}
 
 // LOSSY: No structural information - all files in one section
 export function playlistToPresentations(files: ContentFile[], planName: string = "Playlist", sectionName: string = "Content"): Plan {

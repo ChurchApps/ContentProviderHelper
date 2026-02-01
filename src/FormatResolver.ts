@@ -8,7 +8,7 @@ export interface FormatResolverOptions {
 
 export interface ResolvedFormatMeta {
   isNative: boolean;
-  sourceFormat?: "playlist" | "presentations" | "instructions" | "expandedInstructions";
+  sourceFormat?: "playlist" | "presentations" | "expandedInstructions";
   isLossy: boolean;
 }
 
@@ -49,11 +49,6 @@ export class FormatResolver {
       if (expanded) return Converters.instructionsToPlaylist(expanded);
     }
 
-    if (this.options.allowLossy && caps.instructions && this.provider.getInstructions) {
-      const instructions = await this.provider.getInstructions(path, auth);
-      if (instructions) return Converters.instructionsToPlaylist(instructions);
-    }
-
     return null;
   }
 
@@ -77,11 +72,6 @@ export class FormatResolver {
       if (expanded) return { data: Converters.instructionsToPlaylist(expanded), meta: { isNative: false, sourceFormat: "expandedInstructions", isLossy: false } };
     }
 
-    if (this.options.allowLossy && caps.instructions && this.provider.getInstructions) {
-      const instructions = await this.provider.getInstructions(path, auth);
-      if (instructions) return { data: Converters.instructionsToPlaylist(instructions), meta: { isNative: false, sourceFormat: "instructions", isLossy: true } };
-    }
-
     return { data: null, meta: { isNative: false, isLossy: false } };
   }
 
@@ -97,11 +87,6 @@ export class FormatResolver {
     if (caps.expandedInstructions && this.provider.getExpandedInstructions) {
       const expanded = await this.provider.getExpandedInstructions(path, auth);
       if (expanded) return Converters.instructionsToPresentations(expanded, fallbackId);
-    }
-
-    if (caps.instructions && this.provider.getInstructions) {
-      const instructions = await this.provider.getInstructions(path, auth);
-      if (instructions) return Converters.instructionsToPresentations(instructions, fallbackId);
     }
 
     if (this.options.allowLossy && caps.playlist && this.provider.getPlaylist) {
@@ -130,72 +115,9 @@ export class FormatResolver {
       if (expanded) return { data: Converters.instructionsToPresentations(expanded, fallbackId), meta: { isNative: false, sourceFormat: "expandedInstructions", isLossy: false } };
     }
 
-    if (caps.instructions && this.provider.getInstructions) {
-      const instructions = await this.provider.getInstructions(path, auth);
-      if (instructions) return { data: Converters.instructionsToPresentations(instructions, fallbackId), meta: { isNative: false, sourceFormat: "instructions", isLossy: true } };
-    }
-
     if (this.options.allowLossy && caps.playlist && this.provider.getPlaylist) {
       const playlist = await this.provider.getPlaylist(path, auth);
       if (playlist && playlist.length > 0) return { data: Converters.playlistToPresentations(playlist, fallbackId), meta: { isNative: false, sourceFormat: "playlist", isLossy: true } };
-    }
-
-    return { data: null, meta: { isNative: false, isLossy: false } };
-  }
-
-  async getInstructions(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
-    const caps = this.provider.capabilities;
-    const fallbackTitle = this.getIdFromPath(path);
-
-    if (caps.instructions && this.provider.getInstructions) {
-      const result = await this.provider.getInstructions(path, auth);
-      if (result) return result;
-    }
-
-    if (caps.expandedInstructions && this.provider.getExpandedInstructions) {
-      const expanded = await this.provider.getExpandedInstructions(path, auth);
-      if (expanded) return Converters.collapseInstructions(expanded);
-    }
-
-    if (caps.presentations) {
-      const plan = await this.provider.getPresentations(path, auth);
-      if (plan) return Converters.presentationsToInstructions(plan);
-    }
-
-    if (this.options.allowLossy && caps.playlist && this.provider.getPlaylist) {
-      const playlist = await this.provider.getPlaylist(path, auth);
-      if (playlist && playlist.length > 0) {
-        return Converters.playlistToInstructions(playlist, fallbackTitle);
-      }
-    }
-
-    return null;
-  }
-
-  async getInstructionsWithMeta(path: string, auth?: ContentProviderAuthData | null): Promise<{ data: Instructions | null; meta: ResolvedFormatMeta }> {
-    const caps = this.provider.capabilities;
-    const fallbackTitle = this.getIdFromPath(path);
-
-    if (caps.instructions && this.provider.getInstructions) {
-      const result = await this.provider.getInstructions(path, auth);
-      if (result) {
-        return { data: result, meta: { isNative: true, isLossy: false } };
-      }
-    }
-
-    if (caps.expandedInstructions && this.provider.getExpandedInstructions) {
-      const expanded = await this.provider.getExpandedInstructions(path, auth);
-      if (expanded) return { data: Converters.collapseInstructions(expanded), meta: { isNative: false, sourceFormat: "expandedInstructions", isLossy: true } };
-    }
-
-    if (caps.presentations) {
-      const plan = await this.provider.getPresentations(path, auth);
-      if (plan) return { data: Converters.presentationsToInstructions(plan), meta: { isNative: false, sourceFormat: "presentations", isLossy: false } };
-    }
-
-    if (this.options.allowLossy && caps.playlist && this.provider.getPlaylist) {
-      const playlist = await this.provider.getPlaylist(path, auth);
-      if (playlist && playlist.length > 0) return { data: Converters.playlistToInstructions(playlist, fallbackTitle), meta: { isNative: false, sourceFormat: "playlist", isLossy: true } };
     }
 
     return { data: null, meta: { isNative: false, isLossy: false } };
@@ -213,11 +135,6 @@ export class FormatResolver {
     if (caps.presentations) {
       const plan = await this.provider.getPresentations(path, auth);
       if (plan) return Converters.presentationsToExpandedInstructions(plan);
-    }
-
-    if (caps.instructions && this.provider.getInstructions) {
-      const instructions = await this.provider.getInstructions(path, auth);
-      if (instructions) return instructions;
     }
 
     if (this.options.allowLossy && caps.playlist && this.provider.getPlaylist) {
@@ -244,11 +161,6 @@ export class FormatResolver {
     if (caps.presentations) {
       const plan = await this.provider.getPresentations(path, auth);
       if (plan) return { data: Converters.presentationsToExpandedInstructions(plan), meta: { isNative: false, sourceFormat: "presentations", isLossy: false } };
-    }
-
-    if (caps.instructions && this.provider.getInstructions) {
-      const instructions = await this.provider.getInstructions(path, auth);
-      if (instructions) return { data: instructions, meta: { isNative: false, sourceFormat: "instructions", isLossy: true } };
     }
 
     if (this.options.allowLossy && caps.playlist && this.provider.getPlaylist) {

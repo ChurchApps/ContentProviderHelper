@@ -41,7 +41,6 @@ export class BibleProjectProvider implements IProvider {
     browse: true,
     presentations: true,
     playlist: true,
-    instructions: false,
     expandedInstructions: false,
     mediaLicensing: false
   };

@@ -26,7 +26,7 @@ export class LessonsChurchProvider implements IProvider {
 
   readonly requiresAuth = false;
   readonly authTypes: AuthType[] = ["none"];
-  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: true, instructions: true, expandedInstructions: true, mediaLicensing: false };
+  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: true, expandedInstructions: true, mediaLicensing: false };
 
   async getPlaylist(path: string, _auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null> {
     const venueId = getSegment(path, 4); // /lessons/{0}/{1}/{2}/{3}/{4=venueId}

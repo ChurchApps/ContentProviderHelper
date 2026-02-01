@@ -43,7 +43,6 @@ export class HighVoltageKidsProvider implements IProvider {
     browse: true,
     presentations: true,
     playlist: true,
-    instructions: false,
     expandedInstructions: true,
     mediaLicensing: false
   };

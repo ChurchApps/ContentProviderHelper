@@ -34,7 +34,7 @@ export class B1ChurchProvider implements IProvider {
 
   readonly requiresAuth = true;
   readonly authTypes: AuthType[] = ["oauth_pkce", "device_flow"];
-  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: true, instructions: true, expandedInstructions: true, mediaLicensing: false };
+  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: true, expandedInstructions: true, mediaLicensing: false };
 
   async buildAuthUrl(codeVerifier: string, redirectUri: string, state?: string): Promise<{ url: string; challengeMethod: string }> {
     return auth.buildB1AuthUrl(this.config, this.appBase, redirectUri, codeVerifier, state);
