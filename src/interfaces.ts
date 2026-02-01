@@ -59,7 +59,6 @@ export interface ContentFolder {
   image?: string;
   isLeaf?: boolean;
   path: string;
-  providerData?: Record<string, unknown>;
 }
 
 export interface ContentFile {
@@ -74,7 +73,10 @@ export interface ContentFile {
   decryptionKey?: string;
   mediaId?: string;
   pingbackUrl?: string;
-  providerData?: Record<string, unknown>;
+  seconds?: number;
+  loop?: boolean;
+  loopVideo?: boolean;
+  streamUrl?: string;
 }
 
 export type ContentItem = ContentFolder | ContentFile;
@@ -185,7 +187,6 @@ export interface ProviderCapabilities {
   presentations: boolean;
   playlist: boolean;
   instructions: boolean;
-  expandedInstructions: boolean;
   mediaLicensing: boolean;
 }
 
@@ -220,7 +221,6 @@ export interface IProvider {
   // Optional methods - providers can implement these if they have custom logic
   getPlaylist?(path: string, auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null>;
   getInstructions?(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
-  getExpandedInstructions?(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
   checkMediaLicense?(mediaId: string, auth?: ContentProviderAuthData | null): Promise<MediaLicenseResult | null>;
 }
 
@@ -241,7 +241,6 @@ export interface IContentProvider {
   // Content retrieval
   getPlaylist(path: string, auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null>;
   getInstructions(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
-  getExpandedInstructions(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
 
   // Capability & auth detection
   requiresAuth(): boolean;

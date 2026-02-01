@@ -1,8 +1,9 @@
 import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, ProviderCapabilities, Instructions, InstructionItem, IProvider, AuthType } from "../../interfaces";
 import { createFile } from "../../utils";
 import { parsePath } from "../../pathUtils";
+import { estimateDuration } from "../../durationUtils";
 import highVoltageData from "./data.json";
-import { HighVoltageData } from "./HighVoltageKidsInterfaces";
+import { HighVoltageData, LessonFileJson } from "./HighVoltageKidsInterfaces";
 
 /**
  * HighVoltageKids Provider
@@ -42,8 +43,7 @@ export class HighVoltageKidsProvider implements IProvider {
     browse: true,
     presentations: true,
     playlist: true,
-    instructions: false,
-    expandedInstructions: true,
+    instructions: true,
     mediaLicensing: false
   };
 
@@ -99,8 +99,7 @@ export class HighVoltageKidsProvider implements IProvider {
       id: study.id,
       title: study.name,
       image: study.image || undefined,
-      path: `${currentPath}/${study.id}`,
-      providerData: { studyData: study }
+      path: `${currentPath}/${study.id}`
     }));
   }
 
@@ -117,8 +116,7 @@ export class HighVoltageKidsProvider implements IProvider {
       title: lesson.name,
       image: lesson.image || undefined,
       isLeaf: true,
-      path: `${currentPath}/${lesson.id}`,
-      providerData: { lessonData: lesson, studyName: study.name }
+      path: `${currentPath}/${lesson.id}`
     }));
   }
 
@@ -215,7 +213,7 @@ export class HighVoltageKidsProvider implements IProvider {
     return null;
   }
 
-  async getExpandedInstructions(path: string, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
+  async getInstructions(path: string, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
     const { segments, depth } = parsePath(path);
 
     if (depth < 2) return null;
@@ -232,7 +230,10 @@ export class HighVoltageKidsProvider implements IProvider {
     // For study level
     if (depth === 2) {
       const lessonItems: InstructionItem[] = study.lessons.map(lesson => {
-        const fileItems: InstructionItem[] = lesson.files.map(file => ({ id: file.id, itemType: "file", label: file.title, embedUrl: file.url }));
+        const fileItems: InstructionItem[] = lesson.files.map(file => {
+          const seconds = estimateDuration(file.mediaType as "video" | "image");
+          return { id: file.id, itemType: "file", label: file.title, seconds, embedUrl: file.url };
+        });
         return { id: lesson.id, itemType: "action", label: lesson.name, description: "play", children: fileItems };
       });
 
@@ -260,20 +261,24 @@ export class HighVoltageKidsProvider implements IProvider {
       .replace(/^-|-$/g, "");
   }
 
-  private groupFilesIntoActions(files: { id: string; title: string; url: string }[]): InstructionItem[] {
+  private groupFilesIntoActions(files: LessonFileJson[]): InstructionItem[] {
     // Group only consecutive files with the same base name
     const actionItems: InstructionItem[] = [];
-    let currentGroup: typeof files = [];
+    let currentGroup: LessonFileJson[] = [];
     let currentBaseName: string | null = null;
 
     const flushGroup = () => {
       if (currentGroup.length === 0) return;
-      const children: InstructionItem[] = currentGroup.map(file => ({
-        id: file.id,
-        itemType: "file" as const,
-        label: file.title,
-        embedUrl: file.url
-      }));
+      const children: InstructionItem[] = currentGroup.map(file => {
+        const seconds = estimateDuration(file.mediaType as "video" | "image");
+        return {
+          id: file.id,
+          itemType: "file" as const,
+          label: file.title,
+          seconds,
+          embedUrl: file.url
+        };
+      });
       // Use base name as label only if multiple files were grouped
       const label = (currentGroup.length > 1 && currentBaseName) ? currentBaseName : currentGroup[0].title;
       actionItems.push({

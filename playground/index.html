@@ -64,14 +64,6 @@
             </div>
 
             <div class="docs-method">
-              <h4><code>getInstructions(folder, auth?)</code></h4>
-              <p class="docs-desc">Get instruction/run sheet data for a folder.</p>
-              <div class="docs-returns">
-                <strong>Returns:</strong> <code>Promise&lt;Instructions | null&gt;</code>
-              </div>
-            </div>
-
-            <div class="docs-method">
               <h4><code>getExpandedInstructions(folder, auth?)</code></h4>
               <p class="docs-desc">Get expanded instruction data with actions for a folder.</p>
               <div class="docs-returns">
@@ -125,7 +117,7 @@
   id: string,            // Unique identifier
   title: string,         // Display title
   image?: string,        // Optional thumbnail URL
-  providerData?: object  // Provider-specific navigation data
+  path: string           // Navigation path
 }</pre>
             </div>
 
@@ -140,7 +132,10 @@
   thumbnail?: string,              // Optional thumbnail URL
   url: string,                     // Media file URL
   muxPlaybackId?: string,          // Mux playback ID (if applicable)
-  providerData?: object            // Provider-specific data
+  seconds?: number,                // Duration in seconds
+  loop?: boolean,                  // Loop playback
+  loopVideo?: boolean,             // Loop video playback
+  streamUrl?: string               // Alternative streaming URL
 }</pre>
             </div>
 
@@ -188,7 +183,7 @@
 
             <div class="docs-type">
               <h4>Instructions</h4>
-              <p class="docs-desc">Instructions/run sheet for a venue. Returned by <code>getInstructions()</code> and <code>getExpandedInstructions()</code>.</p>
+              <p class="docs-desc">Instructions/run sheet for a venue. Returned by <code>getExpandedInstructions()</code>.</p>
               <pre class="docs-code">{
   venueName?: string,
   items: InstructionItem[]
@@ -217,7 +212,6 @@
   browse: boolean,              // Supports browsing content hierarchy
   presentations: boolean,       // getPresentations() returns data
   playlist: boolean,            // getPlaylist() returns data
-  instructions: boolean,        // getInstructions() returns data
   expandedInstructions: boolean // getExpandedInstructions() returns data
 }</pre>
             </div>

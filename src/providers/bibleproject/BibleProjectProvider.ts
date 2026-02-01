@@ -1,4 +1,4 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities, IProvider, AuthType } from "../../interfaces";
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities, IProvider, AuthType, Instructions, InstructionItem } from "../../interfaces";
 import { createFile } from "../../utils";
 import { parsePath } from "../../pathUtils";
 import bibleProjectData from "./data.json";
@@ -41,8 +41,7 @@ export class BibleProjectProvider implements IProvider {
     browse: true,
     presentations: true,
     playlist: true,
-    instructions: false,
-    expandedInstructions: false,
+    instructions: true,
     mediaLicensing: false
   };
 
@@ -92,8 +91,7 @@ export class BibleProjectProvider implements IProvider {
       title: video.title,
       image: video.thumbnailUrl,
       isLeaf: true,
-      path: `${currentPath}/${video.id}`,
-      providerData: { videoData: video }
+      path: `${currentPath}/${video.id}`
     }));
   }
 
@@ -161,6 +159,60 @@ export class BibleProjectProvider implements IProvider {
       const video = collection.videos.find(v => v.id === videoId);
       if (!video) return null;
       return [{ type: "file", id: video.id, title: video.title, mediaType: "video", url: video.videoUrl, image: video.thumbnailUrl, muxPlaybackId: video.muxPlaybackId }];
+    }
+
+    return null;
+  }
+
+  async getInstructions(path: string, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
+    const { segments, depth } = parsePath(path);
+
+    if (depth < 1) return null;
+
+    const collectionSlug = segments[0];
+    const collection = this.data.collections.find(c => this.slugify(c.name) === collectionSlug);
+    if (!collection) return null;
+
+    // For collection level (depth 1), create instructions with all videos
+    if (depth === 1) {
+      const fileItems: InstructionItem[] = collection.videos.map(video => ({
+        id: video.id,
+        itemType: "file",
+        label: video.title,
+        embedUrl: video.videoUrl
+      }));
+
+      return {
+        venueName: collection.name,
+        items: [{
+          id: this.slugify(collection.name),
+          itemType: "section",
+          label: "Videos",
+          children: fileItems
+        }]
+      };
+    }
+
+    // For video level (depth 2), create instructions for single video
+    if (depth === 2) {
+      const videoId = segments[1];
+      const video = collection.videos.find(v => v.id === videoId);
+      if (!video) return null;
+
+      return {
+        venueName: video.title,
+        items: [{
+          id: "main",
+          itemType: "section",
+          label: "Content",
+          children: [{
+            id: video.id,
+            itemType: "file",
+            label: video.title,
+            embedUrl: video.videoUrl
+          }]
+        }]
+      };
     }
 
     return null;

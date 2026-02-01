@@ -3,7 +3,7 @@
  * Helper classes for interacting with third party content providers
  */
 
-export const VERSION = "0.0.1";
+export const VERSION = "0.0.4";
 
 // Interfaces
 export * from "./interfaces";
@@ -11,18 +11,25 @@ export * from "./interfaces";
 // Utilities
 export { detectMediaType, createFolder, createFile } from "./utils";
 export { parsePath, getSegment, buildPath, appendToPath } from "./pathUtils";
+export { navigateToPath, generatePath } from "./instructionPathUtils";
+export {
+  estimateDuration,
+  estimateImageDuration,
+  estimateTextDuration,
+  countWords,
+  DEFAULT_DURATION_CONFIG,
+  type DurationEstimationConfig
+} from "./durationUtils";
 
 // Format conversion utilities
 export * as FormatConverters from "./FormatConverters";
 export {
   presentationsToPlaylist,
-  presentationsToInstructions,
   presentationsToExpandedInstructions,
   instructionsToPlaylist,
   expandedInstructionsToPlaylist,
   instructionsToPresentations,
   expandedInstructionsToPresentations,
-  collapseInstructions,
   playlistToPresentations,
   playlistToInstructions,
   playlistToExpandedInstructions

@@ -35,22 +35,6 @@ export abstract class ContentProvider implements IContentProvider, IAuthProvider
   async getInstructions(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
     const caps = this.getCapabilities();
 
-    if (caps.expandedInstructions) {
-      const expanded = await this.getExpandedInstructions(path, auth);
-      if (expanded) return Converters.collapseInstructions(expanded);
-    }
-
-    if (caps.presentations) {
-      const plan = await this.getPresentations(path, auth);
-      if (plan) return Converters.presentationsToInstructions(plan);
-    }
-
-    return null;
-  }
-
-  async getExpandedInstructions(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
-    const caps = this.getCapabilities();
-
     if (caps.presentations) {
       const plan = await this.getPresentations(path, auth);
       if (plan) return Converters.presentationsToExpandedInstructions(plan);
@@ -64,7 +48,7 @@ export abstract class ContentProvider implements IContentProvider, IAuthProvider
   }
 
   getCapabilities(): ProviderCapabilities {
-    return { browse: true, presentations: false, playlist: false, instructions: false, expandedInstructions: false, mediaLicensing: false };
+    return { browse: true, presentations: false, playlist: false, instructions: false, mediaLicensing: false };
   }
 
   checkMediaLicense(_mediaId: string, _auth?: ContentProviderAuthData | null): Promise<MediaLicenseResult | null> {
@@ -135,11 +119,11 @@ export abstract class ContentProvider implements IContentProvider, IAuthProvider
   }
 
   // Content factories
-  protected createFolder(id: string, title: string, path: string, image?: string, providerData?: Record<string, unknown>, isLeaf?: boolean): ContentFolder {
-    return { type: "folder", id, title, path, image, isLeaf, providerData };
+  protected createFolder(id: string, title: string, path: string, image?: string, isLeaf?: boolean): ContentFolder {
+    return { type: "folder", id, title, path, image, isLeaf };
   }
 
-  protected createFile(id: string, title: string, url: string, options?: { mediaType?: "video" | "image"; image?: string; muxPlaybackId?: string; providerData?: Record<string, unknown>; }): ContentFile {
-    return { type: "file", id, title, url, mediaType: options?.mediaType ?? detectMediaType(url), image: options?.image, muxPlaybackId: options?.muxPlaybackId, providerData: options?.providerData };
+  protected createFile(id: string, title: string, url: string, options?: { mediaType?: "video" | "image"; image?: string; muxPlaybackId?: string; seconds?: number; loop?: boolean; loopVideo?: boolean; streamUrl?: string; }): ContentFile {
+    return { type: "file", id, title, url, mediaType: options?.mediaType ?? detectMediaType(url), image: options?.image, muxPlaybackId: options?.muxPlaybackId, seconds: options?.seconds, loop: options?.loop, loopVideo: options?.loopVideo, streamUrl: options?.streamUrl };
   }
 }

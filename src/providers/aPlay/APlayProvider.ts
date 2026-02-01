@@ -1,4 +1,4 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities, MediaLicenseResult, IProvider, AuthType } from "../../interfaces";
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities, MediaLicenseResult, IProvider, AuthType, Instructions, InstructionItem } from "../../interfaces";
 import { detectMediaType } from "../../utils";
 import { parsePath } from "../../pathUtils";
 import { ApiHelper } from "../../helpers";
@@ -28,11 +28,10 @@ export class APlayProvider implements IProvider {
 
   readonly requiresAuth = true;
   readonly authTypes: AuthType[] = ["oauth_pkce"];
-  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: false, instructions: false, expandedInstructions: false, mediaLicensing: true };
+  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: true, instructions: true, mediaLicensing: true };
 
   async browse(path?: string | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const { segments, depth } = parsePath(path);
-    console.log("APlay browse called with path:", path, "depth:", depth);
 
     if (depth === 0) {
       return [{
@@ -79,13 +78,10 @@ export class APlayProvider implements IProvider {
   }
 
   private async getModules(auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
-    console.log(`APlay fetching modules from: ${this.config.endpoints.modules}`);
     const response = await this.apiRequest<Record<string, unknown>>(this.config.endpoints.modules as string, auth);
-    console.log("APlay modules response:", response ? "received" : "null");
     if (!response) return [];
 
     const modules = (response.data || response.modules || response) as Record<string, unknown>[];
-    console.log("APlay modules count:", Array.isArray(modules) ? modules.length : "not an array");
     if (!Array.isArray(modules)) return [];
 
     const items: ContentItem[] = [];
@@ -97,92 +93,59 @@ export class APlayProvider implements IProvider {
       const moduleTitle = (m.title || m.name) as string;
       const moduleImage = m.image as string | undefined;
 
-      const allProducts = (m.products as Record<string, unknown>[]) || [];
-      const products = allProducts.filter((p) => !p.isHidden);
-
-      if (products.length === 0) {
-        // No products - go directly to libraries
-        items.push({
-          type: "folder" as const,
-          id: moduleId,
-          title: moduleTitle,
-          image: moduleImage,
-          path: `/modules/${moduleId}`,
-          providerData: { productCount: 0 }
-        });
-      } else if (products.length === 1) {
-        // Single product - skip products level, go to libraries
-        const product = products[0];
-        items.push({
-          type: "folder" as const,
-          id: (product.productId || product.id) as string,
-          title: moduleTitle,
-          image: (moduleImage || product.image) as string | undefined,
-          path: `/modules/${moduleId}`,
-          providerData: { productCount: 1, productId: product.productId || product.id }
-        });
-      } else {
-        // Multiple products - show products level
-        items.push({
-          type: "folder" as const,
-          id: moduleId,
-          title: moduleTitle,
-          image: moduleImage,
-          path: `/modules/${moduleId}`,
-          providerData: {
-            productCount: products.length,
-            products: products.map((p) => ({
-              id: p.productId || p.id,
-              title: p.title || p.name,
-              image: p.image
-            }))
-          }
-        });
-      }
+      // All modules get the same folder structure - product handling is done in getModuleContent
+      items.push({
+        type: "folder" as const,
+        id: moduleId,
+        title: moduleTitle,
+        image: moduleImage,
+        path: `/modules/${moduleId}`
+      });
     }
 
     return items;
   }
 
   private async getModuleContent(moduleId: string, currentPath: string, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
-    // Get module info to determine product count
-    const modules = await this.getModules(auth);
-    const module = modules.find(m => m.id === moduleId || (m.providerData as Record<string, unknown>)?.productId === moduleId);
+    // Fetch modules API directly to get product info
+    const response = await this.apiRequest<Record<string, unknown>>(this.config.endpoints.modules as string, auth);
+    if (!response) return [];
 
+    const modules = (response.data || response.modules || response) as Record<string, unknown>[];
+    if (!Array.isArray(modules)) return [];
+
+    const module = modules.find(m => (m.id || m.moduleId) === moduleId);
     if (!module) return [];
 
-    const providerData = module.providerData as Record<string, unknown> | undefined;
-    const productCount = providerData?.productCount as number || 0;
+    const allProducts = (module.products as Record<string, unknown>[]) || [];
+    const products = allProducts.filter((p) => !p.isHidden);
 
-    if (productCount === 0 || productCount === 1) {
-      // Direct to libraries
-      const productId = (providerData?.productId || moduleId) as string;
+    if (products.length === 0) {
+      // No products - use moduleId as productId for libraries
+      return this.getLibraryFolders(moduleId, `${currentPath}/libraries`, auth);
+    } else if (products.length === 1) {
+      // Single product - go directly to libraries
+      const productId = (products[0].productId || products[0].id) as string;
       return this.getLibraryFolders(productId, `${currentPath}/libraries`, auth);
     } else {
-      // Show products
-      const products = (providerData?.products || []) as Record<string, unknown>[];
+      // Multiple products - show products list
       return products.map((p) => ({
         type: "folder" as const,
-        id: p.id as string,
-        title: p.title as string,
+        id: (p.productId || p.id) as string,
+        title: (p.title || p.name) as string,
         image: p.image as string | undefined,
-        path: `${currentPath}/products/${p.id}`
+        path: `${currentPath}/products/${p.productId || p.id}`
       }));
     }
   }
 
   private async getLibraryFolders(productId: string, currentPath: string, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
-    console.log("APlay getLibraryFolders called with productId:", productId);
-
     const pathFn = this.config.endpoints.productLibraries as (id: string) => string;
     const apiPath = pathFn(productId);
-    console.log(`APlay fetching libraries from: ${apiPath}`);
     const response = await this.apiRequest<Record<string, unknown>>(apiPath, auth);
-    console.log("APlay libraries response:", response ? "received" : "null");
     if (!response) return [];
 
     const libraries = (response.data || response.libraries || response) as Record<string, unknown>[];
-    console.log("APlay libraries count:", Array.isArray(libraries) ? libraries.length : "not an array");
     if (!Array.isArray(libraries)) return [];
 
     return libraries.map((l) => ({
@@ -196,13 +159,9 @@ export class APlayProvider implements IProvider {
   }
 
   private async getMediaFiles(libraryId: string, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
-    console.log("APlay getMediaFiles called with libraryId:", libraryId);
-
     const pathFn = this.config.endpoints.libraryMedia as (id: string) => string;
     const apiPath = pathFn(libraryId);
-    console.log(`APlay fetching media from: ${apiPath}`);
     const response = await this.apiRequest<Record<string, unknown>>(apiPath, auth);
-    console.log("APlay media response:", response ? "received" : "null");
     if (!response) return [];
 
     const mediaItems = (response.data || response.media || response) as Record<string, unknown>[];
@@ -270,6 +229,67 @@ export class APlayProvider implements IProvider {
 
     const presentations: PlanPresentation[] = files.map(f => ({ id: f.id, name: f.title, actionType: "play" as const, files: [f] }));
     return { id: libraryId, name: title, sections: [{ id: `section-${libraryId}`, name: title, presentations }], allFiles: files };
+  }
+
+  async getPlaylist(path: string, auth?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
+    const { segments, depth } = parsePath(path);
+
+    if (depth < 4 || segments[0] !== "modules") return null;
+
+    let libraryId: string;
+
+    // /modules/{moduleId}/products/{productId}/{libraryId}
+    if (segments[2] === "products" && depth === 5) {
+      libraryId = segments[4];
+    }
+    // /modules/{moduleId}/libraries/{libraryId}
+    else if (segments[2] === "libraries" && depth === 4) {
+      libraryId = segments[3];
+    } else {
+      return null;
+    }
+
+    const files = await this.getMediaFiles(libraryId, auth) as ContentFile[];
+    return files.length > 0 ? files : null;
+  }
+
+  async getInstructions(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
+    const { segments, depth } = parsePath(path);
+
+    if (depth < 4 || segments[0] !== "modules") return null;
+
+    let libraryId: string;
+
+    // /modules/{moduleId}/products/{productId}/{libraryId}
+    if (segments[2] === "products" && depth === 5) {
+      libraryId = segments[4];
+    }
+    // /modules/{moduleId}/libraries/{libraryId}
+    else if (segments[2] === "libraries" && depth === 4) {
+      libraryId = segments[3];
+    } else {
+      return null;
+    }
+
+    const files = await this.getMediaFiles(libraryId, auth) as ContentFile[];
+    if (files.length === 0) return null;
+
+    const fileItems: InstructionItem[] = files.map(file => ({
+      id: file.id,
+      itemType: "file",
+      label: file.title,
+      embedUrl: file.url
+    }));
+
+    return {
+      venueName: "Library",
+      items: [{
+        id: `section-${libraryId}`,
+        itemType: "section",
+        label: "Content",
+        children: fileItems
+      }]
+    };
   }
 
   async checkMediaLicense(mediaId: string, auth?: ContentProviderAuthData | null): Promise<MediaLicenseResult | null> {

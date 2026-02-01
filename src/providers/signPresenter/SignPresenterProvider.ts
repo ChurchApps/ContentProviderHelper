@@ -1,4 +1,4 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities, IProvider, AuthType } from "../../interfaces";
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities, IProvider, AuthType, Instructions, InstructionItem } from "../../interfaces";
 import { detectMediaType } from "../../utils";
 import { parsePath } from "../../pathUtils";
 import { ApiHelper } from "../../helpers";
@@ -25,7 +25,7 @@ export class SignPresenterProvider implements IProvider {
 
   readonly requiresAuth = true;
   readonly authTypes: AuthType[] = ["oauth_pkce", "device_flow"];
-  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: false, instructions: false, expandedInstructions: false, mediaLicensing: false };
+  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: true, instructions: true, mediaLicensing: false };
 
   async browse(path?: string | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const { segments, depth } = parsePath(path);
@@ -95,7 +95,7 @@ export class SignPresenterProvider implements IProvider {
       const url = msg.url as string;
       const seconds = msg.seconds as number | undefined;
 
-      files.push({ type: "file", id: msg.id as string, title: msg.name as string, mediaType: detectMediaType(url, msg.mediaType as string | undefined), image: (msg.thumbnail || msg.image) as string | undefined, url, embedUrl: url, providerData: seconds !== undefined ? { seconds } : undefined });
+      files.push({ type: "file", id: msg.id as string, title: msg.name as string, mediaType: detectMediaType(url, msg.mediaType as string | undefined), image: (msg.thumbnail || msg.image) as string | undefined, url, embedUrl: url, seconds });
     }
 
     return files;
@@ -118,5 +118,48 @@ export class SignPresenterProvider implements IProvider {
 
     const presentations: PlanPresentation[] = files.map(f => ({ id: f.id, name: f.title, actionType: "play" as const, files: [f] }));
     return { id: playlistId, name: title as string, image, sections: [{ id: `section-${playlistId}`, name: title as string, presentations }], allFiles: files };
+  }
+
+  async getPlaylist(path: string, auth?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
+    const { segments, depth } = parsePath(path);
+
+    if (depth < 2 || segments[0] !== "playlists") return null;
+
+    const playlistId = segments[1];
+    const files = await this.getMessages(playlistId, auth) as ContentFile[];
+    return files.length > 0 ? files : null;
+  }
+
+  async getInstructions(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
+    const { segments, depth } = parsePath(path);
+
+    if (depth < 2 || segments[0] !== "playlists") return null;
+
+    const playlistId = segments[1];
+    const files = await this.getMessages(playlistId, auth) as ContentFile[];
+    if (files.length === 0) return null;
+
+    // Get playlist info for title
+    const playlists = await this.getPlaylists(auth);
+    const playlist = playlists.find(p => p.id === playlistId);
+    const title = playlist?.title || "Playlist";
+
+    const fileItems: InstructionItem[] = files.map(file => ({
+      id: file.id,
+      itemType: "file",
+      label: file.title,
+      seconds: file.seconds,
+      embedUrl: file.embedUrl || file.url
+    }));
+
+    return {
+      venueName: title as string,
+      items: [{
+        id: `section-${playlistId}`,
+        itemType: "section",
+        label: title as string,
+        children: fileItems
+      }]
+    };
   }
 }

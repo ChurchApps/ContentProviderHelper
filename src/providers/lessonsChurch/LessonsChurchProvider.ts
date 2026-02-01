@@ -1,6 +1,7 @@
 import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, FeedVenueInterface, Instructions, InstructionItem, VenueActionsResponseInterface, ProviderCapabilities, IProvider, AuthType } from "../../interfaces";
 import { detectMediaType } from "../../utils";
 import { parsePath, getSegment } from "../../pathUtils";
+import { estimateImageDuration } from "../../durationUtils";
 
 /**
  * LessonsChurch Provider
@@ -25,7 +26,7 @@ export class LessonsChurchProvider implements IProvider {
 
   readonly requiresAuth = false;
   readonly authTypes: AuthType[] = ["none"];
-  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: true, instructions: true, expandedInstructions: true, mediaLicensing: false };
+  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: true, instructions: true, mediaLicensing: false };
 
   async getPlaylist(path: string, _auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null> {
     const venueId = getSegment(path, 4); // /lessons/{0}/{1}/{2}/{3}/{4=venueId}
@@ -50,7 +51,7 @@ export class LessonsChurchProvider implements IProvider {
         const url = f.url as string;
         const fileId = (f.id as string) || `playlist-${fileIndex++}`;
 
-        files.push({ type: "file", id: fileId, title: (f.name || msg.name) as string, mediaType: detectMediaType(url, f.fileType as string | undefined), image: response.lessonImage as string | undefined, url, providerData: { seconds: f.seconds, loop: f.loop, loopVideo: f.loopVideo } });
+        files.push({ type: "file", id: fileId, title: (f.name || msg.name) as string, mediaType: detectMediaType(url, f.fileType as string | undefined), image: response.lessonImage as string | undefined, url, seconds: f.seconds as number | undefined, loop: f.loop as boolean | undefined, loopVideo: f.loopVideo as boolean | undefined });
       }
     }
 
@@ -70,7 +71,6 @@ export class LessonsChurchProvider implements IProvider {
 
   async browse(path?: string | null, _auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const { segments, depth } = parsePath(path);
-    console.log("[LessonsChurchProvider.browse] path:", path, "depth:", depth, "segments:", segments);
 
     if (depth === 0) {
       return [
@@ -143,8 +143,7 @@ export class LessonsChurchProvider implements IProvider {
       id: l.id as string,
       title: (l.name || l.title) as string,
       image: l.image as string | undefined,
-      path: `${currentPath}/${l.id}`,
-      providerData: { lessonImage: l.image } // Keep for display on venues
+      path: `${currentPath}/${l.id}`
     }));
   }
 
@@ -158,7 +157,7 @@ export class LessonsChurchProvider implements IProvider {
     const lessonImage = lessonResponse?.image as string | undefined;
 
     const venues = Array.isArray(response) ? response : [];
-    const result = venues.map((v) => ({
+    return venues.map((v) => ({
       type: "folder" as const,
       id: v.id as string,
       title: v.name as string,
@@ -166,8 +165,6 @@ export class LessonsChurchProvider implements IProvider {
       isLeaf: true,
       path: `${currentPath}/${v.id}`
     }));
-    console.log("[LessonsChurchProvider.getVenues] returning:", result.map(r => ({ id: r.id, title: r.title, isLeaf: r.isLeaf })));
-    return result;
   }
 
   private async getPlaylistFiles(venueId: string): Promise<ContentItem[]> {
@@ -245,7 +242,7 @@ export class LessonsChurchProvider implements IProvider {
       return null;
     }
 
-    return { type: "file", id: addOn.id as string, title: addOn.name as string, mediaType, image: addOn.image as string | undefined, url, embedUrl: `https://lessons.church/embed/addon/${addOn.id}`, providerData: { seconds, loopVideo: (video as Record<string, unknown> | undefined)?.loopVideo || false } };
+    return { type: "file", id: addOn.id as string, title: addOn.name as string, mediaType, image: addOn.image as string | undefined, url, embedUrl: `https://lessons.church/embed/addon/${addOn.id}`, seconds, loopVideo: ((video as Record<string, unknown> | undefined)?.loopVideo as boolean) || false };
   }
 
   async getPresentations(path: string, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
@@ -263,21 +260,6 @@ export class LessonsChurchProvider implements IProvider {
     const venueId = getSegment(path, 4);
     if (!venueId) return null;
 
-    const response = await this.apiRequest<{ venueName?: string; items?: Record<string, unknown>[] }>(`/venues/public/planItems/${venueId}`);
-    if (!response) return null;
-
-    const processItem = (item: Record<string, unknown>): InstructionItem => {
-      const itemType = this.normalizeItemType(item.itemType as string | undefined);
-      const relatedId = item.relatedId as string | undefined;
-      return { id: item.id as string | undefined, itemType, relatedId, label: item.label as string | undefined, description: item.description as string | undefined, seconds: item.seconds as number | undefined, children: (item.children as Record<string, unknown>[] | undefined)?.map(processItem), embedUrl: this.getEmbedUrl(itemType, relatedId) };
-    };
-    return { venueName: response.venueName, items: (response.items || []).map(processItem) };
-  }
-
-  async getExpandedInstructions(path: string, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
-    const venueId = getSegment(path, 4);
-    if (!venueId) return null;
-
     const [planItemsResponse, actionsResponse] = await Promise.all([
       this.apiRequest<{ venueName?: string; items?: Record<string, unknown>[] }>(`/venues/public/planItems/${venueId}`),
       this.apiRequest<VenueActionsResponseInterface>(`/venues/public/actions/${venueId}`)
@@ -291,7 +273,8 @@ export class LessonsChurchProvider implements IProvider {
         if (section.id && section.actions) {
           sectionActionsMap.set(section.id, section.actions.map(action => {
             const embedUrl = this.getEmbedUrl("action", action.id);
-            return { id: action.id, itemType: "action", relatedId: action.id, label: action.name, description: action.actionType, seconds: action.seconds, children: [{ id: action.id + "-file", itemType: "file", label: action.name, seconds: action.seconds, embedUrl }] };
+            const seconds = action.seconds ?? estimateImageDuration();
+            return { id: action.id, itemType: "action", relatedId: action.id, label: action.name, description: action.actionType, seconds, children: [{ id: action.id + "-file", itemType: "file", label: action.name, seconds, embedUrl }] };
           }));
         }
       }
@@ -358,7 +341,7 @@ export class LessonsChurchProvider implements IProvider {
 
           const embedUrl = action.id ? `https://lessons.church/embed/action/${action.id}` : undefined;
 
-          const contentFile: ContentFile = { type: "file", id: file.id || "", title: file.name || "", mediaType: detectMediaType(file.url, file.fileType), image: venue.lessonImage, url: file.url, embedUrl, providerData: { seconds: file.seconds, streamUrl: file.streamUrl } };
+          const contentFile: ContentFile = { type: "file", id: file.id || "", title: file.name || "", mediaType: detectMediaType(file.url, file.fileType), image: venue.lessonImage, url: file.url, embedUrl, seconds: file.seconds, streamUrl: file.streamUrl };
 
           files.push(contentFile);
           allFiles.push(contentFile);

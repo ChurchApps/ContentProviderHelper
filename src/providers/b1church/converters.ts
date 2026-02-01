@@ -4,37 +4,19 @@ import { B1Ministry, B1PlanType, B1Plan, B1PlanItem, ArrangementKeyResponse } fr
 import { fetchArrangementKey } from "./api";
 
 export function ministryToFolder(ministry: B1Ministry): ContentItem {
-  return { type: "folder" as const, id: ministry.id, title: ministry.name, path: "", image: ministry.photoUrl, providerData: { level: "ministry", ministryId: ministry.id, churchId: ministry.churchId } };
+  return { type: "folder" as const, id: ministry.id, title: ministry.name, path: "", image: ministry.photoUrl };
 }
 
-export function planTypeToFolder(planType: B1PlanType, ministryId: string): ContentItem {
-  return { type: "folder" as const, id: planType.id, title: planType.name, path: "", providerData: { level: "planType", planTypeId: planType.id, ministryId: ministryId, churchId: planType.churchId } };
+export function planTypeToFolder(planType: B1PlanType): ContentItem {
+  return { type: "folder" as const, id: planType.id, title: planType.name, path: "" };
 }
 
 export function planToFolder(plan: B1Plan): ContentItem {
-  return { type: "folder" as const, id: plan.id, title: plan.name, path: "", isLeaf: true, providerData: { level: "plan", planId: plan.id, planTypeId: plan.planTypeId, ministryId: plan.ministryId, churchId: plan.churchId, serviceDate: plan.serviceDate, contentType: plan.contentType, contentId: plan.contentId } };
+  return { type: "folder" as const, id: plan.id, title: plan.name, path: "", isLeaf: true };
 }
 
 export function sectionToFolder(section: B1PlanItem): ContentItem {
-  return { type: "folder" as const, id: section.id, title: section.label || "Section", path: "", providerData: { level: "section", itemType: "section", description: section.description, seconds: section.seconds } };
-}
-
-export function planItemToContentItem(item: B1PlanItem, venueId: string | undefined): ContentItem | null {
-  const itemType = item.itemType;
-
-  if (itemType === "arrangementKey" && item.churchId && item.relatedId) {
-    return { type: "file" as const, id: item.id, title: item.label || "Song", mediaType: "image" as const, url: "", providerData: { itemType: "arrangementKey", churchId: item.churchId, relatedId: item.relatedId, seconds: item.seconds } };
-  }
-
-  if ((itemType === "lessonSection" || itemType === "section" || itemType === "lessonAction" || itemType === "action" || itemType === "lessonAddOn" || itemType === "addon") && item.relatedId) {
-    return { type: "file" as const, id: item.id, title: item.label || "Lesson Content", mediaType: "video" as const, url: "", providerData: { itemType, relatedId: item.relatedId, venueId, seconds: item.seconds } };
-  }
-
-  if (itemType === "item" || itemType === "header") {
-    return { type: "file" as const, id: item.id, title: item.label || "", mediaType: "image" as const, url: "", providerData: { itemType, description: item.description, seconds: item.seconds } };
-  }
-
-  return null;
+  return { type: "folder" as const, id: section.id, title: section.label || "Section", path: "" };
 }
 
 export async function planItemToPresentation(item: B1PlanItem, venueFeed: FeedVenueInterface | null): Promise<PlanPresentation | null> {
@@ -94,7 +76,7 @@ export function getFilesFromVenueFeed(venueFeed: FeedVenueInterface, itemType: s
 }
 
 export function convertFeedFiles(feedFiles: Array<{ id?: string; name?: string; url?: string; streamUrl?: string; seconds?: number; fileType?: string }>, thumbnailImage?: string): ContentFile[] {
-  return feedFiles.filter(f => f.url).map(f => ({ type: "file" as const, id: f.id || "", title: f.name || "", mediaType: detectMediaType(f.url || "", f.fileType), image: thumbnailImage, url: f.url || "", providerData: { seconds: f.seconds, streamUrl: f.streamUrl } }));
+  return feedFiles.filter(f => f.url).map(f => ({ type: "file" as const, id: f.id || "", title: f.name || "", mediaType: detectMediaType(f.url || "", f.fileType), image: thumbnailImage, url: f.url || "", seconds: f.seconds, streamUrl: f.streamUrl }));
 }
 
 export function planItemToInstruction(item: B1PlanItem): InstructionItem {

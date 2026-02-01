@@ -22,6 +22,9 @@ export interface B1Plan {
   serviceDate: string;
   contentType?: string;
   contentId?: string;
+  providerId?: string;       // Associated provider ID (e.g., "lessonschurch")
+  providerPlanId?: string;   // Content path for associated lesson
+  providerPlanName?: string; // Display name of associated lesson
 }
 
 export interface B1PlanItem {
@@ -34,7 +37,7 @@ export interface B1PlanItem {
   churchId?: string;
   providerId?: string;
   providerPath?: string;
-  providerContentId?: string;
+  providerContentPath?: string;
   children?: B1PlanItem[];
 }
 
