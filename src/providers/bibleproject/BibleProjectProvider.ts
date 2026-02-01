@@ -91,8 +91,7 @@ export class BibleProjectProvider implements IProvider {
       title: video.title,
       image: video.thumbnailUrl,
       isLeaf: true,
-      path: `${currentPath}/${video.id}`,
-      providerData: { videoData: video }
+      path: `${currentPath}/${video.id}`
     }));
   }
 

@@ -99,8 +99,7 @@ export class HighVoltageKidsProvider implements IProvider {
       id: study.id,
       title: study.name,
       image: study.image || undefined,
-      path: `${currentPath}/${study.id}`,
-      providerData: { studyData: study }
+      path: `${currentPath}/${study.id}`
     }));
   }
 
@@ -117,8 +116,7 @@ export class HighVoltageKidsProvider implements IProvider {
       title: lesson.name,
       image: lesson.image || undefined,
       isLeaf: true,
-      path: `${currentPath}/${lesson.id}`,
-      providerData: { lessonData: lesson, studyName: study.name }
+      path: `${currentPath}/${lesson.id}`
     }));
   }
 

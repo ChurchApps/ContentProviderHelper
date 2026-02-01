@@ -1021,7 +1021,7 @@ function renderPlaylistView(playlist: ContentFile[], meta: ResolvedFormatMeta) {
         <div class="playlist-file-info">
           <span class="playlist-file-title">${file.title}</span>
           <span class="playlist-file-type">${file.mediaType}</span>
-          ${file.providerData?.seconds ? `<span class="playlist-file-duration">${file.providerData.seconds}s</span>` : ''}
+          ${file.seconds ? `<span class="playlist-file-duration">${file.seconds}s</span>` : ''}
         </div>
         <a href="${file.url}" target="_blank" class="playlist-file-link">Open</a>
       </div>
@@ -1136,7 +1136,7 @@ function showPresentationDetails(presentation: PlanPresentation) {
     <div class="presentation-file-item">
       <span class="file-type ${file.mediaType}">${file.mediaType === 'video' ? '🎬' : '🖼️'}</span>
       <span class="file-title">${file.title || 'Untitled'}</span>
-      <span class="file-seconds">${file.providerData?.seconds ? `${file.providerData.seconds}s` : ''}</span>
+      <span class="file-seconds">${file.seconds ? `${file.seconds}s` : ''}</span>
       <a href="${file.url}" target="_blank" class="file-link">Open</a>
     </div>
   `).join('');

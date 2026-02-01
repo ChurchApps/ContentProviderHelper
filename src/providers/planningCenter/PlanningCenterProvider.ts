@@ -105,8 +105,7 @@ export class PlanningCenterProvider implements IProvider {
       id: plan.id,
       title: plan.attributes.title || this.formatDate(plan.attributes.sort_date),
       isLeaf: true,
-      path: `${currentPath}/${plan.id}`,
-      providerData: { sortDate: plan.attributes.sort_date }
+      path: `${currentPath}/${plan.id}`
     }));
   }
 
@@ -119,7 +118,7 @@ export class PlanningCenterProvider implements IProvider {
 
     if (!response?.data) return [];
 
-    return response.data.map((item) => ({ type: "file" as const, id: item.id, title: item.attributes.title || "", mediaType: "image" as const, url: "", providerData: { itemType: item.attributes.item_type, description: item.attributes.description, length: item.attributes.length, songId: item.relationships?.song?.data?.id, arrangementId: item.relationships?.arrangement?.data?.id } }));
+    return response.data.map((item) => ({ type: "file" as const, id: item.id, title: item.attributes.title || "", mediaType: "image" as const, url: "" }));
   }
 
   async getPresentations(path: string, auth?: ContentProviderAuthData | null): Promise<Plan | null> {

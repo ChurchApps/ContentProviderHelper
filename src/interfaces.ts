@@ -59,7 +59,6 @@ export interface ContentFolder {
   image?: string;
   isLeaf?: boolean;
   path: string;
-  providerData?: Record<string, unknown>;
 }
 
 export interface ContentFile {
@@ -74,7 +73,10 @@ export interface ContentFile {
   decryptionKey?: string;
   mediaId?: string;
   pingbackUrl?: string;
-  providerData?: Record<string, unknown>;
+  seconds?: number;
+  loop?: boolean;
+  loopVideo?: boolean;
+  streamUrl?: string;
 }
 
 export type ContentItem = ContentFolder | ContentFile;

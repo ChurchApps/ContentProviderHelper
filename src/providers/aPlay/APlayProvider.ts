@@ -97,76 +97,48 @@ export class APlayProvider implements IProvider {
       const moduleTitle = (m.title || m.name) as string;
       const moduleImage = m.image as string | undefined;
 
-      const allProducts = (m.products as Record<string, unknown>[]) || [];
-      const products = allProducts.filter((p) => !p.isHidden);
-
-      if (products.length === 0) {
-        // No products - go directly to libraries
-        items.push({
-          type: "folder" as const,
-          id: moduleId,
-          title: moduleTitle,
-          image: moduleImage,
-          path: `/modules/${moduleId}`,
-          providerData: { productCount: 0 }
-        });
-      } else if (products.length === 1) {
-        // Single product - skip products level, go to libraries
-        const product = products[0];
-        items.push({
-          type: "folder" as const,
-          id: (product.productId || product.id) as string,
-          title: moduleTitle,
-          image: (moduleImage || product.image) as string | undefined,
-          path: `/modules/${moduleId}`,
-          providerData: { productCount: 1, productId: product.productId || product.id }
-        });
-      } else {
-        // Multiple products - show products level
-        items.push({
-          type: "folder" as const,
-          id: moduleId,
-          title: moduleTitle,
-          image: moduleImage,
-          path: `/modules/${moduleId}`,
-          providerData: {
-            productCount: products.length,
-            products: products.map((p) => ({
-              id: p.productId || p.id,
-              title: p.title || p.name,
-              image: p.image
-            }))
-          }
-        });
-      }
+      // All modules get the same folder structure - product handling is done in getModuleContent
+      items.push({
+        type: "folder" as const,
+        id: moduleId,
+        title: moduleTitle,
+        image: moduleImage,
+        path: `/modules/${moduleId}`
+      });
     }
 
     return items;
   }
 
   private async getModuleContent(moduleId: string, currentPath: string, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
-    // Get module info to determine product count
-    const modules = await this.getModules(auth);
-    const module = modules.find(m => m.id === moduleId || (m.providerData as Record<string, unknown>)?.productId === moduleId);
+    // Fetch modules API directly to get product info
+    const response = await this.apiRequest<Record<string, unknown>>(this.config.endpoints.modules as string, auth);
+    if (!response) return [];
 
+    const modules = (response.data || response.modules || response) as Record<string, unknown>[];
+    if (!Array.isArray(modules)) return [];
+
+    const module = modules.find(m => (m.id || m.moduleId) === moduleId);
     if (!module) return [];
 
-    const providerData = module.providerData as Record<string, unknown> | undefined;
-    const productCount = providerData?.productCount as number || 0;
+    const allProducts = (module.products as Record<string, unknown>[]) || [];
+    const products = allProducts.filter((p) => !p.isHidden);
 
-    if (productCount === 0 || productCount === 1) {
-      // Direct to libraries
-      const productId = (providerData?.productId || moduleId) as string;
+    if (products.length === 0) {
+      // No products - use moduleId as productId for libraries
+      return this.getLibraryFolders(moduleId, `${currentPath}/libraries`, auth);
+    } else if (products.length === 1) {
+      // Single product - go directly to libraries
+      const productId = (products[0].productId || products[0].id) as string;
       return this.getLibraryFolders(productId, `${currentPath}/libraries`, auth);
     } else {
-      // Show products
-      const products = (providerData?.products || []) as Record<string, unknown>[];
+      // Multiple products - show products list
       return products.map((p) => ({
         type: "folder" as const,
-        id: p.id as string,
-        title: p.title as string,
+        id: (p.productId || p.id) as string,
+        title: (p.title || p.name) as string,
         image: p.image as string | undefined,
-        path: `${currentPath}/products/${p.id}`
+        path: `${currentPath}/products/${p.productId || p.id}`
       }));
     }
   }

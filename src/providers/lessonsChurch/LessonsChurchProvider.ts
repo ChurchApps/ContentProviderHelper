@@ -51,7 +51,7 @@ export class LessonsChurchProvider implements IProvider {
         const url = f.url as string;
         const fileId = (f.id as string) || `playlist-${fileIndex++}`;
 
-        files.push({ type: "file", id: fileId, title: (f.name || msg.name) as string, mediaType: detectMediaType(url, f.fileType as string | undefined), image: response.lessonImage as string | undefined, url, providerData: { seconds: f.seconds, loop: f.loop, loopVideo: f.loopVideo } });
+        files.push({ type: "file", id: fileId, title: (f.name || msg.name) as string, mediaType: detectMediaType(url, f.fileType as string | undefined), image: response.lessonImage as string | undefined, url, seconds: f.seconds as number | undefined, loop: f.loop as boolean | undefined, loopVideo: f.loopVideo as boolean | undefined });
       }
     }
 
@@ -144,8 +144,7 @@ export class LessonsChurchProvider implements IProvider {
       id: l.id as string,
       title: (l.name || l.title) as string,
       image: l.image as string | undefined,
-      path: `${currentPath}/${l.id}`,
-      providerData: { lessonImage: l.image } // Keep for display on venues
+      path: `${currentPath}/${l.id}`
     }));
   }
 
@@ -246,7 +245,7 @@ export class LessonsChurchProvider implements IProvider {
       return null;
     }
 
-    return { type: "file", id: addOn.id as string, title: addOn.name as string, mediaType, image: addOn.image as string | undefined, url, embedUrl: `https://lessons.church/embed/addon/${addOn.id}`, providerData: { seconds, loopVideo: (video as Record<string, unknown> | undefined)?.loopVideo || false } };
+    return { type: "file", id: addOn.id as string, title: addOn.name as string, mediaType, image: addOn.image as string | undefined, url, embedUrl: `https://lessons.church/embed/addon/${addOn.id}`, seconds, loopVideo: ((video as Record<string, unknown> | undefined)?.loopVideo as boolean) || false };
   }
 
   async getPresentations(path: string, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
@@ -345,7 +344,7 @@ export class LessonsChurchProvider implements IProvider {
 
           const embedUrl = action.id ? `https://lessons.church/embed/action/${action.id}` : undefined;
 
-          const contentFile: ContentFile = { type: "file", id: file.id || "", title: file.name || "", mediaType: detectMediaType(file.url, file.fileType), image: venue.lessonImage, url: file.url, embedUrl, providerData: { seconds: file.seconds, streamUrl: file.streamUrl } };
+          const contentFile: ContentFile = { type: "file", id: file.id || "", title: file.name || "", mediaType: detectMediaType(file.url, file.fileType), image: venue.lessonImage, url: file.url, embedUrl, seconds: file.seconds, streamUrl: file.streamUrl };
 
           files.push(contentFile);
           allFiles.push(contentFile);

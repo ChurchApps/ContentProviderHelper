@@ -80,8 +80,7 @@ export class B1ChurchProvider implements IProvider {
       const ministries = await fetchMinistries(authData);
       return ministries.map(m => {
         const folder = ministryToFolder(m);
-        const ministryId = (folder.providerData as Record<string, unknown>)?.ministryId || folder.id;
-        return { ...folder, path: `/ministries/${ministryId}` };
+        return { ...folder, path: `/ministries/${m.id}` };
       });
     }
 
@@ -90,9 +89,8 @@ export class B1ChurchProvider implements IProvider {
       const ministryId = segments[1];
       const planTypes = await fetchPlanTypes(ministryId, authData);
       return planTypes.map(pt => {
-        const folder = planTypeToFolder(pt, ministryId);
-        const planTypeId = (folder.providerData as Record<string, unknown>)?.planTypeId || folder.id;
-        return { ...folder, path: `/ministries/${ministryId}/${planTypeId}` };
+        const folder = planTypeToFolder(pt);
+        return { ...folder, path: `/ministries/${ministryId}/${pt.id}` };
       });
     }
 
@@ -103,11 +101,10 @@ export class B1ChurchProvider implements IProvider {
       const plans = await fetchPlans(planTypeId, authData);
       return plans.map(p => {
         const folder = planToFolder(p);
-        const planId = (folder.providerData as Record<string, unknown>)?.planId || folder.id;
         return {
           ...folder,
           isLeaf: true,
-          path: `/ministries/${ministryId}/${planTypeId}/${planId}`
+          path: `/ministries/${ministryId}/${planTypeId}/${p.id}`
         };
       });
     }
@@ -126,17 +123,12 @@ export class B1ChurchProvider implements IProvider {
 
     // Need to fetch plan details to get churchId and contentId
     const plans = await fetchPlans(planTypeId, authData);
-    const planFolder = plans.find(p => {
-      const folder = planToFolder(p);
-      return (folder.providerData as Record<string, unknown>)?.planId === planId || folder.id === planId;
-    });
+    const planFolder = plans.find(p => p.id === planId);
     if (!planFolder) return null;
 
-    const folder = planToFolder(planFolder);
-    const providerData = folder.providerData as Record<string, unknown>;
-    const churchId = providerData?.churchId as string;
-    const venueId = providerData?.contentId as string | undefined;
-    const planTitle = folder.title || "Plan";
+    const churchId = planFolder.churchId;
+    const venueId = planFolder.contentId;
+    const planTitle = planFolder.name || "Plan";
 
     if (!churchId) return null;
 
@@ -228,18 +220,13 @@ export class B1ChurchProvider implements IProvider {
     const planId = segments[3];
     const planTypeId = segments[2];
 
-    // Need to fetch plan details to get churchId and contentId
+    // Need to fetch plan details to get churchId
     const plans = await fetchPlans(planTypeId, authData);
-    const planFolder = plans.find(p => {
-      const folder = planToFolder(p);
-      return (folder.providerData as Record<string, unknown>)?.planId === planId || folder.id === planId;
-    });
+    const planFolder = plans.find(p => p.id === planId);
     if (!planFolder) return null;
 
-    const folder = planToFolder(planFolder);
-    const providerData = folder.providerData as Record<string, unknown>;
-    const churchId = providerData?.churchId as string;
-    const planTitle = folder.title || "Plan";
+    const churchId = planFolder.churchId;
+    const planTitle = planFolder.name || "Plan";
 
     if (!churchId) return null;
 
@@ -340,16 +327,11 @@ export class B1ChurchProvider implements IProvider {
 
     // Need to fetch plan details to get churchId and contentId
     const plans = await fetchPlans(planTypeId, authData);
-    const planFolder = plans.find(p => {
-      const folder = planToFolder(p);
-      return (folder.providerData as Record<string, unknown>)?.planId === planId || folder.id === planId;
-    });
+    const planFolder = plans.find(p => p.id === planId);
     if (!planFolder) return [];
 
-    const folder = planToFolder(planFolder);
-    const providerData = folder.providerData as Record<string, unknown>;
-    const churchId = providerData?.churchId as string;
-    const venueId = providerData?.contentId as string | undefined;
+    const churchId = planFolder.churchId;
+    const venueId = planFolder.contentId;
 
     if (!churchId) return [];
 

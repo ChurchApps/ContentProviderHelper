@@ -117,7 +117,7 @@
   id: string,            // Unique identifier
   title: string,         // Display title
   image?: string,        // Optional thumbnail URL
-  providerData?: object  // Provider-specific navigation data
+  path: string           // Navigation path
 }</pre>
             </div>
 
@@ -132,7 +132,10 @@
   thumbnail?: string,              // Optional thumbnail URL
   url: string,                     // Media file URL
   muxPlaybackId?: string,          // Mux playback ID (if applicable)
-  providerData?: object            // Provider-specific data
+  seconds?: number,                // Duration in seconds
+  loop?: boolean,                  // Loop playback
+  loopVideo?: boolean,             // Loop video playback
+  streamUrl?: string               // Alternative streaming URL
 }</pre>
             </div>
 
