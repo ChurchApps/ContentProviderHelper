@@ -34,7 +34,7 @@ export class B1ChurchProvider implements IProvider {
 
   readonly requiresAuth = true;
   readonly authTypes: AuthType[] = ["oauth_pkce", "device_flow"];
-  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: true, expandedInstructions: true, mediaLicensing: false };
+  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: true, instructions: true, mediaLicensing: false };
 
   async buildAuthUrl(codeVerifier: string, redirectUri: string, state?: string): Promise<{ url: string; challengeMethod: string }> {
     return auth.buildB1AuthUrl(this.config, this.appBase, redirectUri, codeVerifier, state);
@@ -181,7 +181,7 @@ export class B1ChurchProvider implements IProvider {
             if (child.providerContentPath) {
               // Fetch instructions to enable path-based lookup
               const externalInstructions = await fetchFromProviderProxy(
-                "getExpandedInstructions",
+                "getInstructions",
                 ministryId,
                 child.providerId,
                 child.providerPath,
@@ -249,7 +249,7 @@ export class B1ChurchProvider implements IProvider {
     // If no planItems but plan has associated provider content, fetch from that provider
     if ((!planItems || planItems.length === 0) && planFolder.providerId && planFolder.providerPlanId) {
       const externalInstructions = await fetchFromProviderProxy(
-        "getExpandedInstructions",
+        "getInstructions",
         ministryId,
         planFolder.providerId,
         planFolder.providerPlanId,
@@ -267,12 +267,6 @@ export class B1ChurchProvider implements IProvider {
     return { venueName: planTitle, items: processedItems };
   }
 
-  async getExpandedInstructions(path: string, authData?: ContentProviderAuthData | null): Promise<Instructions | null> {
-    // For B1Church, expanded instructions are the same as regular instructions
-    // External provider items will be expanded via proxy
-    return this.getInstructions(path, authData);
-  }
-
   private async processInstructionItems(
     items: B1PlanItem[],
     ministryId: string,
@@ -288,7 +282,7 @@ export class B1ChurchProvider implements IProvider {
         // Fetch expanded instructions from external provider
         console.log("Processing external item:", item.providerId, item.providerPath, item.providerContentPath);
         const externalInstructions = await fetchFromProviderProxy(
-          "getExpandedInstructions",
+          "getInstructions",
           ministryId,
           item.providerId,
           item.providerPath,
@@ -394,7 +388,7 @@ export class B1ChurchProvider implements IProvider {
               authData
             );
             const externalInstructions = await fetchFromProviderProxy(
-              "getExpandedInstructions",
+              "getInstructions",
               ministryId,
               child.providerId,
               child.providerPath,

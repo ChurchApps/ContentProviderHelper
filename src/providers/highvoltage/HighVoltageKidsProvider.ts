@@ -43,7 +43,7 @@ export class HighVoltageKidsProvider implements IProvider {
     browse: true,
     presentations: true,
     playlist: true,
-    expandedInstructions: true,
+    instructions: true,
     mediaLicensing: false
   };
 
@@ -215,7 +215,7 @@ export class HighVoltageKidsProvider implements IProvider {
     return null;
   }
 
-  async getExpandedInstructions(path: string, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
+  async getInstructions(path: string, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
     const { segments, depth } = parsePath(path);
 
     if (depth < 2) return null;

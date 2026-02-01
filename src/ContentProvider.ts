@@ -32,7 +32,7 @@ export abstract class ContentProvider implements IContentProvider, IAuthProvider
     return null;
   }
 
-  async getExpandedInstructions(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
+  async getInstructions(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
     const caps = this.getCapabilities();
 
     if (caps.presentations) {
@@ -48,7 +48,7 @@ export abstract class ContentProvider implements IContentProvider, IAuthProvider
   }
 
   getCapabilities(): ProviderCapabilities {
-    return { browse: true, presentations: false, playlist: false, expandedInstructions: false, mediaLicensing: false };
+    return { browse: true, presentations: false, playlist: false, instructions: false, mediaLicensing: false };
   }
 
   checkMediaLicense(_mediaId: string, _auth?: ContentProviderAuthData | null): Promise<MediaLicenseResult | null> {

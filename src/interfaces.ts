@@ -184,7 +184,7 @@ export interface ProviderCapabilities {
   browse: boolean;
   presentations: boolean;
   playlist: boolean;
-  expandedInstructions: boolean;
+  instructions: boolean;
   mediaLicensing: boolean;
 }
 
@@ -218,7 +218,7 @@ export interface IProvider {
 
   // Optional methods - providers can implement these if they have custom logic
   getPlaylist?(path: string, auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null>;
-  getExpandedInstructions?(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
+  getInstructions?(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
   checkMediaLicense?(mediaId: string, auth?: ContentProviderAuthData | null): Promise<MediaLicenseResult | null>;
 }
 
@@ -238,7 +238,7 @@ export interface IContentProvider {
 
   // Content retrieval
   getPlaylist(path: string, auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null>;
-  getExpandedInstructions(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
+  getInstructions(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;
 
   // Capability & auth detection
   requiresAuth(): boolean;

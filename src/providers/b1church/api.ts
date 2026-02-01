@@ -3,13 +3,13 @@ import { ArrangementKeyResponse, B1Ministry, B1PlanType, B1Plan } from "./types"
 
 export const API_BASE = "http://localhost:8084"; // TODO: revert to https://api.churchapps.org
 
-export type ProxyMethod = "browse" | "getPresentations" | "getPlaylist" | "getInstructions" | "getExpandedInstructions";
+export type ProxyMethod = "browse" | "getPresentations" | "getPlaylist" | "getInstructions";
 
 export type ProxyResult<M extends ProxyMethod> =
   M extends "browse" ? ContentItem[] :
   M extends "getPresentations" ? Plan :
   M extends "getPlaylist" ? ContentFile[] :
-  M extends "getInstructions" | "getExpandedInstructions" ? Instructions :
+  M extends "getInstructions" ? Instructions :
   never;
 export const LESSONS_API_BASE = "https://api.lessons.church";
 export const CONTENT_API_BASE = "https://contentapi.churchapps.org";

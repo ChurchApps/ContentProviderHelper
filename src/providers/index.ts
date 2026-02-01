@@ -152,7 +152,7 @@ export function getAvailableProviders(ids?: string[]): ProviderInfo[] {
     implemented: false,
     requiresAuth: false,
     authTypes: [],
-    capabilities: { browse: false, presentations: false, playlist: false, expandedInstructions: false, mediaLicensing: false },
+    capabilities: { browse: false, presentations: false, playlist: false, instructions: false, mediaLicensing: false },
   }));
 
   const all = [...implemented, ...comingSoon];

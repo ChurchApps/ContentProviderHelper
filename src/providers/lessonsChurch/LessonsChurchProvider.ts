@@ -26,7 +26,7 @@ export class LessonsChurchProvider implements IProvider {
 
   readonly requiresAuth = false;
   readonly authTypes: AuthType[] = ["none"];
-  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: true, expandedInstructions: true, mediaLicensing: false };
+  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: true, instructions: true, mediaLicensing: false };
 
   async getPlaylist(path: string, _auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null> {
     const venueId = getSegment(path, 4); // /lessons/{0}/{1}/{2}/{3}/{4=venueId}
@@ -261,21 +261,6 @@ export class LessonsChurchProvider implements IProvider {
   }
 
   async getInstructions(path: string, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
-    const venueId = getSegment(path, 4);
-    if (!venueId) return null;
-
-    const response = await this.apiRequest<{ venueName?: string; items?: Record<string, unknown>[] }>(`/venues/public/planItems/${venueId}`);
-    if (!response) return null;
-
-    const processItem = (item: Record<string, unknown>): InstructionItem => {
-      const itemType = this.normalizeItemType(item.itemType as string | undefined);
-      const relatedId = item.relatedId as string | undefined;
-      return { id: item.id as string | undefined, itemType, relatedId, label: item.label as string | undefined, description: item.description as string | undefined, seconds: item.seconds as number | undefined, children: (item.children as Record<string, unknown>[] | undefined)?.map(processItem), embedUrl: this.getEmbedUrl(itemType, relatedId) };
-    };
-    return { venueName: response.venueName, items: (response.items || []).map(processItem) };
-  }
-
-  async getExpandedInstructions(path: string, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
     const venueId = getSegment(path, 4);
     if (!venueId) return null;
 

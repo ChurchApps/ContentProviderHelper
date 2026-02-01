@@ -8,7 +8,7 @@ export interface FormatResolverOptions {
 
 export interface ResolvedFormatMeta {
   isNative: boolean;
-  sourceFormat?: "playlist" | "presentations" | "expandedInstructions";
+  sourceFormat?: "playlist" | "presentations" | "instructions";
   isLossy: boolean;
 }
 
@@ -44,8 +44,8 @@ export class FormatResolver {
       if (plan) return Converters.presentationsToPlaylist(plan);
     }
 
-    if (caps.expandedInstructions && this.provider.getExpandedInstructions) {
-      const expanded = await this.provider.getExpandedInstructions(path, auth);
+    if (caps.instructions && this.provider.getInstructions) {
+      const expanded = await this.provider.getInstructions(path, auth);
       if (expanded) return Converters.instructionsToPlaylist(expanded);
     }
 
@@ -67,9 +67,9 @@ export class FormatResolver {
       if (plan) return { data: Converters.presentationsToPlaylist(plan), meta: { isNative: false, sourceFormat: "presentations", isLossy: false } };
     }
 
-    if (caps.expandedInstructions && this.provider.getExpandedInstructions) {
-      const expanded = await this.provider.getExpandedInstructions(path, auth);
-      if (expanded) return { data: Converters.instructionsToPlaylist(expanded), meta: { isNative: false, sourceFormat: "expandedInstructions", isLossy: false } };
+    if (caps.instructions && this.provider.getInstructions) {
+      const expanded = await this.provider.getInstructions(path, auth);
+      if (expanded) return { data: Converters.instructionsToPlaylist(expanded), meta: { isNative: false, sourceFormat: "instructions", isLossy: false } };
     }
 
     return { data: null, meta: { isNative: false, isLossy: false } };
@@ -84,8 +84,8 @@ export class FormatResolver {
       if (result) return result;
     }
 
-    if (caps.expandedInstructions && this.provider.getExpandedInstructions) {
-      const expanded = await this.provider.getExpandedInstructions(path, auth);
+    if (caps.instructions && this.provider.getInstructions) {
+      const expanded = await this.provider.getInstructions(path, auth);
       if (expanded) return Converters.instructionsToPresentations(expanded, fallbackId);
     }
 
@@ -110,9 +110,9 @@ export class FormatResolver {
       }
     }
 
-    if (caps.expandedInstructions && this.provider.getExpandedInstructions) {
-      const expanded = await this.provider.getExpandedInstructions(path, auth);
-      if (expanded) return { data: Converters.instructionsToPresentations(expanded, fallbackId), meta: { isNative: false, sourceFormat: "expandedInstructions", isLossy: false } };
+    if (caps.instructions && this.provider.getInstructions) {
+      const expanded = await this.provider.getInstructions(path, auth);
+      if (expanded) return { data: Converters.instructionsToPresentations(expanded, fallbackId), meta: { isNative: false, sourceFormat: "instructions", isLossy: false } };
     }
 
     if (this.options.allowLossy && caps.playlist && this.provider.getPlaylist) {
@@ -123,12 +123,12 @@ export class FormatResolver {
     return { data: null, meta: { isNative: false, isLossy: false } };
   }
 
-  async getExpandedInstructions(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
+  async getInstructions(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
     const caps = this.provider.capabilities;
     const fallbackTitle = this.getIdFromPath(path);
 
-    if (caps.expandedInstructions && this.provider.getExpandedInstructions) {
-      const result = await this.provider.getExpandedInstructions(path, auth);
+    if (caps.instructions && this.provider.getInstructions) {
+      const result = await this.provider.getInstructions(path, auth);
       if (result) return result;
     }
 
@@ -147,12 +147,12 @@ export class FormatResolver {
     return null;
   }
 
-  async getExpandedInstructionsWithMeta(path: string, auth?: ContentProviderAuthData | null): Promise<{ data: Instructions | null; meta: ResolvedFormatMeta }> {
+  async getInstructionsWithMeta(path: string, auth?: ContentProviderAuthData | null): Promise<{ data: Instructions | null; meta: ResolvedFormatMeta }> {
     const caps = this.provider.capabilities;
     const fallbackTitle = this.getIdFromPath(path);
 
-    if (caps.expandedInstructions && this.provider.getExpandedInstructions) {
-      const result = await this.provider.getExpandedInstructions(path, auth);
+    if (caps.instructions && this.provider.getInstructions) {
+      const result = await this.provider.getInstructions(path, auth);
       if (result) {
         return { data: result, meta: { isNative: true, isLossy: false } };
       }
