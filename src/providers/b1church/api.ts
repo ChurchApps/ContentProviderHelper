@@ -1,7 +1,7 @@
 import { ContentProviderAuthData, FeedVenueInterface, ContentItem, Plan, ContentFile, Instructions } from "../../interfaces";
 import { ArrangementKeyResponse, B1Ministry, B1PlanType, B1Plan } from "./types";
 
-export const API_BASE = "http://localhost:8084"; // TODO: revert to https://api.churchapps.org
+export const API_BASE = "https://api.churchapps.org";
 
 export type ProxyMethod = "browse" | "getPresentations" | "getPlaylist" | "getInstructions";
 

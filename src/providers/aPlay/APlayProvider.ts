@@ -32,7 +32,6 @@ export class APlayProvider implements IProvider {
 
   async browse(path?: string | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const { segments, depth } = parsePath(path);
-    console.log("APlay browse called with path:", path, "depth:", depth);
 
     if (depth === 0) {
       return [{
@@ -79,13 +78,10 @@ export class APlayProvider implements IProvider {
   }
 
   private async getModules(auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
-    console.log(`APlay fetching modules from: ${this.config.endpoints.modules}`);
     const response = await this.apiRequest<Record<string, unknown>>(this.config.endpoints.modules as string, auth);
-    console.log("APlay modules response:", response ? "received" : "null");
     if (!response) return [];
 
     const modules = (response.data || response.modules || response) as Record<string, unknown>[];
-    console.log("APlay modules count:", Array.isArray(modules) ? modules.length : "not an array");
     if (!Array.isArray(modules)) return [];
 
     const items: ContentItem[] = [];
@@ -144,17 +140,12 @@ export class APlayProvider implements IProvider {
   }
 
   private async getLibraryFolders(productId: string, currentPath: string, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
-    console.log("APlay getLibraryFolders called with productId:", productId);
-
     const pathFn = this.config.endpoints.productLibraries as (id: string) => string;
     const apiPath = pathFn(productId);
-    console.log(`APlay fetching libraries from: ${apiPath}`);
     const response = await this.apiRequest<Record<string, unknown>>(apiPath, auth);
-    console.log("APlay libraries response:", response ? "received" : "null");
     if (!response) return [];
 
     const libraries = (response.data || response.libraries || response) as Record<string, unknown>[];
-    console.log("APlay libraries count:", Array.isArray(libraries) ? libraries.length : "not an array");
     if (!Array.isArray(libraries)) return [];
 
     return libraries.map((l) => ({
@@ -168,13 +159,9 @@ export class APlayProvider implements IProvider {
   }
 
   private async getMediaFiles(libraryId: string, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
-    console.log("APlay getMediaFiles called with libraryId:", libraryId);
-
     const pathFn = this.config.endpoints.libraryMedia as (id: string) => string;
     const apiPath = pathFn(libraryId);
-    console.log(`APlay fetching media from: ${apiPath}`);
     const response = await this.apiRequest<Record<string, unknown>>(apiPath, auth);
-    console.log("APlay media response:", response ? "received" : "null");
     if (!response) return [];
 
     const mediaItems = (response.data || response.media || response) as Record<string, unknown>[];

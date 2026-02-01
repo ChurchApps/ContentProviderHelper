@@ -30,7 +30,7 @@ export class B1ChurchProvider implements IProvider {
 
   readonly config: ContentProviderConfig = { id: "b1church", name: "B1.Church", apiBase: `${API_BASE}/doing`, oauthBase: `${API_BASE}/membership/oauth`, clientId: "nsowldn58dk", scopes: ["plans"], supportsDeviceFlow: true, deviceAuthEndpoint: "/device/authorize", endpoints: { planItems: (churchId: string, planId: string) => `/planFeed/presenter/${churchId}/${planId}` } };
 
-  private appBase = "http://localhost:3101"; // TODO: revert to https://admin.b1.church
+  private appBase = "https://admin.b1.church";
 
   readonly requiresAuth = true;
   readonly authTypes: AuthType[] = ["oauth_pkce", "device_flow"];
@@ -267,7 +267,6 @@ export class B1ChurchProvider implements IProvider {
 
       if (isExternalProviderItem(item) && item.providerId && item.providerPath) {
         // Fetch expanded instructions from external provider
-        console.log("Processing external item:", item.providerId, item.providerPath, item.providerContentPath);
         const externalInstructions = await fetchFromProviderProxy(
           "getInstructions",
           ministryId,

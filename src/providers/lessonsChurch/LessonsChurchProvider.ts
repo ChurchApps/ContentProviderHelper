@@ -71,7 +71,6 @@ export class LessonsChurchProvider implements IProvider {
 
   async browse(path?: string | null, _auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const { segments, depth } = parsePath(path);
-    console.log("[LessonsChurchProvider.browse] path:", path, "depth:", depth, "segments:", segments);
 
     if (depth === 0) {
       return [
@@ -158,7 +157,7 @@ export class LessonsChurchProvider implements IProvider {
     const lessonImage = lessonResponse?.image as string | undefined;
 
     const venues = Array.isArray(response) ? response : [];
-    const result = venues.map((v) => ({
+    return venues.map((v) => ({
       type: "folder" as const,
       id: v.id as string,
       title: v.name as string,
@@ -166,8 +165,6 @@ export class LessonsChurchProvider implements IProvider {
       isLeaf: true,
       path: `${currentPath}/${v.id}`
     }));
-    console.log("[LessonsChurchProvider.getVenues] returning:", result.map(r => ({ id: r.id, title: r.title, isLeaf: r.isLeaf })));
-    return result;
   }
 
   private async getPlaylistFiles(venueId: string): Promise<ContentItem[]> {

@@ -3,7 +3,7 @@
  * Helper classes for interacting with third party content providers
  */
 
-export const VERSION = "0.0.1";
+export const VERSION = "0.0.4";
 
 // Interfaces
 export * from "./interfaces";

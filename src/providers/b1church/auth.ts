@@ -34,26 +34,15 @@ export async function exchangeCodeForTokensWithPKCE(config: ContentProviderConfi
     const params = { grant_type: "authorization_code", code, client_id: config.clientId, code_verifier: codeVerifier, redirect_uri: redirectUri };
 
     const tokenUrl = `${config.oauthBase}/token`;
-    console.log(`B1Church PKCE token exchange request to: ${tokenUrl}`);
-    console.log(`  - client_id: ${config.clientId}`);
-    console.log(`  - redirect_uri: ${redirectUri}`);
-    console.log(`  - code: ${code.substring(0, 10)}...`);
-
     const response = await fetch(tokenUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(params) });
 
-    console.log(`B1Church token response status: ${response.status}`);
-
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`B1Church token exchange failed: ${response.status} - ${errorText}`);
       return null;
     }
 
     const data = await response.json();
-    console.log(`B1Church token exchange successful, got access_token: ${!!data.access_token}`);
     return { access_token: data.access_token, refresh_token: data.refresh_token, token_type: data.token_type || "Bearer", created_at: Math.floor(Date.now() / 1000), expires_in: data.expires_in, scope: data.scope || config.scopes.join(" ") };
-  } catch (error) {
-    console.error("B1Church token exchange error:", error);
+  } catch {
     return null;
   }
 }
@@ -63,26 +52,15 @@ export async function exchangeCodeForTokensWithSecret(config: ContentProviderCon
     const params = { grant_type: "authorization_code", code, client_id: config.clientId, client_secret: clientSecret, redirect_uri: redirectUri };
 
     const tokenUrl = `${config.oauthBase}/token`;
-    console.log(`B1Church token exchange request to: ${tokenUrl}`);
-    console.log(`  - client_id: ${config.clientId}`);
-    console.log(`  - redirect_uri: ${redirectUri}`);
-    console.log(`  - code: ${code.substring(0, 10)}...`);
-
     const response = await fetch(tokenUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(params) });
 
-    console.log(`B1Church token response status: ${response.status}`);
-
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`B1Church token exchange failed: ${response.status} - ${errorText}`);
       return null;
     }
 
     const data = await response.json();
-    console.log(`B1Church token exchange successful, got access_token: ${!!data.access_token}`);
     return { access_token: data.access_token, refresh_token: data.refresh_token, token_type: data.token_type || "Bearer", created_at: Math.floor(Date.now() / 1000), expires_in: data.expires_in, scope: data.scope || config.scopes.join(" ") };
-  } catch (error) {
-    console.error("B1Church token exchange error:", error);
+  } catch {
     return null;
   }
 }
@@ -109,14 +87,11 @@ export async function initiateDeviceFlow(config: ContentProviderConfig): Promise
     const response = await fetch(`${config.oauthBase}${config.deviceAuthEndpoint}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ client_id: config.clientId, scope: config.scopes.join(" ") }) });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`B1Church device authorize failed: ${response.status} - ${errorText}`);
       return null;
     }
 
     return await response.json();
-  } catch (error) {
-    console.error("B1Church device flow initiation error:", error);
+  } catch {
     return null;
   }
 }
