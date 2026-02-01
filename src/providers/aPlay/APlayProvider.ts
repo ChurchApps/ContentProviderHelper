@@ -1,4 +1,4 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities, MediaLicenseResult, IProvider, AuthType } from "../../interfaces";
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities, MediaLicenseResult, IProvider, AuthType, Instructions, InstructionItem } from "../../interfaces";
 import { detectMediaType } from "../../utils";
 import { parsePath } from "../../pathUtils";
 import { ApiHelper } from "../../helpers";
@@ -28,7 +28,7 @@ export class APlayProvider implements IProvider {
 
   readonly requiresAuth = true;
   readonly authTypes: AuthType[] = ["oauth_pkce"];
-  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: false, instructions: false, mediaLicensing: true };
+  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: true, instructions: true, mediaLicensing: true };
 
   async browse(path?: string | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const { segments, depth } = parsePath(path);
@@ -270,6 +270,67 @@ export class APlayProvider implements IProvider {
 
     const presentations: PlanPresentation[] = files.map(f => ({ id: f.id, name: f.title, actionType: "play" as const, files: [f] }));
     return { id: libraryId, name: title, sections: [{ id: `section-${libraryId}`, name: title, presentations }], allFiles: files };
+  }
+
+  async getPlaylist(path: string, auth?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
+    const { segments, depth } = parsePath(path);
+
+    if (depth < 4 || segments[0] !== "modules") return null;
+
+    let libraryId: string;
+
+    // /modules/{moduleId}/products/{productId}/{libraryId}
+    if (segments[2] === "products" && depth === 5) {
+      libraryId = segments[4];
+    }
+    // /modules/{moduleId}/libraries/{libraryId}
+    else if (segments[2] === "libraries" && depth === 4) {
+      libraryId = segments[3];
+    } else {
+      return null;
+    }
+
+    const files = await this.getMediaFiles(libraryId, auth) as ContentFile[];
+    return files.length > 0 ? files : null;
+  }
+
+  async getInstructions(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
+    const { segments, depth } = parsePath(path);
+
+    if (depth < 4 || segments[0] !== "modules") return null;
+
+    let libraryId: string;
+
+    // /modules/{moduleId}/products/{productId}/{libraryId}
+    if (segments[2] === "products" && depth === 5) {
+      libraryId = segments[4];
+    }
+    // /modules/{moduleId}/libraries/{libraryId}
+    else if (segments[2] === "libraries" && depth === 4) {
+      libraryId = segments[3];
+    } else {
+      return null;
+    }
+
+    const files = await this.getMediaFiles(libraryId, auth) as ContentFile[];
+    if (files.length === 0) return null;
+
+    const fileItems: InstructionItem[] = files.map(file => ({
+      id: file.id,
+      itemType: "file",
+      label: file.title,
+      embedUrl: file.url
+    }));
+
+    return {
+      venueName: "Library",
+      items: [{
+        id: `section-${libraryId}`,
+        itemType: "section",
+        label: "Content",
+        children: fileItems
+      }]
+    };
   }
 
   async checkMediaLicense(mediaId: string, auth?: ContentProviderAuthData | null): Promise<MediaLicenseResult | null> {

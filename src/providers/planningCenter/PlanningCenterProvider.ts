@@ -1,4 +1,4 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, ProviderCapabilities, IProvider, AuthType } from "../../interfaces";
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, ProviderCapabilities, IProvider, AuthType, Instructions, InstructionItem } from "../../interfaces";
 import { detectMediaType } from "../../utils";
 import { parsePath } from "../../pathUtils";
 import { ApiHelper } from "../../helpers";
@@ -30,7 +30,7 @@ export class PlanningCenterProvider implements IProvider {
 
   readonly requiresAuth = true;
   readonly authTypes: AuthType[] = ["oauth_pkce"];
-  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: false, instructions: false, mediaLicensing: false };
+  readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: true, instructions: true, mediaLicensing: false };
 
   async browse(path?: string | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const { segments, depth } = parsePath(path);
@@ -262,5 +262,48 @@ export class PlanningCenterProvider implements IProvider {
   private formatDate(dateString: string): string {
     const date = new Date(dateString);
     return date.toISOString().slice(0, 10);
+  }
+
+  async getPlaylist(path: string, auth?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
+    const plan = await this.getPresentations(path, auth);
+    if (!plan) return null;
+    return plan.allFiles.length > 0 ? plan.allFiles : null;
+  }
+
+  async getInstructions(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
+    const plan = await this.getPresentations(path, auth);
+    if (!plan) return null;
+
+    const sectionItems: InstructionItem[] = plan.sections.map(section => {
+      const actionItems: InstructionItem[] = section.presentations.map(pres => {
+        const fileItems: InstructionItem[] = pres.files.map(file => ({
+          id: file.id,
+          itemType: "file",
+          label: file.title,
+          embedUrl: file.url
+        }));
+
+        return {
+          id: pres.id,
+          itemType: "action",
+          relatedId: pres.id,
+          label: pres.name,
+          description: pres.actionType,
+          children: fileItems.length > 0 ? fileItems : undefined
+        };
+      });
+
+      return {
+        id: section.id,
+        itemType: "section",
+        label: section.name,
+        children: actionItems
+      };
+    });
+
+    return {
+      venueName: plan.name,
+      items: sectionItems
+    };
   }
 }
