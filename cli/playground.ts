@@ -6,7 +6,7 @@ import ora from 'ora';
 import {
   getAvailableProviders,
   getProvider,
-  ContentProvider,
+  IProvider,
   ContentFolder,
   ContentItem,
   ContentFile,
@@ -14,7 +14,11 @@ import {
   isContentFolder,
   isContentFile,
   ProviderInfo,
+  DeviceFlowHelper,
 } from '../src/index.js';
+
+// Device flow helper for providers that support it
+const deviceFlowHelper = new DeviceFlowHelper();
 import {
   displayContentTable,
   displayPlaylist,
@@ -32,7 +36,7 @@ import {
 
 // App state
 interface CliState {
-  currentProvider: ContentProvider | null;
+  currentProvider: IProvider | null;
   currentAuth: ContentProviderAuthData | null;
   currentPath: string;
   breadcrumbTitles: string[];
@@ -144,7 +148,7 @@ async function handleProviderSelection(providerId: string): Promise<void> {
   }
 
   // Check if auth is needed
-  if (!provider.requiresAuth()) {
+  if (!provider.requiresAuth) {
     // Public API - no auth needed
     state.currentProvider = provider;
     state.currentAuth = null;
@@ -172,7 +176,7 @@ async function handleProviderSelection(providerId: string): Promise<void> {
   }
 
   // Form login auth
-  if (provider.getAuthTypes().includes('form_login')) {
+  if (provider.authTypes.includes('form_login')) {
     const auth = await handleFormLogin(provider);
     if (auth) {
       state.currentProvider = provider;
@@ -193,10 +197,10 @@ async function handleProviderSelection(providerId: string): Promise<void> {
 /**
  * Handle device flow authentication
  */
-async function handleDeviceFlow(provider: ContentProvider): Promise<ContentProviderAuthData | null> {
+async function handleDeviceFlow(provider: IProvider): Promise<ContentProviderAuthData | null> {
   const spinner = ora('Initiating device authorization...').start();
 
-  const deviceAuth = await provider.initiateDeviceFlow();
+  const deviceAuth = await deviceFlowHelper.initiateDeviceFlow(provider.config);
   if (!deviceAuth) {
     spinner.fail('Failed to initiate device flow');
     return null;
@@ -221,10 +225,10 @@ async function handleDeviceFlow(provider: ContentProvider): Promise<ContentProvi
   const baseInterval = deviceAuth.interval || 5;
 
   while (Date.now() < expiresAt) {
-    const delay = provider.calculatePollDelay(baseInterval, slowDownCount);
+    const delay = deviceFlowHelper.calculatePollDelay(baseInterval, slowDownCount);
     await sleep(delay);
 
-    const result = await provider.pollDeviceFlowToken(deviceAuth.device_code);
+    const result = await deviceFlowHelper.pollDeviceFlowToken(provider.config, deviceAuth.device_code);
 
     if (result === null) {
       pollSpinner.fail('Authorization denied or expired');
@@ -248,7 +252,7 @@ async function handleDeviceFlow(provider: ContentProvider): Promise<ContentProvi
 /**
  * Handle form-based login authentication
  */
-async function handleFormLogin(provider: ContentProvider): Promise<ContentProviderAuthData | null> {
+async function handleFormLogin(provider: IProvider): Promise<ContentProviderAuthData | null> {
   console.log(chalk.cyan('\n' + '═'.repeat(50)));
   console.log(chalk.bold(`  Login to ${provider.name}`));
   console.log(chalk.cyan('═'.repeat(50)) + '\n');
@@ -420,7 +424,7 @@ async function handleFolderSelection(folder: ContentFolder): Promise<void> {
 async function showViewModeMenu(folder: ContentFolder): Promise<void> {
   if (!state.currentProvider) return;
 
-  const caps = state.currentProvider.getCapabilities();
+  const caps = state.currentProvider.capabilities;
   const path = folder.path;
   const title = folder.title;
 
@@ -428,7 +432,7 @@ async function showViewModeMenu(folder: ContentFolder): Promise<void> {
     {
       name: '📋 Playlist - Simple list of media files',
       value: 'playlist',
-      disabled: !caps.browse && 'Not supported',
+      disabled: !caps.playlist && !caps.browse && 'Not supported',
     },
     {
       name: '🎬 Presentations - Structured sections with files',
@@ -436,14 +440,9 @@ async function showViewModeMenu(folder: ContentFolder): Promise<void> {
       disabled: !caps.presentations && 'Not supported',
     },
     {
-      name: '📖 Instructions - Headers and sections only',
+      name: '📖 Instructions - Full hierarchy with all actions',
       value: 'instructions',
       disabled: !caps.instructions && 'Not supported',
-    },
-    {
-      name: '📚 Expanded - Full hierarchy with all actions',
-      value: 'expanded',
-      disabled: !caps.expandedInstructions && 'Not supported',
     },
     { name: '← Cancel', value: 'cancel' },
   ];
@@ -461,10 +460,7 @@ async function showViewModeMenu(folder: ContentFolder): Promise<void> {
       await showPresentationsView(path, title);
       break;
     case 'instructions':
-      await showInstructionsView(path, title, false);
-      break;
-    case 'expanded':
-      await showInstructionsView(path, title, true);
+      await showInstructionsView(path, title);
       break;
     case 'cancel':
       await browseContent();
@@ -484,7 +480,7 @@ async function showPlaylistView(path: string, title: string): Promise<void> {
     // Try getPlaylist first, fall back to browse
     let files: ContentFile[] | null = null;
 
-    if (state.currentProvider.getCapabilities().playlist) {
+    if (state.currentProvider.capabilities.playlist && state.currentProvider.getPlaylist) {
       files = await state.currentProvider.getPlaylist(path, state.currentAuth);
     }
 
@@ -604,29 +600,29 @@ async function handlePlanMenu(plan: any): Promise<void> {
 /**
  * Show instructions view
  */
-async function showInstructionsView(path: string, title: string, expanded: boolean): Promise<void> {
+async function showInstructionsView(path: string, title: string): Promise<void> {
   if (!state.currentProvider) return;
 
-  const spinner = ora(`Loading ${expanded ? 'expanded ' : ''}instructions...`).start();
+  const spinner = ora('Loading instructions...').start();
 
   try {
-    const instructions = expanded
-      ? await state.currentProvider.getExpandedInstructions(path, state.currentAuth)
-      : await state.currentProvider.getInstructions(path, state.currentAuth);
+    const instructions = state.currentProvider.getInstructions
+      ? await state.currentProvider.getInstructions(path, state.currentAuth)
+      : null;
 
     spinner.stop();
 
     if (!instructions) {
-      showError(`This provider does not support ${expanded ? 'expanded ' : ''}instructions view`);
+      showError('This provider does not support instructions view');
       return;
     }
 
     state.currentPath = path;
     state.breadcrumbTitles.push(title);
     displayBreadcrumb(state.currentProvider.name, state.breadcrumbTitles);
-    displayInstructions(instructions, expanded);
+    displayInstructions(instructions, true);
 
-    await handleInstructionsMenu(instructions, expanded);
+    await handleInstructionsMenu(instructions);
   } catch (error) {
     spinner.stop();
     showError(`Failed to load instructions: ${error}`);
@@ -636,7 +632,7 @@ async function showInstructionsView(path: string, title: string, expanded: boole
 /**
  * Handle instructions menu actions
  */
-async function handleInstructionsMenu(instructions: any, expanded: boolean): Promise<void> {
+async function handleInstructionsMenu(instructions: any): Promise<void> {
   const choices = [
     { name: '📋 View as JSON', value: 'json' },
     { name: '← Back', value: 'back' },
@@ -649,8 +645,8 @@ async function handleInstructionsMenu(instructions: any, expanded: boolean): Pro
   });
 
   if (action === 'json') {
-    displayJson(instructions, `${expanded ? 'Expanded ' : ''}Instructions JSON`);
-    await handleInstructionsMenu(instructions, expanded);
+    displayJson(instructions, 'Instructions JSON');
+    await handleInstructionsMenu(instructions);
     return;
   }
 

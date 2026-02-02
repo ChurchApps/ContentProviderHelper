@@ -74,7 +74,8 @@ export class SignPresenterProvider implements IProvider {
       id: p.id as string,
       title: p.name as string,
       image: p.image as string | undefined,
-      path: `/playlists/${p.id}`
+      path: `/playlists/${p.id}`,
+      isLeaf: true
     }));
   }
 
