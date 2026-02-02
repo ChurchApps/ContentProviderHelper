@@ -316,4 +316,8 @@ export class HighVoltageKidsProvider implements IProvider {
     const match = title.match(/^(.+?)\s*\d+$/);
     return match ? match[1].trim() : title;
   }
+
+  supportsDeviceFlow(): boolean {
+    return false;
+  }
 }

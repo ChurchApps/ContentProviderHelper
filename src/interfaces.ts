@@ -218,6 +218,16 @@ export interface IProvider {
   browse(path?: string | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]>;
   getPresentations(path: string, auth?: ContentProviderAuthData | null): Promise<Plan | null>;
 
+  // Auth methods (required)
+  supportsDeviceFlow(): boolean;
+
+  // Auth methods (optional - only needed for providers that require auth)
+  generateCodeVerifier?(): string;
+  buildAuthUrl?(codeVerifier: string, redirectUri: string, state?: string): Promise<{ url: string; challengeMethod: string }>;
+  exchangeCodeForTokens?(code: string, codeVerifier: string, redirectUri: string): Promise<ContentProviderAuthData | null>;
+  initiateDeviceFlow?(): Promise<DeviceAuthorizationResponse | null>;
+  pollDeviceFlowToken?(deviceCode: string): Promise<DeviceFlowPollResult>;
+
   // Optional methods - providers can implement these if they have custom logic
   getPlaylist?(path: string, auth?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null>;
   getInstructions?(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null>;

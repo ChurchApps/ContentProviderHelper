@@ -410,4 +410,8 @@ export class B1ChurchProvider implements IProvider {
 
     return files;
   }
+
+  supportsDeviceFlow(): boolean {
+    return !!this.config.supportsDeviceFlow;
+  }
 }

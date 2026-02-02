@@ -224,4 +224,8 @@ export class BibleProjectProvider implements IProvider {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
   }
+
+  supportsDeviceFlow(): boolean {
+    return false;
+  }
 }

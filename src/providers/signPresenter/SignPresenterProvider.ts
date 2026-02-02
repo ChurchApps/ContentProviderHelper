@@ -1,7 +1,7 @@
-import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities, IProvider, AuthType, Instructions, InstructionItem } from "../../interfaces";
+import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities, IProvider, AuthType, Instructions, InstructionItem, DeviceAuthorizationResponse, DeviceFlowPollResult } from "../../interfaces";
 import { detectMediaType } from "../../utils";
 import { parsePath } from "../../pathUtils";
-import { ApiHelper } from "../../helpers";
+import { ApiHelper, OAuthHelper, DeviceFlowHelper } from "../../helpers";
 
 /**
  * SignPresenter Provider
@@ -12,6 +12,8 @@ import { ApiHelper } from "../../helpers";
  */
 export class SignPresenterProvider implements IProvider {
   private readonly apiHelper = new ApiHelper();
+  private readonly oauthHelper = new OAuthHelper();
+  private readonly deviceFlowHelper = new DeviceFlowHelper();
 
   private async apiRequest<T>(path: string, auth?: ContentProviderAuthData | null): Promise<T | null> {
     return this.apiHelper.apiRequest<T>(this.config, this.id, path, auth);
@@ -161,5 +163,30 @@ export class SignPresenterProvider implements IProvider {
         children: fileItems
       }]
     };
+  }
+
+  // Auth methods
+  supportsDeviceFlow(): boolean {
+    return this.deviceFlowHelper.supportsDeviceFlow(this.config);
+  }
+
+  generateCodeVerifier(): string {
+    return this.oauthHelper.generateCodeVerifier();
+  }
+
+  async buildAuthUrl(codeVerifier: string, redirectUri: string, state?: string): Promise<{ url: string; challengeMethod: string }> {
+    return this.oauthHelper.buildAuthUrl(this.config, codeVerifier, redirectUri, state || this.id);
+  }
+
+  async exchangeCodeForTokens(code: string, codeVerifier: string, redirectUri: string): Promise<ContentProviderAuthData | null> {
+    return this.oauthHelper.exchangeCodeForTokens(this.config, this.id, code, codeVerifier, redirectUri);
+  }
+
+  async initiateDeviceFlow(): Promise<DeviceAuthorizationResponse | null> {
+    return this.deviceFlowHelper.initiateDeviceFlow(this.config);
+  }
+
+  async pollDeviceFlowToken(deviceCode: string): Promise<DeviceFlowPollResult> {
+    return this.deviceFlowHelper.pollDeviceFlowToken(this.config, deviceCode);
   }
 }

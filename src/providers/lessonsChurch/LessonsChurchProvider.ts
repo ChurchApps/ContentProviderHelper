@@ -359,4 +359,8 @@ export class LessonsChurchProvider implements IProvider {
 
     return { id: venue.id || "", name: venue.lessonName || venue.name || "Plan", description: venue.lessonDescription, image: venue.lessonImage, sections, allFiles };
   }
+
+  supportsDeviceFlow(): boolean {
+    return false;
+  }
 }

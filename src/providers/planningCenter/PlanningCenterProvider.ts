@@ -305,4 +305,8 @@ export class PlanningCenterProvider implements IProvider {
       items: sectionItems
     };
   }
+
+  supportsDeviceFlow(): boolean {
+    return false;
+  }
 }

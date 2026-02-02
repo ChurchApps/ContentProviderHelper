@@ -313,4 +313,8 @@ export class APlayProvider implements IProvider {
       return { mediaId, status: "unknown", message: "Unable to verify license status" };
     }
   }
+
+  supportsDeviceFlow(): boolean {
+    return false;
+  }
 }
