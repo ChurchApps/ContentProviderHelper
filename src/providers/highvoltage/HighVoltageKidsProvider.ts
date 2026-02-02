@@ -1,5 +1,5 @@
 import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanSection, PlanPresentation, ProviderCapabilities, Instructions, InstructionItem, IProvider, AuthType } from "../../interfaces";
-import { createFile } from "../../utils";
+import { createFile, slugify } from "../../utils";
 import { parsePath } from "../../pathUtils";
 import { estimateDuration } from "../../durationUtils";
 import highVoltageData from "./data.json";
@@ -84,14 +84,14 @@ export class HighVoltageKidsProvider implements IProvider {
       .filter(collection => collection.folders.length > 0)
       .map(collection => ({
         type: "folder" as const,
-        id: this.slugify(collection.name),
+        id: slugify(collection.name),
         title: collection.name,
-        path: `/${this.slugify(collection.name)}`
+        path: `/${slugify(collection.name)}`
       }));
   }
 
   private getStudyFolders(collectionSlug: string, currentPath: string): ContentItem[] {
-    const collection = this.data.collections.find(c => this.slugify(c.name) === collectionSlug);
+    const collection = this.data.collections.find(c => slugify(c.name) === collectionSlug);
     if (!collection) return [];
 
     return collection.folders.map(study => ({
@@ -104,7 +104,7 @@ export class HighVoltageKidsProvider implements IProvider {
   }
 
   private getLessonFolders(collectionSlug: string, studyId: string, currentPath: string): ContentItem[] {
-    const collection = this.data.collections.find(c => this.slugify(c.name) === collectionSlug);
+    const collection = this.data.collections.find(c => slugify(c.name) === collectionSlug);
     if (!collection) return [];
 
     const study = collection.folders.find(s => s.id === studyId);
@@ -121,7 +121,7 @@ export class HighVoltageKidsProvider implements IProvider {
   }
 
   private getLessonFiles(collectionSlug: string, studyId: string, lessonId: string): ContentItem[] {
-    const collection = this.data.collections.find(c => this.slugify(c.name) === collectionSlug);
+    const collection = this.data.collections.find(c => slugify(c.name) === collectionSlug);
     if (!collection) return [];
 
     const study = collection.folders.find(s => s.id === studyId);
@@ -141,7 +141,7 @@ export class HighVoltageKidsProvider implements IProvider {
     const collectionSlug = segments[0];
     const studyId = segments[1];
 
-    const collection = this.data.collections.find(c => this.slugify(c.name) === collectionSlug);
+    const collection = this.data.collections.find(c => slugify(c.name) === collectionSlug);
     if (!collection) return null;
 
     const study = collection.folders.find(s => s.id === studyId);
@@ -185,7 +185,7 @@ export class HighVoltageKidsProvider implements IProvider {
     const collectionSlug = segments[0];
     const studyId = segments[1];
 
-    const collection = this.data.collections.find(c => this.slugify(c.name) === collectionSlug);
+    const collection = this.data.collections.find(c => slugify(c.name) === collectionSlug);
     if (!collection) return null;
 
     const study = collection.folders.find(s => s.id === studyId);
@@ -221,7 +221,7 @@ export class HighVoltageKidsProvider implements IProvider {
     const collectionSlug = segments[0];
     const studyId = segments[1];
 
-    const collection = this.data.collections.find(c => this.slugify(c.name) === collectionSlug);
+    const collection = this.data.collections.find(c => slugify(c.name) === collectionSlug);
     if (!collection) return null;
 
     const study = collection.folders.find(s => s.id === studyId);
@@ -252,13 +252,6 @@ export class HighVoltageKidsProvider implements IProvider {
     }
 
     return null;
-  }
-
-  private slugify(text: string): string {
-    return text
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
   }
 
   private groupFilesIntoActions(files: LessonFileJson[]): InstructionItem[] {

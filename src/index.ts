@@ -3,7 +3,7 @@
  * Helper classes for interacting with third party content providers
  */
 
-export const VERSION = "0.0.4";
+export const VERSION = "0.0.5";
 
 // Interfaces
 export * from "./interfaces";
@@ -37,10 +37,6 @@ export {
 
 // Format resolver
 export { FormatResolver, type FormatResolverOptions, type ResolvedFormatMeta } from "./FormatResolver";
-
-// Base class (for extending with custom providers)
-// @deprecated Use IProvider interface instead. ContentProvider will be removed in a future version.
-export { ContentProvider } from "./ContentProvider";
 
 // Helper classes (for standalone use or custom providers)
 export { OAuthHelper, TokenHelper, DeviceFlowHelper, ApiHelper } from "./helpers";
