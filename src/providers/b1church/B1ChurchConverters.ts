@@ -1,7 +1,7 @@
 import { ContentItem, ContentFile, FeedVenueInterface, PlanPresentation, InstructionItem, VenueActionsResponseInterface } from "../../interfaces";
 import { detectMediaType } from "../../utils";
-import { B1Ministry, B1PlanType, B1Plan, B1PlanItem, ArrangementKeyResponse } from "./types";
-import { fetchArrangementKey } from "./api";
+import { B1Ministry, B1PlanType, B1Plan, B1PlanItem, ArrangementKeyResponse } from "./B1ChurchTypes";
+import { fetchArrangementKey } from "./B1ChurchApi";
 
 export function ministryToFolder(ministry: B1Ministry): ContentItem {
   return { type: "folder" as const, id: ministry.id, title: ministry.name, path: "", image: ministry.photoUrl };

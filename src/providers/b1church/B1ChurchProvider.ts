@@ -2,10 +2,10 @@ import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFil
 import { parsePath } from "../../pathUtils";
 import { navigateToPath } from "../../instructionPathUtils";
 import { ApiHelper } from "../../helpers";
-import { B1PlanItem } from "./types";
-import * as auth from "./auth";
-import { fetchMinistries, fetchPlanTypes, fetchPlans, fetchVenueFeed, fetchVenueActions, fetchFromProviderProxy, API_BASE } from "./api";
-import { ministryToFolder, planTypeToFolder, planToFolder, planItemToPresentation, planItemToInstruction, getFilesFromVenueFeed, getFileFromProviderFileItem, buildSectionActionsMap } from "./converters";
+import { B1PlanItem } from "./B1ChurchTypes";
+import * as B1ChurchAuth from "./B1ChurchAuth";
+import { fetchMinistries, fetchPlanTypes, fetchPlans, fetchVenueFeed, fetchVenueActions, fetchFromProviderProxy, API_BASE } from "./B1ChurchApi";
+import { ministryToFolder, planTypeToFolder, planToFolder, planItemToPresentation, planItemToInstruction, getFilesFromVenueFeed, getFileFromProviderFileItem, buildSectionActionsMap } from "./B1ChurchConverters";
 
 function isExternalProviderItem(item: B1PlanItem): boolean {
   // An item is external if it has a non-b1church providerId and a providerPath
@@ -37,27 +37,27 @@ export class B1ChurchProvider implements IProvider {
   readonly capabilities: ProviderCapabilities = { browse: true, presentations: true, playlist: true, instructions: true, mediaLicensing: false };
 
   async buildAuthUrl(codeVerifier: string, redirectUri: string, state?: string): Promise<{ url: string; challengeMethod: string }> {
-    return auth.buildB1AuthUrl(this.config, this.appBase, redirectUri, codeVerifier, state);
+    return B1ChurchAuth.buildB1AuthUrl(this.config, this.appBase, redirectUri, codeVerifier, state);
   }
 
   async exchangeCodeForTokensWithPKCE(code: string, redirectUri: string, codeVerifier: string): Promise<ContentProviderAuthData | null> {
-    return auth.exchangeCodeForTokensWithPKCE(this.config, code, redirectUri, codeVerifier);
+    return B1ChurchAuth.exchangeCodeForTokensWithPKCE(this.config, code, redirectUri, codeVerifier);
   }
 
   async exchangeCodeForTokensWithSecret(code: string, redirectUri: string, clientSecret: string): Promise<ContentProviderAuthData | null> {
-    return auth.exchangeCodeForTokensWithSecret(this.config, code, redirectUri, clientSecret);
+    return B1ChurchAuth.exchangeCodeForTokensWithSecret(this.config, code, redirectUri, clientSecret);
   }
 
   async refreshTokenWithSecret(authData: ContentProviderAuthData, clientSecret: string): Promise<ContentProviderAuthData | null> {
-    return auth.refreshTokenWithSecret(this.config, authData, clientSecret);
+    return B1ChurchAuth.refreshTokenWithSecret(this.config, authData, clientSecret);
   }
 
   async initiateDeviceFlow(): Promise<DeviceAuthorizationResponse | null> {
-    return auth.initiateDeviceFlow(this.config);
+    return B1ChurchAuth.initiateDeviceFlow(this.config);
   }
 
   async pollDeviceFlowToken(deviceCode: string): Promise<DeviceFlowPollResult> {
-    return auth.pollDeviceFlowToken(this.config, deviceCode);
+    return B1ChurchAuth.pollDeviceFlowToken(this.config, deviceCode);
   }
 
   async browse(path?: string | null, authData?: ContentProviderAuthData | null): Promise<ContentItem[]> {

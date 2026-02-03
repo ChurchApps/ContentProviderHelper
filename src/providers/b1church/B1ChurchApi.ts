@@ -1,5 +1,5 @@
 import { ContentProviderAuthData, FeedVenueInterface, ContentItem, Plan, ContentFile, Instructions, VenueActionsResponseInterface } from "../../interfaces";
-import { ArrangementKeyResponse, B1Ministry, B1PlanType, B1Plan } from "./types";
+import { ArrangementKeyResponse, B1Ministry, B1PlanType, B1Plan } from "./B1ChurchTypes";
 
 export const API_BASE = "https://api.churchapps.org";
 
