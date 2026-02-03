@@ -38,6 +38,7 @@ export interface B1PlanItem {
   providerId?: string;
   providerPath?: string;
   providerContentPath?: string;
+  link?: string;
   children?: B1PlanItem[];
 }
 

@@ -2,13 +2,13 @@
 export { B1ChurchProvider } from "./B1ChurchProvider";
 
 // Types
-export * from "./types";
+export * from "./B1ChurchTypes";
 
 // Auth helpers (for advanced usage)
-export * as b1Auth from "./auth";
+export * as B1ChurchAuth from "./B1ChurchAuth";
 
 // API helpers (for advanced usage)
-export * as b1Api from "./api";
+export * as B1ChurchApi from "./B1ChurchApi";
 
 // Converters (for advanced usage)
-export * as b1Converters from "./converters";
+export * as B1ChurchConverters from "./B1ChurchConverters";

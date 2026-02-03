@@ -22,14 +22,6 @@ function mapItemTypeToActionType(itemType?: string): "play" | "add-on" | "other"
   }
 }
 
-function mapActionTypeToItemType(actionType: "play" | "add-on" | "other"): string {
-  switch (actionType) {
-    case "play": return "action";
-    case "add-on": return "addon";
-    default: return "item";
-  }
-}
-
 // LOSSLESS: All file data preserved, only hierarchy lost
 export function presentationsToPlaylist(plan: Plan): ContentFile[] {
   if (plan.allFiles && plan.allFiles.length > 0) {
@@ -43,6 +35,14 @@ export function presentationsToPlaylist(plan: Plan): ContentFile[] {
     }
   }
   return files;
+}
+
+function mapActionTypeToItemType(actionType: "play" | "add-on" | "other"): string {
+  switch (actionType) {
+    case "play": return "action";
+    case "add-on": return "addon";
+    default: return "item";
+  }
 }
 
 // LOSSLESS: All hierarchy and file data preserved

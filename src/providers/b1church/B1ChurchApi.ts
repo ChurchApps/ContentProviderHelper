@@ -1,5 +1,5 @@
-import { ContentProviderAuthData, FeedVenueInterface, ContentItem, Plan, ContentFile, Instructions } from "../../interfaces";
-import { ArrangementKeyResponse, B1Ministry, B1PlanType, B1Plan } from "./types";
+import { ContentProviderAuthData, FeedVenueInterface, ContentItem, Plan, ContentFile, Instructions, VenueActionsResponseInterface } from "../../interfaces";
+import { ArrangementKeyResponse, B1Ministry, B1PlanType, B1Plan } from "./B1ChurchTypes";
 
 export const API_BASE = "https://api.churchapps.org";
 
@@ -46,6 +46,28 @@ export async function fetchPlans(planTypeId: string, auth: ContentProviderAuthDa
 export async function fetchVenueFeed(venueId: string): Promise<FeedVenueInterface | null> {
   try {
     const url = `${LESSONS_API_BASE}/venues/public/feed/${venueId}`;
+    const response = await fetch(url, { method: "GET", headers: { Accept: "application/json" } });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchVenuePlanItems(venueId: string): Promise<{ venueName?: string; items?: Record<string, unknown>[] } | null> {
+  try {
+    const url = `${LESSONS_API_BASE}/venues/public/planItems/${venueId}`;
+    const response = await fetch(url, { method: "GET", headers: { Accept: "application/json" } });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchVenueActions(venueId: string): Promise<VenueActionsResponseInterface | null> {
+  try {
+    const url = `${LESSONS_API_BASE}/venues/public/actions/${venueId}`;
     const response = await fetch(url, { method: "GET", headers: { Accept: "application/json" } });
     if (!response.ok) return null;
     return await response.json();

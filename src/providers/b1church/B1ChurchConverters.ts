@@ -1,7 +1,7 @@
-import { ContentItem, ContentFile, FeedVenueInterface, PlanPresentation, InstructionItem } from "../../interfaces";
+import { ContentItem, ContentFile, FeedVenueInterface, PlanPresentation, InstructionItem, VenueActionsResponseInterface } from "../../interfaces";
 import { detectMediaType } from "../../utils";
-import { B1Ministry, B1PlanType, B1Plan, B1PlanItem, ArrangementKeyResponse } from "./types";
-import { fetchArrangementKey } from "./api";
+import { B1Ministry, B1PlanType, B1Plan, B1PlanItem, ArrangementKeyResponse } from "./B1ChurchTypes";
+import { fetchArrangementKey } from "./B1ChurchApi";
 
 export function ministryToFolder(ministry: B1Ministry): ContentItem {
   return { type: "folder" as const, id: ministry.id, title: ministry.name, path: "", image: ministry.photoUrl };
@@ -27,7 +27,20 @@ export async function planItemToPresentation(item: B1PlanItem, venueFeed: FeedVe
     if (songData) return arrangementToPresentation(item, songData);
   }
 
-  if ((itemType === "lessonSection" || itemType === "section" || itemType === "lessonAction" || itemType === "action" || itemType === "lessonAddOn" || itemType === "addon") && venueFeed) {
+  // Handle providerFile/providerPresentation items with a direct link
+  if ((itemType === "providerFile" || itemType === "providerPresentation") && item.link) {
+    const file: ContentFile = {
+      type: "file",
+      id: item.relatedId || item.id,
+      title: item.label || "File",
+      mediaType: detectMediaType(item.link),
+      url: item.link,
+      seconds: item.seconds
+    };
+    return { id: item.id, name: item.label || "File", actionType: "play", files: [file] };
+  }
+
+  if ((itemType === "lessonSection" || itemType === "section" || itemType === "providerSection" || itemType === "lessonAction" || itemType === "action" || itemType === "lessonAddOn" || itemType === "addon") && venueFeed) {
     const files = getFilesFromVenueFeed(venueFeed, itemType, item.relatedId);
     if (files.length > 0) return { id: item.id, name: item.label || "Lesson Content", actionType: (itemType === "lessonAddOn" || itemType === "addon") ? "add-on" : "play", files };
   }
@@ -49,7 +62,7 @@ export function getFilesFromVenueFeed(venueFeed: FeedVenueInterface, itemType: s
 
   if (!relatedId) return files;
 
-  if (itemType === "lessonSection" || itemType === "section") {
+  if (itemType === "lessonSection" || itemType === "section" || itemType === "providerSection") {
     for (const section of venueFeed.sections || []) {
       if (section.id === relatedId) {
         for (const action of section.actions || []) {
@@ -79,6 +92,19 @@ export function convertFeedFiles(feedFiles: Array<{ id?: string; name?: string; 
   return feedFiles.filter(f => f.url).map(f => ({ type: "file" as const, id: f.id || "", title: f.name || "", mediaType: detectMediaType(f.url || "", f.fileType), image: thumbnailImage, url: f.url || "", seconds: f.seconds, streamUrl: f.streamUrl }));
 }
 
+export function getFileFromProviderFileItem(item: B1PlanItem): ContentFile | null {
+  // Handle both providerFile and providerPresentation items with direct links
+  if ((item.itemType !== "providerFile" && item.itemType !== "providerPresentation") || !item.link) return null;
+  return {
+    type: "file",
+    id: item.relatedId || item.id,
+    title: item.label || "File",
+    mediaType: detectMediaType(item.link),
+    url: item.link,
+    seconds: item.seconds
+  };
+}
+
 export function planItemToInstruction(item: B1PlanItem): InstructionItem {
   // Convert B1 API itemTypes to standardized short names
   let itemType: string | undefined = item.itemType;
@@ -88,7 +114,7 @@ export function planItemToInstruction(item: B1PlanItem): InstructionItem {
     case "lessonAddOn": itemType = "addon"; break;
   }
 
-  return { id: item.id, itemType, relatedId: item.relatedId, label: item.label, description: item.description, seconds: item.seconds, children: item.children?.map(planItemToInstruction) };
+  return { id: item.id, itemType, relatedId: item.relatedId, label: item.label, description: item.description, seconds: item.seconds, embedUrl: item.link, children: item.children?.map(planItemToInstruction) };
 }
 
 /**
@@ -133,4 +159,95 @@ export function venueFeedToDefaultPlanItems(venueFeed: FeedVenueInterface): B1Pl
   }
 
   return headerItem.children!.length > 0 ? [headerItem] : [];
+}
+
+function getEmbedUrl(itemType?: string, relatedId?: string): string | undefined {
+  if (!relatedId) return undefined;
+  const baseUrl = "https://lessons.church";
+  switch (itemType) {
+    case "action": return `${baseUrl}/embed/action/${relatedId}`;
+    case "addon": return `${baseUrl}/embed/addon/${relatedId}`;
+    case "section": return `${baseUrl}/embed/section/${relatedId}`;
+    default: return undefined;
+  }
+}
+
+export function buildSectionActionsMap(actionsResponse: VenueActionsResponseInterface | null): Map<string, InstructionItem[]> {
+  const sectionActionsMap = new Map<string, InstructionItem[]>();
+  if (actionsResponse?.sections) {
+    for (const section of actionsResponse.sections) {
+      if (section.id && section.actions) {
+        sectionActionsMap.set(section.id, section.actions.map(action => {
+          const embedUrl = getEmbedUrl("action", action.id);
+          const seconds = action.seconds ?? 10;
+          return {
+            id: action.id,
+            itemType: "action",
+            relatedId: action.id,
+            label: action.name,
+            seconds,
+            children: [{
+              id: action.id + "-file",
+              itemType: "file",
+              label: action.name,
+              seconds,
+              embedUrl
+            }]
+          };
+        }));
+      }
+    }
+  }
+  return sectionActionsMap;
+}
+
+export function processVenueInstructionItem(item: Record<string, unknown>, sectionActionsMap: Map<string, InstructionItem[]>): InstructionItem {
+  const relatedId = item.relatedId as string | undefined;
+  let itemType = item.itemType as string | undefined;
+
+  // Normalize item types
+  if (itemType === "lessonSection") itemType = "section";
+  if (itemType === "lessonAction") itemType = "action";
+  if (itemType === "lessonAddOn") itemType = "addon";
+
+  const children = item.children as Record<string, unknown>[] | undefined;
+  let processedChildren: InstructionItem[] | undefined;
+
+  if (children) {
+    processedChildren = children.map(child => {
+      const childRelatedId = child.relatedId as string | undefined;
+      let childItemType = child.itemType as string | undefined;
+
+      // Normalize child item types
+      if (childItemType === "lessonSection") childItemType = "section";
+      if (childItemType === "lessonAction") childItemType = "action";
+      if (childItemType === "lessonAddOn") childItemType = "addon";
+
+      // If this child is a section with actions in the map, expand it
+      if (childRelatedId && sectionActionsMap.has(childRelatedId)) {
+        return {
+          id: child.id as string | undefined,
+          itemType: childItemType,
+          relatedId: childRelatedId,
+          label: child.label as string | undefined,
+          description: child.description as string | undefined,
+          seconds: child.seconds as number | undefined,
+          children: sectionActionsMap.get(childRelatedId),
+          embedUrl: getEmbedUrl(childItemType, childRelatedId)
+        };
+      }
+      return processVenueInstructionItem(child, sectionActionsMap);
+    });
+  }
+
+  return {
+    id: item.id as string | undefined,
+    itemType,
+    relatedId,
+    label: item.label as string | undefined,
+    description: item.description as string | undefined,
+    seconds: item.seconds as number | undefined,
+    children: processedChildren,
+    embedUrl: getEmbedUrl(itemType, relatedId)
+  };
 }
