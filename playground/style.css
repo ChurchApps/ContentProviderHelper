@@ -1043,6 +1043,15 @@ h2 {
   background: #1a1a3e;
 }
 
+.instruction-thumb {
+  width: 48px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 4px;
+  float: left;
+  margin-right: 0.75rem;
+}
+
 .instruction-content {
   display: flex;
   align-items: center;

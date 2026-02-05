@@ -753,8 +753,8 @@ function renderContent(items: ContentItem[]) {
 }
 
 function renderFolder(folder: ContentFolder): string {
-  const imageHtml = folder.image
-    ? `<img class="card-image" src="${folder.image}" alt="${folder.title}" onerror="this.outerHTML='<div class=\\'card-image placeholder\\'>📁</div>'">`
+  const imageHtml = folder.thumbnail
+    ? `<img class="card-image" src="${folder.thumbnail}" alt="${folder.title}" onerror="this.outerHTML='<div class=\\'card-image placeholder\\'>📁</div>'">`
     : '<div class="card-image placeholder">📁</div>';
 
   return `
@@ -767,8 +767,8 @@ function renderFolder(folder: ContentFolder): string {
 }
 
 function renderFile(file: ContentItem & { type: 'file' }): string {
-  const imageHtml = file.image
-    ? `<img class="card-image" src="${file.image}" alt="${file.title}" onerror="this.outerHTML='<div class=\\'card-image placeholder\\'>${file.mediaType === 'video' ? '🎬' : '🖼️'}</div>'">`
+  const imageHtml = file.thumbnail
+    ? `<img class="card-image" src="${file.thumbnail}" alt="${file.title}" onerror="this.outerHTML='<div class=\\'card-image placeholder\\'>${file.mediaType === 'video' ? '🎬' : '🖼️'}</div>'">`
     : `<div class="card-image placeholder">${file.mediaType === 'video' ? '🎬' : '🖼️'}</div>`;
 
   return `
@@ -1011,8 +1011,8 @@ function renderPlaylistView(playlist: ContentFile[], meta: ResolvedFormatMeta) {
   `;
 
   playlist.forEach((file, index) => {
-    const imageHtml = file.image
-      ? `<img class="file-thumb" src="${file.image}" alt="${file.title}" onerror="this.outerHTML='<span class=\\'file-thumb-icon\\'>${file.mediaType === 'video' ? '🎬' : '🖼️'}</span>'">`
+    const imageHtml = file.thumbnail
+      ? `<img class="file-thumb" src="${file.thumbnail}" alt="${file.title}" onerror="this.outerHTML='<span class=\\'file-thumb-icon\\'>${file.mediaType === 'video' ? '🎬' : '🖼️'}</span>'">`
       : `<span class="file-thumb-icon">${file.mediaType === 'video' ? '🎬' : '🖼️'}</span>`;
 
     html += `
@@ -1052,7 +1052,7 @@ function renderPlanView(plan: Plan, meta: ResolvedFormatMeta) {
   let html = `
     <div class="plan-view">
       <div class="plan-header">
-        ${plan.image ? `<img class="plan-image" src="${plan.image}" alt="${plan.name}">` : ''}
+        ${plan.thumbnail ? `<img class="plan-image" src="${plan.thumbnail}" alt="${plan.name}">` : ''}
         <div class="plan-info">
           <h2>${plan.name}</h2>
           ${renderFormatSourceBadge(meta)}
@@ -1194,8 +1194,13 @@ function renderInstructionsView(instructions: Instructions, _isExpanded: boolean
                      item.itemType === 'lessonAction' ? '▶️' :
                      item.itemType === 'lessonAddOn' ? '➕' : '📄';
 
+    const thumbHtml = item.thumbnail
+      ? `<img class="instruction-thumb" src="${item.thumbnail}" alt="${item.label || ''}" onerror="this.style.display='none'">`
+      : '';
+
     let itemHtml = `
       <div class="instruction-item" style="margin-left: ${indent}px;" data-embed-url="${item.embedUrl || ''}">
+        ${thumbHtml}
         <div class="instruction-content">
           <span class="instruction-icon">${typeIcon}</span>
           <span class="instruction-label">${item.label || 'Untitled'}</span>

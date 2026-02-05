@@ -56,7 +56,7 @@ export interface ContentFolder {
   type: "folder";
   id: string;
   title: string;
-  image?: string;
+  thumbnail?: string;
   isLeaf?: boolean;
   path: string;
 }
@@ -66,7 +66,7 @@ export interface ContentFile {
   id: string;
   title: string;
   mediaType: "video" | "image";
-  image?: string;
+  thumbnail?: string;
   url: string;
   embedUrl?: string;
   muxPlaybackId?: string;
@@ -113,7 +113,7 @@ export interface Plan {
   id: string;
   name: string;
   description?: string;
-  image?: string;
+  thumbnail?: string;
   sections: PlanSection[];
   allFiles: ContentFile[];
 }
@@ -159,6 +159,7 @@ export interface InstructionItem {
   seconds?: number;
   children?: InstructionItem[];
   embedUrl?: string;
+  thumbnail?: string;
 }
 
 export interface Instructions {

@@ -279,20 +279,25 @@ export class B1ChurchProvider implements IProvider {
 
     if (!planItems || !Array.isArray(planItems)) return null;
 
-    // Fetch venue actions to expand section items
+    // Fetch venue actions and feed to expand section items and get thumbnail
     let sectionActionsMap = new Map<string, import("../../interfaces").InstructionItem[]>();
+    let lessonImage: string | undefined;
     if (venueId) {
       console.log("[B1Church getInstructions] Fetching venue actions for venueId:", venueId);
-      const venueActions = await fetchVenueActions(venueId);
+      const [venueActions, venueFeed] = await Promise.all([
+        fetchVenueActions(venueId),
+        fetchVenueFeed(venueId)
+      ]);
       console.log("[B1Church getInstructions] venueActions response:", JSON.stringify(venueActions, null, 2));
-      sectionActionsMap = buildSectionActionsMap(venueActions);
+      lessonImage = venueFeed?.lessonImage;
+      sectionActionsMap = buildSectionActionsMap(venueActions, lessonImage);
       console.log("[B1Church getInstructions] sectionActionsMap keys:", Array.from(sectionActionsMap.keys()));
     } else {
       console.log("[B1Church getInstructions] No venueId - planFolder.contentId is:", planFolder.contentId);
     }
 
     // Process items, handling external providers
-    const processedItems = await this.processInstructionItems(planItems, ministryId, authData, sectionActionsMap);
+    const processedItems = await this.processInstructionItems(planItems, ministryId, authData, sectionActionsMap, lessonImage);
     return { name: planTitle, items: processedItems };
   }
 
@@ -300,7 +305,8 @@ export class B1ChurchProvider implements IProvider {
     items: B1PlanItem[],
     ministryId: string,
     authData?: ContentProviderAuthData | null,
-    sectionActionsMap?: Map<string, import("../../interfaces").InstructionItem[]>
+    sectionActionsMap?: Map<string, import("../../interfaces").InstructionItem[]>,
+    thumbnail?: string
   ): Promise<import("../../interfaces").InstructionItem[]> {
     const result: import("../../interfaces").InstructionItem[] = [];
 
@@ -310,7 +316,7 @@ export class B1ChurchProvider implements IProvider {
       console.log("[B1Church processInstructionItems] Item:", item.id, "type:", item.itemType, "relatedId:", item.relatedId, "hasChildren:", !!item.children?.length);
 
       // Convert the item first
-      const instructionItem = planItemToInstruction(item);
+      const instructionItem = planItemToInstruction(item, thumbnail);
 
       // Check if this is a section that can be expanded from the local sectionActionsMap
       const itemType = item.itemType;
@@ -340,7 +346,7 @@ export class B1ChurchProvider implements IProvider {
       } else if (hasLocallyExpandableChildren) {
         // Recurse into children that can be expanded locally (don't fetch from external)
         console.log("[B1Church processInstructionItems] Has locally expandable children, recursing into", item.children!.length, "children");
-        instructionItem.children = await this.processInstructionItems(item.children!, ministryId, authData, sectionActionsMap);
+        instructionItem.children = await this.processInstructionItems(item.children!, ministryId, authData, sectionActionsMap, thumbnail);
       } else if (isExternalProviderItem(item) && item.providerId && item.providerPath) {
         console.log("[B1Church processInstructionItems] External provider item - fetching from:", item.providerId, item.providerPath);
         // Fetch expanded instructions from external provider
@@ -366,7 +372,7 @@ export class B1ChurchProvider implements IProvider {
       } else if (item.children && item.children.length > 0) {
         // Recursively process children for internal items
         console.log("[B1Church processInstructionItems] Recursing into", item.children.length, "children");
-        instructionItem.children = await this.processInstructionItems(item.children, ministryId, authData, sectionActionsMap);
+        instructionItem.children = await this.processInstructionItems(item.children, ministryId, authData, sectionActionsMap, thumbnail);
       }
 
       result.push(instructionItem);
