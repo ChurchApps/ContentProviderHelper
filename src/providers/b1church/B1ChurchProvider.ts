@@ -396,7 +396,7 @@ export class B1ChurchProvider implements IProvider {
   async getPlaylist(path: string, authData?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null> {
     const { segments, depth } = parsePath(path);
 
-    if (depth < 4 || segments[0] !== "ministries") return [];
+    if (depth < 4 || segments[0] !== "ministries") return null;
 
     const ministryId = segments[1];
     const planId = segments[3];
@@ -405,12 +405,12 @@ export class B1ChurchProvider implements IProvider {
     // Need to fetch plan details to get churchId and contentId
     const plans = await fetchPlans(planTypeId, authData);
     const planFolder = plans.find(p => p.id === planId);
-    if (!planFolder) return [];
+    if (!planFolder) return null;
 
     const churchId = planFolder.churchId;
     const venueId = planFolder.contentId;
 
-    if (!churchId) return [];
+    if (!churchId) return null;
 
     const pathFn = this.config.endpoints.planItems as (churchId: string, planId: string) => string;
     const planItems = await this.apiRequest<B1PlanItem[]>(pathFn(churchId, planId), authData);
@@ -425,10 +425,10 @@ export class B1ChurchProvider implements IProvider {
         authData,
         resolution
       );
-      return externalFiles || [];
+      return externalFiles || null;
     }
 
-    if (!planItems || !Array.isArray(planItems)) return [];
+    if (!planItems || !Array.isArray(planItems)) return null;
 
     const venueFeed = venueId ? await fetchVenueFeed(venueId) : null;
     const files: ContentFile[] = [];
@@ -517,7 +517,7 @@ export class B1ChurchProvider implements IProvider {
       }
     }
 
-    return files;
+    return files.length > 0 ? files : null;
   }
 
   supportsDeviceFlow(): boolean {

@@ -85,12 +85,16 @@ export class HighVoltageKidsProvider implements IProvider {
     const study = findStudy(this.data, segments[0], segments[1]);
     if (!study) return null;
 
-    if (depth === 2) return buildStudyPlaylist(study);
+    if (depth === 2) {
+      const files = buildStudyPlaylist(study);
+      return files.length > 0 ? files : null;
+    }
 
     if (depth === 3) {
       const lesson = findLesson(this.data, segments[0], segments[1], segments[2]);
       if (!lesson) return null;
-      return buildLessonPlaylist(lesson);
+      const files = buildLessonPlaylist(lesson);
+      return files.length > 0 ? files : null;
     }
 
     return null;

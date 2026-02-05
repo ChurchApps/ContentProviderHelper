@@ -56,7 +56,7 @@ export class LessonsChurchProvider implements IProvider {
       }
     }
 
-    return files;
+    return files.length > 0 ? files : null;
   }
 
   async browse(path?: string | null, _auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
