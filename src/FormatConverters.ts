@@ -5,18 +5,17 @@ function generateId(): string {
   return "gen-" + Math.random().toString(36).substring(2, 11);
 }
 
-function mapItemTypeToActionType(itemType?: string): "play" | "add-on" | "other" {
+function mapItemTypeToActionType(itemType?: string): "play" | "other" {
   switch (itemType) {
     case "action":
     case "lessonAction":
     case "providerPresentation":
     case "play":
-      return "play";
     case "addon":
     case "add-on":
     case "lessonAddOn":
     case "providerFile":
-      return "add-on";
+      return "play";
     default:
       return "other";
   }
@@ -37,10 +36,9 @@ export function presentationsToPlaylist(plan: Plan): ContentFile[] {
   return files;
 }
 
-function mapActionTypeToItemType(actionType: "play" | "add-on" | "other"): string {
+function mapActionTypeToItemType(actionType: "play" | "other"): string {
   switch (actionType) {
     case "play": return "action";
-    case "add-on": return "addon";
     default: return "item";
   }
 }

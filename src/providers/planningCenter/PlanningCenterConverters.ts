@@ -21,7 +21,7 @@ export async function convertToPresentation(config: ContentProviderConfig, item:
   }
 
   if (itemType === "item") {
-    return { id: item.id, name: item.attributes.title || "", actionType: "other", files: [], providerData: { itemType: "item", description: item.attributes.description, length: item.attributes.length } } as PlanPresentation;
+    return { id: item.id, name: item.attributes.title || "", actionType: "other", files: [], providerData: { itemType: "item", description: item.attributes.description, length: item.attributes.length } };
   }
 
   return null;
@@ -32,7 +32,7 @@ async function convertSongToPresentation(config: ContentProviderConfig, item: PC
   const arrangementId = item.relationships?.arrangement?.data?.id;
 
   if (!songId) {
-    return { id: item.id, name: item.attributes.title || "Song", actionType: "other", files: [], providerData: { itemType: "song" } } as PlanPresentation;
+    return { id: item.id, name: item.attributes.title || "Song", actionType: "other", files: [], providerData: { itemType: "song" } };
   }
 
   const songFn = config.endpoints.song as (id: string) => string;
@@ -62,7 +62,7 @@ async function convertSongToPresentation(config: ContentProviderConfig, item: PC
   const song = songResponse?.data;
   const title = song?.attributes?.title || item.attributes.title || "Song";
 
-  return { id: item.id, name: title, actionType: "other", files: [], providerData: { itemType: "song", title, author: song?.attributes?.author, copyright: song?.attributes?.copyright, ccliNumber: song?.attributes?.ccli_number, arrangementName: arrangement?.attributes?.name, keySignature: arrangement?.attributes?.chord_chart_key, bpm: arrangement?.attributes?.bpm, sequence: arrangement?.attributes?.sequence, sections: sections.map(s => ({ label: s.label, lyrics: s.lyrics })), length: item.attributes.length } } as PlanPresentation;
+  return { id: item.id, name: title, actionType: "other", files: [], providerData: { itemType: "song", title, author: song?.attributes?.author, copyright: song?.attributes?.copyright, ccliNumber: song?.attributes?.ccli_number, arrangementName: arrangement?.attributes?.name, keySignature: arrangement?.attributes?.chord_chart_key, bpm: arrangement?.attributes?.bpm, sequence: arrangement?.attributes?.sequence, sections: sections.map(s => ({ label: s.label, lyrics: s.lyrics })), length: item.attributes.length } };
 }
 
 async function convertMediaToPresentation(config: ContentProviderConfig, item: PCOPlanItem, auth?: ContentProviderAuthData | null): Promise<PlanPresentation | null> {
@@ -95,7 +95,7 @@ async function convertMediaToPresentation(config: ContentProviderConfig, item: P
     }
   }
 
-  return { id: item.id, name: item.attributes.title || "Media", actionType: "play", files, providerData: { itemType: "media", length: item.attributes.length } } as PlanPresentation;
+  return { id: item.id, name: item.attributes.title || "Media", actionType: "play", files, providerData: { itemType: "media", length: item.attributes.length } };
 }
 
 export function formatDate(dateString: string): string {

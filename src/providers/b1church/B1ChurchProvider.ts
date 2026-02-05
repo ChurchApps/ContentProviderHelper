@@ -510,7 +510,7 @@ export class B1ChurchProvider implements IProvider {
           if (file) files.push(file);
         } else if (venueFeed && (childItemType === "lessonAction" || childItemType === "action" ||
                childItemType === "lessonAddOn" || childItemType === "addon")) {
-          // Handle action/addon items from venue feed
+          // Handle action items from venue feed
           const itemFiles = getFilesFromVenueFeed(venueFeed, childItemType, child.relatedId);
           files.push(...itemFiles);
         }

@@ -42,11 +42,11 @@ export async function planItemToPresentation(item: B1PlanItem, venueFeed: FeedVe
 
   if ((itemType === "lessonSection" || itemType === "section" || itemType === "providerSection" || itemType === "lessonAction" || itemType === "action" || itemType === "lessonAddOn" || itemType === "addon") && venueFeed) {
     const files = getFilesFromVenueFeed(venueFeed, itemType, item.relatedId);
-    if (files.length > 0) return { id: item.id, name: item.label || "Lesson Content", actionType: (itemType === "lessonAddOn" || itemType === "addon") ? "add-on" : "play", files };
+    if (files.length > 0) return { id: item.id, name: item.label || "Lesson Content", actionType: "play", files };
   }
 
   if (itemType === "item" || itemType === "header") {
-    return { id: item.id, name: item.label || "", actionType: "other", files: [], providerData: { itemType, description: item.description, seconds: item.seconds } } as PlanPresentation;
+    return { id: item.id, name: item.label || "", actionType: "other", files: [], providerData: { itemType, description: item.description, seconds: item.seconds } };
   }
 
   return null;
@@ -54,7 +54,7 @@ export async function planItemToPresentation(item: B1PlanItem, venueFeed: FeedVe
 
 function arrangementToPresentation(item: B1PlanItem, songData: ArrangementKeyResponse): PlanPresentation {
   const title = songData.songDetail?.title || item.label || "Song";
-  return { id: item.id, name: title, actionType: "other", files: [], providerData: { itemType: "song", title, artist: songData.songDetail?.artist, lyrics: songData.arrangement?.lyrics, keySignature: songData.arrangementKey?.keySignature, arrangementName: songData.arrangement?.name, seconds: songData.songDetail?.seconds || item.seconds } } as PlanPresentation;
+  return { id: item.id, name: title, actionType: "other", files: [], providerData: { itemType: "song", title, artist: songData.songDetail?.artist, lyrics: songData.arrangement?.lyrics, keySignature: songData.arrangementKey?.keySignature, arrangementName: songData.arrangement?.name, seconds: songData.songDetail?.seconds || item.seconds } };
 }
 
 export function getFilesFromVenueFeed(venueFeed: FeedVenueInterface, itemType: string, relatedId?: string): ContentFile[] {
@@ -74,7 +74,7 @@ export function getFilesFromVenueFeed(venueFeed: FeedVenueInterface, itemType: s
         break;
       }
     }
-  } else if (itemType === "lessonAction" || itemType === "action") {
+  } else if (itemType === "lessonAction" || itemType === "action" || itemType === "lessonAddOn" || itemType === "addon") {
     for (const section of venueFeed.sections || []) {
       for (const action of section.actions || []) {
         if (action.id === relatedId) {
@@ -111,7 +111,7 @@ export function planItemToInstruction(item: B1PlanItem): InstructionItem {
   switch (item.itemType) {
     case "lessonSection": itemType = "section"; break;
     case "lessonAction": itemType = "action"; break;
-    case "lessonAddOn": itemType = "addon"; break;
+    case "lessonAddOn": itemType = "action"; break;
   }
 
   return { id: item.id, itemType, relatedId: item.relatedId, label: item.label, description: item.description, seconds: item.seconds, embedUrl: item.link, children: item.children?.map(planItemToInstruction) };
@@ -140,12 +140,11 @@ export function venueFeedToDefaultPlanItems(venueFeed: FeedVenueInterface): B1Pl
 
     for (const action of section.actions || []) {
       const actionType = action.actionType?.toLowerCase();
-      // Only include play and add-on actions
       if (actionType === "play" || actionType === "add-on") {
         const actionItem: B1PlanItem = {
           id: action.id || `action-${sectionItem.children!.length}`,
           label: action.content || "Action",
-          itemType: actionType === "add-on" ? "addon" : "action",
+          itemType: "action",
           relatedId: action.id
         };
         sectionItem.children!.push(actionItem);
@@ -161,13 +160,19 @@ export function venueFeedToDefaultPlanItems(venueFeed: FeedVenueInterface): B1Pl
   return headerItem.children!.length > 0 ? [headerItem] : [];
 }
 
-function getEmbedUrl(itemType?: string, relatedId?: string): string | undefined {
+function getEmbedUrl(apiType?: string, relatedId?: string): string | undefined {
   if (!relatedId) return undefined;
   const baseUrl = "https://lessons.church";
-  switch (itemType) {
-    case "action": return `${baseUrl}/embed/action/${relatedId}`;
-    case "addon": return `${baseUrl}/embed/addon/${relatedId}`;
-    case "section": return `${baseUrl}/embed/section/${relatedId}`;
+  switch (apiType) {
+    case "action":
+    case "lessonAction":
+      return `${baseUrl}/embed/action/${relatedId}`;
+    case "addon":
+    case "lessonAddOn":
+      return `${baseUrl}/embed/addon/${relatedId}`;
+    case "section":
+    case "lessonSection":
+      return `${baseUrl}/embed/section/${relatedId}`;
     default: return undefined;
   }
 }
@@ -203,12 +208,13 @@ export function buildSectionActionsMap(actionsResponse: VenueActionsResponseInte
 
 export function processVenueInstructionItem(item: Record<string, unknown>, sectionActionsMap: Map<string, InstructionItem[]>): InstructionItem {
   const relatedId = item.relatedId as string | undefined;
-  let itemType = item.itemType as string | undefined;
+  const rawItemType = item.itemType as string | undefined;
 
   // Normalize item types
+  let itemType = rawItemType;
   if (itemType === "lessonSection") itemType = "section";
   if (itemType === "lessonAction") itemType = "action";
-  if (itemType === "lessonAddOn") itemType = "addon";
+  if (itemType === "lessonAddOn") itemType = "action";
 
   const children = item.children as Record<string, unknown>[] | undefined;
   let processedChildren: InstructionItem[] | undefined;
@@ -216,12 +222,13 @@ export function processVenueInstructionItem(item: Record<string, unknown>, secti
   if (children) {
     processedChildren = children.map(child => {
       const childRelatedId = child.relatedId as string | undefined;
-      let childItemType = child.itemType as string | undefined;
+      const rawChildItemType = child.itemType as string | undefined;
 
       // Normalize child item types
+      let childItemType = rawChildItemType;
       if (childItemType === "lessonSection") childItemType = "section";
       if (childItemType === "lessonAction") childItemType = "action";
-      if (childItemType === "lessonAddOn") childItemType = "addon";
+      if (childItemType === "lessonAddOn") childItemType = "action";
 
       // If this child is a section with actions in the map, expand it
       if (childRelatedId && sectionActionsMap.has(childRelatedId)) {
@@ -233,7 +240,7 @@ export function processVenueInstructionItem(item: Record<string, unknown>, secti
           description: child.description as string | undefined,
           seconds: child.seconds as number | undefined,
           children: sectionActionsMap.get(childRelatedId),
-          embedUrl: getEmbedUrl(childItemType, childRelatedId)
+          embedUrl: getEmbedUrl(rawChildItemType, childRelatedId)
         };
       }
       return processVenueInstructionItem(child, sectionActionsMap);
@@ -248,6 +255,6 @@ export function processVenueInstructionItem(item: Record<string, unknown>, secti
     description: item.description as string | undefined,
     seconds: item.seconds as number | undefined,
     children: processedChildren,
-    embedUrl: getEmbedUrl(itemType, relatedId)
+    embedUrl: getEmbedUrl(rawItemType, relatedId)
   };
 }

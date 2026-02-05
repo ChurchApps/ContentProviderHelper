@@ -98,8 +98,9 @@ export type DeviceFlowPollResult =
 export interface PlanPresentation {
   id: string;
   name: string;
-  actionType: "play" | "add-on" | "other";
+  actionType: "play" | "other";
   files: ContentFile[];
+  providerData?: Record<string, unknown>;
 }
 
 export interface PlanSection {
