@@ -142,7 +142,7 @@ export function convertFilesToInstructions(files: ContentFile[], _libraryId: str
       itemType: "file",
       label: file.title,
       seconds: file.seconds,
-      embedUrl: file.url,
+      downloadUrl: file.url,
       thumbnail: file.thumbnail
     }]
   }));

@@ -115,7 +115,7 @@ export function planItemToInstruction(item: B1PlanItem, thumbnail?: string): Ins
   }
 
   const isFileType = itemType === "file" || (item.link && !item.children?.length);
-  return { id: item.id, itemType, relatedId: item.relatedId, label: item.label, description: item.description, seconds: item.seconds, embedUrl: item.link, thumbnail: isFileType ? thumbnail : undefined, children: item.children?.map(child => planItemToInstruction(child, thumbnail)) };
+  return { id: item.id, itemType, relatedId: item.relatedId, label: item.label, description: item.description, seconds: item.seconds, downloadUrl: item.link, thumbnail: isFileType ? thumbnail : undefined, children: item.children?.map(child => planItemToInstruction(child, thumbnail)) };
 }
 
 /**
@@ -184,7 +184,7 @@ export function buildSectionActionsMap(actionsResponse: VenueActionsResponseInte
     for (const section of actionsResponse.sections) {
       if (section.id && section.actions) {
         sectionActionsMap.set(section.id, section.actions.map(action => {
-          const embedUrl = getEmbedUrl("action", action.id);
+          const downloadUrl = getEmbedUrl("action", action.id);
           const seconds = action.seconds ?? 10;
           return {
             id: action.id,
@@ -197,7 +197,7 @@ export function buildSectionActionsMap(actionsResponse: VenueActionsResponseInte
               itemType: "file",
               label: action.name,
               seconds,
-              embedUrl,
+              downloadUrl,
               thumbnail
             }]
           };
@@ -242,7 +242,7 @@ export function processVenueInstructionItem(item: Record<string, unknown>, secti
           description: child.description as string | undefined,
           seconds: child.seconds as number | undefined,
           children: sectionActionsMap.get(childRelatedId),
-          embedUrl: getEmbedUrl(rawChildItemType, childRelatedId)
+          downloadUrl: getEmbedUrl(rawChildItemType, childRelatedId)
         };
       }
       return processVenueInstructionItem(child, sectionActionsMap, thumbnail);
@@ -258,7 +258,7 @@ export function processVenueInstructionItem(item: Record<string, unknown>, secti
     description: item.description as string | undefined,
     seconds: item.seconds as number | undefined,
     children: processedChildren,
-    embedUrl: getEmbedUrl(rawItemType, relatedId),
+    downloadUrl: getEmbedUrl(rawItemType, relatedId),
     thumbnail: isFileType ? thumbnail : undefined
   };
 }

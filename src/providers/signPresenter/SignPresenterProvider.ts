@@ -98,7 +98,7 @@ export class SignPresenterProvider implements IProvider {
       const url = msg.url as string;
       const seconds = msg.seconds as number | undefined;
 
-      files.push({ type: "file", id: msg.id as string, title: msg.name as string, mediaType: detectMediaType(url, msg.mediaType as string | undefined), thumbnail: (msg.thumbnail || msg.image) as string | undefined, url, embedUrl: url, seconds });
+      files.push({ type: "file", id: msg.id as string, title: msg.name as string, mediaType: detectMediaType(url, msg.mediaType as string | undefined), thumbnail: (msg.thumbnail || msg.image) as string | undefined, url, downloadUrl: url, seconds });
     }
 
     return files;
@@ -158,7 +158,7 @@ export class SignPresenterProvider implements IProvider {
         itemType: "file",
         label: file.title,
         seconds: file.seconds,
-        embedUrl: file.embedUrl || file.url,
+        downloadUrl: file.downloadUrl || file.url,
         thumbnail: file.thumbnail
       }]
     }));

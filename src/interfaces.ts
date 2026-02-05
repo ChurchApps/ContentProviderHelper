@@ -68,7 +68,7 @@ export interface ContentFile {
   mediaType: "video" | "image";
   thumbnail?: string;
   url: string;
-  embedUrl?: string;
+  downloadUrl?: string;
   muxPlaybackId?: string;
   decryptionKey?: string;
   mediaId?: string;
@@ -158,7 +158,7 @@ export interface InstructionItem {
   description?: string;
   seconds?: number;
   children?: InstructionItem[];
-  embedUrl?: string;
+  downloadUrl?: string;
   thumbnail?: string;
 }
 

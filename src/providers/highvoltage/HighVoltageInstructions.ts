@@ -28,7 +28,7 @@ export function groupFilesIntoActions(files: LessonFileJson[], thumbnail?: strin
         itemType: "file" as const,
         label: file.title,
         seconds,
-        embedUrl: file.url,
+        downloadUrl: file.url,
         thumbnail
       };
     });
@@ -68,7 +68,7 @@ export function buildStudyInstructions(study: StudyFolder): Instructions {
   const lessonItems: InstructionItem[] = study.lessons.map(lesson => {
     const fileItems: InstructionItem[] = lesson.files.map(file => {
       const seconds = estimateDuration(file.mediaType as "video" | "image");
-      return { id: file.id, itemType: "file", label: file.title, seconds, embedUrl: file.url, thumbnail: lesson.image };
+      return { id: file.id, itemType: "file", label: file.title, seconds, downloadUrl: file.url, thumbnail: lesson.image };
     });
     return { id: lesson.id, itemType: "action", label: lesson.name, description: "play", children: fileItems };
   });

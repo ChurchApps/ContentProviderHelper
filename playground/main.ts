@@ -1199,7 +1199,7 @@ function renderInstructionsView(instructions: Instructions, _isExpanded: boolean
       : '';
 
     let itemHtml = `
-      <div class="instruction-item" style="margin-left: ${indent}px;" data-embed-url="${item.embedUrl || ''}">
+      <div class="instruction-item" style="margin-left: ${indent}px;" data-embed-url="${item.downloadUrl || ''}">
         ${thumbHtml}
         <div class="instruction-content">
           <span class="instruction-icon">${typeIcon}</span>
@@ -1208,7 +1208,7 @@ function renderInstructionsView(instructions: Instructions, _isExpanded: boolean
           ${item.seconds ? `<span class="instruction-seconds">${item.seconds}s</span>` : ''}
         </div>
         ${item.description ? `<div class="instruction-description">${item.description}</div>` : ''}
-        ${item.embedUrl ? `<a href="${item.embedUrl}" target="_blank" class="instruction-embed-link">Open Embed</a>` : ''}
+        ${item.downloadUrl ? `<a href="${item.downloadUrl}" target="_blank" class="instruction-embed-link">Open Embed</a>` : ''}
       </div>
     `;
 
@@ -1234,9 +1234,9 @@ function renderInstructionsView(instructions: Instructions, _isExpanded: boolean
   contentGrid.querySelectorAll('.instruction-item').forEach(item => {
     item.addEventListener('click', (e) => {
       if ((e.target as HTMLElement).classList.contains('instruction-embed-link')) return;
-      const embedUrl = item.getAttribute('data-embed-url');
-      if (embedUrl) {
-        showStatus(`Embed URL: ${embedUrl}`, 'success');
+      const downloadUrl = item.getAttribute('data-embed-url');
+      if (downloadUrl) {
+        showStatus(`Embed URL: ${downloadUrl}`, 'success');
         console.log('Instruction item:', item);
       }
     });

@@ -668,7 +668,7 @@ async function handleFileSelection(file: ContentFile): Promise<void> {
   console.log(chalk.cyan('─'.repeat(50)));
   console.log(`  Type: ${file.mediaType}`);
   console.log(`  URL: ${chalk.underline(file.url)}`);
-  if (file.embedUrl) console.log(`  Embed: ${chalk.underline(file.embedUrl)}`);
+  if (file.downloadUrl) console.log(`  Download: ${chalk.underline(file.downloadUrl)}`);
   if (file.muxPlaybackId) console.log(`  Mux ID: ${file.muxPlaybackId}`);
   console.log();
 

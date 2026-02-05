@@ -185,7 +185,7 @@ export class BibleProjectProvider implements IProvider {
           id: video.id,
           itemType: "file",
           label: video.title,
-          embedUrl: video.videoUrl,
+          downloadUrl: video.videoUrl,
           thumbnail: video.thumbnailUrl
         }]
       }));
@@ -210,7 +210,7 @@ export class BibleProjectProvider implements IProvider {
             id: video.id,
             itemType: "file",
             label: video.title,
-            embedUrl: video.videoUrl,
+            downloadUrl: video.videoUrl,
             thumbnail: video.thumbnailUrl
           }]
         }]
