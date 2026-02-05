@@ -109,7 +109,7 @@ export class HighVoltageKidsProvider implements IProvider {
     if (depth === 3) {
       const lesson = findLesson(this.data, segments[0], segments[1], segments[2]);
       if (!lesson) return null;
-      return buildLessonInstructions(study, lesson);
+      return buildLessonInstructions(lesson);
     }
 
     return null;

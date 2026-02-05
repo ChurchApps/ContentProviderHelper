@@ -72,11 +72,10 @@ export function buildStudyInstructions(study: StudyFolder): Instructions {
     return { id: lesson.id, itemType: "action", label: lesson.name, description: "play", children: fileItems };
   });
 
-  return { venueName: study.name, items: [{ id: study.id, itemType: "header", label: study.name, children: [{ id: "main", itemType: "section", label: "Content", children: lessonItems }] }] };
+  return { venueName: study.name, items: [{ id: "main", itemType: "section", label: "Content", children: lessonItems }] };
 }
 
-export function buildLessonInstructions(study: StudyFolder, lesson: LessonFolder): Instructions {
-  const headerLabel = `${study.name} - ${lesson.name}`;
+export function buildLessonInstructions(lesson: LessonFolder): Instructions {
   const actionItems = groupFilesIntoActions(lesson.files);
-  return { venueName: lesson.name, items: [{ id: lesson.id, itemType: "header", label: headerLabel, children: [{ id: "main", itemType: "section", label: lesson.name, children: actionItems }] }] };
+  return { venueName: lesson.name, items: [{ id: "main", itemType: "section", label: lesson.name, children: actionItems }] };
 }

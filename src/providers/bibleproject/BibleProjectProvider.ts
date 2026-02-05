@@ -175,23 +175,20 @@ export class BibleProjectProvider implements IProvider {
 
     // For collection level (depth 1), create instructions with all videos
     if (depth === 1) {
-      const fileItems: InstructionItem[] = collection.videos.map(video => ({
-        id: video.id,
-        itemType: "file",
+      const items: InstructionItem[] = collection.videos.map(video => ({
+        id: video.id + "-action",
+        itemType: "action",
         label: video.title,
-        seconds: 0,
-        embedUrl: video.videoUrl
+        description: "play",
+        children: [{
+          id: video.id,
+          itemType: "file",
+          label: video.title,
+          embedUrl: video.videoUrl
+        }]
       }));
 
-      return {
-        venueName: collection.name,
-        items: [{
-          id: slugify(collection.name),
-          itemType: "section",
-          label: "Videos",
-          children: fileItems
-        }]
-      };
+      return { venueName: collection.name, items };
     }
 
     // For video level (depth 2), create instructions for single video
@@ -203,14 +200,14 @@ export class BibleProjectProvider implements IProvider {
       return {
         venueName: video.title,
         items: [{
-          id: "main",
-          itemType: "section",
-          label: "Content",
+          id: video.id + "-action",
+          itemType: "action",
+          label: video.title,
+          description: "play",
           children: [{
             id: video.id,
             itemType: "file",
             label: video.title,
-            seconds: 0,
             embedUrl: video.videoUrl
           }]
         }]

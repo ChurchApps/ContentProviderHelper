@@ -147,23 +147,22 @@ export class SignPresenterProvider implements IProvider {
     const playlist = playlists.find(p => p.id === playlistId);
     const title = playlist?.title || "Playlist";
 
-    const fileItems: InstructionItem[] = files.map(file => ({
-      id: file.id,
-      itemType: "file",
+    const actionItems: InstructionItem[] = files.map(file => ({
+      id: file.id + "-action",
+      itemType: "action",
       label: file.title,
+      description: "play",
       seconds: file.seconds,
-      embedUrl: file.embedUrl || file.url
+      children: [{
+        id: file.id,
+        itemType: "file",
+        label: file.title,
+        seconds: file.seconds,
+        embedUrl: file.embedUrl || file.url
+      }]
     }));
 
-    return {
-      venueName: title as string,
-      items: [{
-        id: `section-${playlistId}`,
-        itemType: "section",
-        label: title as string,
-        children: fileItems
-      }]
-    };
+    return { venueName: title as string, items: actionItems };
   }
 
   // Auth methods
