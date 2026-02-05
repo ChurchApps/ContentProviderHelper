@@ -273,7 +273,7 @@ export class B1ChurchProvider implements IProvider {
         authData
       );
       if (externalInstructions) {
-        return { venueName: planTitle, items: externalInstructions.items };
+        return { name: planTitle, items: externalInstructions.items };
       }
     }
 
@@ -293,7 +293,7 @@ export class B1ChurchProvider implements IProvider {
 
     // Process items, handling external providers
     const processedItems = await this.processInstructionItems(planItems, ministryId, authData, sectionActionsMap);
-    return { venueName: planTitle, items: processedItems };
+    return { name: planTitle, items: processedItems };
   }
 
   private async processInstructionItems(

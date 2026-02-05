@@ -132,7 +132,7 @@ export function buildInstructionsFromPlan(plan: Plan): Instructions {
   });
 
   return {
-    venueName: plan.name,
+    name: plan.name,
     items: sectionItems
   };
 }

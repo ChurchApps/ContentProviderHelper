@@ -225,7 +225,7 @@ export class LessonsChurchProvider implements IProvider {
 
       const sectionActionsMap = buildSectionActionsMap(actionsResponse);
 
-      return { venueName: planItemsResponse.venueName, items: (planItemsResponse.items || []).map(item => processInstructionItem(item, sectionActionsMap)) };
+      return { name: planItemsResponse.venueName, items: (planItemsResponse.items || []).map(item => processInstructionItem(item, sectionActionsMap)) };
     }
 
     const { segments } = parsePath(path);

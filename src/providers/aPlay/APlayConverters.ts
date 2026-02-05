@@ -131,7 +131,7 @@ export function convertFilesToPresentations(files: ContentFile[], libraryId: str
 /**
  * Convert files to instructions
  */
-export function convertFilesToInstructions(files: ContentFile[], _libraryId: string): { venueName: string; items: InstructionItem[] } {
+export function convertFilesToInstructions(files: ContentFile[], _libraryId: string): { name: string; items: InstructionItem[] } {
   const items: InstructionItem[] = files.map(file => ({
     id: file.id + "-action",
     itemType: "action",
@@ -146,5 +146,5 @@ export function convertFilesToInstructions(files: ContentFile[], _libraryId: str
     }]
   }));
 
-  return { venueName: "Library", items };
+  return { name: "Library", items };
 }

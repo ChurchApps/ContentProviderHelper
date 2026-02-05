@@ -162,7 +162,7 @@ export class SignPresenterProvider implements IProvider {
       }]
     }));
 
-    return { venueName: title as string, items: actionItems };
+    return { name: title as string, items: actionItems };
   }
 
   // Auth methods

@@ -162,7 +162,7 @@ export interface InstructionItem {
 }
 
 export interface Instructions {
-  venueName?: string;
+  name?: string;
   items: InstructionItem[];
 }
 

@@ -1162,7 +1162,7 @@ function playPlanFiles(files: ContentItem[]) {
 
 function renderInstructionsView(instructions: Instructions, _isExpanded: boolean = false, meta?: ResolvedFormatMeta) {
   const viewType = 'Instructions';
-  browserTitle.textContent = `${instructions.venueName || 'Instructions'} (${viewType})`;
+  browserTitle.textContent = `${instructions.name || 'Instructions'} (${viewType})`;
 
   const countItems = (items: InstructionItem[]): number => {
     let count = items.length;
@@ -1178,7 +1178,7 @@ function renderInstructionsView(instructions: Instructions, _isExpanded: boolean
     <div class="instructions-view">
       <div class="instructions-header">
         <div class="instructions-info">
-          <h2>${instructions.venueName || 'Instructions'}</h2>
+          <h2>${instructions.name || 'Instructions'}</h2>
           ${meta ? renderFormatSourceBadge(meta) : ''}
           <p class="instructions-stats">${instructions.items.length} top-level items • ${totalItems} total items</p>
         </div>

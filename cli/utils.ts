@@ -119,7 +119,7 @@ export function displayPlan(plan: Plan): void {
  */
 export function displayInstructions(instructions: Instructions, isExpanded: boolean = false): void {
   const viewType = isExpanded ? 'Expanded Instructions' : 'Instructions';
-  const venueName = instructions.venueName || 'Instructions';
+  const venueName = instructions.name || 'Instructions';
 
   const countItems = (items: InstructionItem[]): number => {
     let count = items.length;

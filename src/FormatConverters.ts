@@ -45,7 +45,7 @@ function mapActionTypeToItemType(actionType: "play" | "other"): string {
 
 // LOSSLESS: All hierarchy and file data preserved
 export function presentationsToExpandedInstructions(plan: Plan): Instructions {
-  return { venueName: plan.name, items: plan.sections.map(section => ({ id: section.id, itemType: "section", label: section.name, children: section.presentations.map(pres => ({ id: pres.id, itemType: mapActionTypeToItemType(pres.actionType), label: pres.name, description: pres.actionType !== "other" ? pres.actionType : undefined, seconds: pres.files.reduce((sum, f) => sum + (f.seconds || 0), 0) || undefined, children: pres.files.map(f => ({ id: f.id, itemType: "file", label: f.title, seconds: f.seconds, embedUrl: f.embedUrl || f.url })) })) })) };
+  return { name: plan.name, items: plan.sections.map(section => ({ id: section.id, itemType: "section", label: section.name, children: section.presentations.map(pres => ({ id: pres.id, itemType: mapActionTypeToItemType(pres.actionType), label: pres.name, description: pres.actionType !== "other" ? pres.actionType : undefined, seconds: pres.files.reduce((sum, f) => sum + (f.seconds || 0), 0) || undefined, children: pres.files.map(f => ({ id: f.id, itemType: "file", label: f.title, seconds: f.seconds, embedUrl: f.embedUrl || f.url })) })) })) };
 }
 
 // LOSSLESS for media: All items with embedUrl become files
@@ -99,7 +99,7 @@ export function instructionsToPresentations(instructions: Instructions, planId?:
     return { id: sectionItem.id || sectionItem.relatedId || generateId(), name: sectionItem.label || "Section", presentations };
   });
 
-  return { id: planId || generateId(), name: instructions.venueName || "Plan", sections, allFiles };
+  return { id: planId || generateId(), name: instructions.name || "Plan", sections, allFiles };
 }
 
 export const expandedInstructionsToPresentations = instructionsToPresentations;
@@ -111,8 +111,8 @@ export function playlistToPresentations(files: ContentFile[], planName: string =
 }
 
 // LOSSY: Minimal structure - just file references in a single section
-export function playlistToInstructions(files: ContentFile[], venueName: string = "Playlist"): Instructions {
-  return { venueName, items: [{ id: "main-section", itemType: "section", label: "Content", children: files.map((file, index) => ({ id: file.id || `item-${index}`, itemType: "file", label: file.title, seconds: file.seconds, embedUrl: file.embedUrl || file.url })) }] };
+export function playlistToInstructions(files: ContentFile[], name: string = "Playlist"): Instructions {
+  return { name, items: [{ id: "main-section", itemType: "section", label: "Content", children: files.map((file, index) => ({ id: file.id || `item-${index}`, itemType: "file", label: file.title, seconds: file.seconds, embedUrl: file.embedUrl || file.url })) }] };
 }
 
 export const playlistToExpandedInstructions = playlistToInstructions;

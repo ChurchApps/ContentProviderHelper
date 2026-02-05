@@ -176,5 +176,5 @@ export async function convertAddOnCategoryToInstructions(category: string): Prom
   if (children.length === 0) return null;
 
   const sectionItem: InstructionItem = { id: `category-${decodedCategory}`, itemType: "section", label: decodedCategory, children };
-  return { venueName: decodedCategory, items: [sectionItem] };
+  return { name: decodedCategory, items: [sectionItem] };
 }

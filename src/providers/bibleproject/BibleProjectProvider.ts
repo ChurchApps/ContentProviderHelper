@@ -188,7 +188,7 @@ export class BibleProjectProvider implements IProvider {
         }]
       }));
 
-      return { venueName: collection.name, items };
+      return { name: collection.name, items };
     }
 
     // For video level (depth 2), create instructions for single video
@@ -198,7 +198,7 @@ export class BibleProjectProvider implements IProvider {
       if (!video) return null;
 
       return {
-        venueName: video.title,
+        name: video.title,
         items: [{
           id: video.id + "-action",
           itemType: "action",
