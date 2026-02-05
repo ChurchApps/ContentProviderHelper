@@ -2,7 +2,7 @@ import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFil
 import { detectMediaType } from "../../utils";
 import { parsePath, getSegment } from "../../pathUtils";
 import { apiRequest, API_BASE } from "./LessonsChurchApi";
-import { convertVenueToPlan, convertAddOnToFile, buildSectionActionsMap, processInstructionItem } from "./LessonsChurchConverters";
+import { convertVenueToPlan, convertAddOnToFile, convertAddOnCategoryToPlan, convertAddOnCategoryToInstructions, buildSectionActionsMap, processInstructionItem } from "./LessonsChurchConverters";
 
 /**
  * LessonsChurch Provider
@@ -56,7 +56,7 @@ export class LessonsChurchProvider implements IProvider {
       }
     }
 
-    return files;
+    return files.length > 0 ? files : null;
   }
 
   async browse(path?: string | null, _auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
@@ -175,6 +175,7 @@ export class LessonsChurchProvider implements IProvider {
       type: "folder" as const,
       id: `category-${category}`,
       title: category,
+      isLeaf: true,
       path: `/addons/${encodeURIComponent(category)}`
     }));
   }
@@ -198,28 +199,41 @@ export class LessonsChurchProvider implements IProvider {
 
   async getPresentations(path: string, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
     const venueId = getSegment(path, 4);
-    if (!venueId) return null;
+    if (venueId) {
+      const venueData = await apiRequest<FeedVenueInterface>(`/venues/public/feed/${venueId}`);
+      if (!venueData) return null;
+      return convertVenueToPlan(venueData);
+    }
 
-    const venueData = await apiRequest<FeedVenueInterface>(`/venues/public/feed/${venueId}`);
-    if (!venueData) return null;
+    const { segments } = parsePath(path);
+    if (segments[0] === "addons" && segments.length === 2) {
+      return convertAddOnCategoryToPlan(segments[1]);
+    }
 
-    return convertVenueToPlan(venueData);
+    return null;
   }
 
   async getInstructions(path: string, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
     const venueId = getSegment(path, 4);
-    if (!venueId) return null;
+    if (venueId) {
+      const [planItemsResponse, actionsResponse] = await Promise.all([
+        apiRequest<{ venueName?: string; items?: Record<string, unknown>[] }>(`/venues/public/planItems/${venueId}`),
+        apiRequest<VenueActionsResponseInterface>(`/venues/public/actions/${venueId}`)
+      ]);
 
-    const [planItemsResponse, actionsResponse] = await Promise.all([
-      apiRequest<{ venueName?: string; items?: Record<string, unknown>[] }>(`/venues/public/planItems/${venueId}`),
-      apiRequest<VenueActionsResponseInterface>(`/venues/public/actions/${venueId}`)
-    ]);
+      if (!planItemsResponse) return null;
 
-    if (!planItemsResponse) return null;
+      const sectionActionsMap = buildSectionActionsMap(actionsResponse);
 
-    const sectionActionsMap = buildSectionActionsMap(actionsResponse);
+      return { name: planItemsResponse.venueName, items: (planItemsResponse.items || []).map(item => processInstructionItem(item, sectionActionsMap)) };
+    }
 
-    return { venueName: planItemsResponse.venueName, items: (planItemsResponse.items || []).map(item => processInstructionItem(item, sectionActionsMap)) };
+    const { segments } = parsePath(path);
+    if (segments[0] === "addons" && segments.length === 2) {
+      return convertAddOnCategoryToInstructions(segments[1]);
+    }
+
+    return null;
   }
 
   supportsDeviceFlow(): boolean {

@@ -5,18 +5,17 @@ function generateId(): string {
   return "gen-" + Math.random().toString(36).substring(2, 11);
 }
 
-function mapItemTypeToActionType(itemType?: string): "play" | "add-on" | "other" {
+function mapItemTypeToActionType(itemType?: string): "play" | "other" {
   switch (itemType) {
     case "action":
     case "lessonAction":
     case "providerPresentation":
     case "play":
-      return "play";
     case "addon":
     case "add-on":
     case "lessonAddOn":
     case "providerFile":
-      return "add-on";
+      return "play";
     default:
       return "other";
   }
@@ -37,17 +36,16 @@ export function presentationsToPlaylist(plan: Plan): ContentFile[] {
   return files;
 }
 
-function mapActionTypeToItemType(actionType: "play" | "add-on" | "other"): string {
+function mapActionTypeToItemType(actionType: "play" | "other"): string {
   switch (actionType) {
     case "play": return "action";
-    case "add-on": return "addon";
     default: return "item";
   }
 }
 
 // LOSSLESS: All hierarchy and file data preserved
 export function presentationsToExpandedInstructions(plan: Plan): Instructions {
-  return { venueName: plan.name, items: plan.sections.map(section => ({ id: section.id, itemType: "section", label: section.name, children: section.presentations.map(pres => ({ id: pres.id, itemType: mapActionTypeToItemType(pres.actionType), label: pres.name, description: pres.actionType !== "other" ? pres.actionType : undefined, seconds: pres.files.reduce((sum, f) => sum + (f.seconds || 0), 0) || undefined, children: pres.files.map(f => ({ id: f.id, itemType: "file", label: f.title, seconds: f.seconds, embedUrl: f.embedUrl || f.url })) })) })) };
+  return { name: plan.name, items: plan.sections.map(section => ({ id: section.id, itemType: "section", label: section.name, children: section.presentations.map(pres => ({ id: pres.id, itemType: mapActionTypeToItemType(pres.actionType), label: pres.name, description: pres.actionType !== "other" ? pres.actionType : undefined, seconds: pres.files.reduce((sum, f) => sum + (f.seconds || 0), 0) || undefined, children: pres.files.map(f => ({ id: f.id, itemType: "file", label: f.title, seconds: f.seconds, embedUrl: f.embedUrl || f.url })) })) })) };
 }
 
 // LOSSLESS for media: All items with embedUrl become files
@@ -101,7 +99,7 @@ export function instructionsToPresentations(instructions: Instructions, planId?:
     return { id: sectionItem.id || sectionItem.relatedId || generateId(), name: sectionItem.label || "Section", presentations };
   });
 
-  return { id: planId || generateId(), name: instructions.venueName || "Plan", sections, allFiles };
+  return { id: planId || generateId(), name: instructions.name || "Plan", sections, allFiles };
 }
 
 export const expandedInstructionsToPresentations = instructionsToPresentations;
@@ -113,8 +111,8 @@ export function playlistToPresentations(files: ContentFile[], planName: string =
 }
 
 // LOSSY: Minimal structure - just file references in a single section
-export function playlistToInstructions(files: ContentFile[], venueName: string = "Playlist"): Instructions {
-  return { venueName, items: [{ id: "main-section", itemType: "section", label: "Content", children: files.map((file, index) => ({ id: file.id || `item-${index}`, itemType: "file", label: file.title, seconds: file.seconds, embedUrl: file.embedUrl || file.url })) }] };
+export function playlistToInstructions(files: ContentFile[], name: string = "Playlist"): Instructions {
+  return { name, items: [{ id: "main-section", itemType: "section", label: "Content", children: files.map((file, index) => ({ id: file.id || `item-${index}`, itemType: "file", label: file.title, seconds: file.seconds, embedUrl: file.embedUrl || file.url })) }] };
 }
 
 export const playlistToExpandedInstructions = playlistToInstructions;

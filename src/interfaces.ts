@@ -77,6 +77,7 @@ export interface ContentFile {
   loop?: boolean;
   loopVideo?: boolean;
   streamUrl?: string;
+  providerData?: Record<string, unknown>;
 }
 
 export type ContentItem = ContentFolder | ContentFile;
@@ -97,8 +98,9 @@ export type DeviceFlowPollResult =
 export interface PlanPresentation {
   id: string;
   name: string;
-  actionType: "play" | "add-on" | "other";
+  actionType: "play" | "other";
   files: ContentFile[];
+  providerData?: Record<string, unknown>;
 }
 
 export interface PlanSection {
@@ -160,7 +162,7 @@ export interface InstructionItem {
 }
 
 export interface Instructions {
-  venueName?: string;
+  name?: string;
   items: InstructionItem[];
 }
 

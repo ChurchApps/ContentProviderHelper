@@ -164,24 +164,8 @@ export class B1ChurchProvider implements IProvider {
       const presentations: PlanPresentation[] = [];
 
       for (const child of sectionItem.children || []) {
-        const childItemType = child.itemType;
-
-        // Handle providerFile/providerPresentation items with a direct link first
-        if ((childItemType === "providerFile" || childItemType === "providerPresentation") && child.link) {
-          const presentation = await planItemToPresentation(child, venueFeed);
-          if (presentation) {
-            presentations.push(presentation);
-            allFiles.push(...presentation.files);
-          }
-        } else if ((childItemType === "providerSection" || childItemType === "section" || childItemType === "lessonSection") && venueFeed && child.relatedId) {
-          // Handle section items from venue feed
-          const presentation = await planItemToPresentation(child, venueFeed);
-          if (presentation) {
-            presentations.push(presentation);
-            allFiles.push(...presentation.files);
-          }
-        } else if (isExternalProviderItem(child) && child.providerId && child.providerPath) {
-          // Handle external provider items via proxy
+        // Try external provider resolution first (cached, uses providerContentPath)
+        if (isExternalProviderItem(child) && child.providerId && child.providerPath) {
           const cacheKey = `${child.providerId}:${child.providerPath}`;
 
           let externalPlan = externalPlanCache.get(cacheKey);
@@ -231,7 +215,7 @@ export class B1ChurchProvider implements IProvider {
             }
           }
         } else {
-          // Handle internal items as before
+          // Handle internal items (venue feed sections, link-based files, etc.)
           const presentation = await planItemToPresentation(child, venueFeed);
           if (presentation) {
             presentations.push(presentation);
@@ -289,7 +273,7 @@ export class B1ChurchProvider implements IProvider {
         authData
       );
       if (externalInstructions) {
-        return { venueName: planTitle, items: externalInstructions.items };
+        return { name: planTitle, items: externalInstructions.items };
       }
     }
 
@@ -309,7 +293,7 @@ export class B1ChurchProvider implements IProvider {
 
     // Process items, handling external providers
     const processedItems = await this.processInstructionItems(planItems, ministryId, authData, sectionActionsMap);
-    return { venueName: planTitle, items: processedItems };
+    return { name: planTitle, items: processedItems };
   }
 
   private async processInstructionItems(
@@ -412,7 +396,7 @@ export class B1ChurchProvider implements IProvider {
   async getPlaylist(path: string, authData?: ContentProviderAuthData | null, resolution?: number): Promise<ContentFile[] | null> {
     const { segments, depth } = parsePath(path);
 
-    if (depth < 4 || segments[0] !== "ministries") return [];
+    if (depth < 4 || segments[0] !== "ministries") return null;
 
     const ministryId = segments[1];
     const planId = segments[3];
@@ -421,12 +405,12 @@ export class B1ChurchProvider implements IProvider {
     // Need to fetch plan details to get churchId and contentId
     const plans = await fetchPlans(planTypeId, authData);
     const planFolder = plans.find(p => p.id === planId);
-    if (!planFolder) return [];
+    if (!planFolder) return null;
 
     const churchId = planFolder.churchId;
     const venueId = planFolder.contentId;
 
-    if (!churchId) return [];
+    if (!churchId) return null;
 
     const pathFn = this.config.endpoints.planItems as (churchId: string, planId: string) => string;
     const planItems = await this.apiRequest<B1PlanItem[]>(pathFn(churchId, planId), authData);
@@ -441,10 +425,10 @@ export class B1ChurchProvider implements IProvider {
         authData,
         resolution
       );
-      return externalFiles || [];
+      return externalFiles || null;
     }
 
-    if (!planItems || !Array.isArray(planItems)) return [];
+    if (!planItems || !Array.isArray(planItems)) return null;
 
     const venueFeed = venueId ? await fetchVenueFeed(venueId) : null;
     const files: ContentFile[] = [];
@@ -462,16 +446,8 @@ export class B1ChurchProvider implements IProvider {
         const isSectionType = childItemType === "section" || childItemType === "lessonSection" || childItemType === "providerSection";
         const canExpandLocally = isSectionType && venueFeed && child.relatedId;
 
-        // Handle providerFile/providerPresentation items with a direct link first
-        if ((childItemType === "providerFile" || childItemType === "providerPresentation") && child.link) {
-          const file = getFileFromProviderFileItem(child);
-          if (file) files.push(file);
-        } else if (canExpandLocally) {
-          // Get files from venue feed for section items
-          const itemFiles = getFilesFromVenueFeed(venueFeed, childItemType!, child.relatedId);
-          files.push(...itemFiles);
-        } else if (isExternalProviderItem(child) && child.providerId && child.providerPath) {
-          // Handle external provider items via proxy
+        // Try external provider resolution first (cached, uses providerContentPath)
+        if (isExternalProviderItem(child) && child.providerId && child.providerPath) {
           const cacheKey = `${child.providerId}:${child.providerPath}`;
 
           if (child.providerContentPath) {
@@ -507,7 +483,7 @@ export class B1ChurchProvider implements IProvider {
               }
             }
           } else {
-            // No specific content ID - get all files (with caching)
+            // No specific content path - get all files (with caching)
             let externalFiles = externalPlaylistCache.get(cacheKey);
             if (externalFiles === undefined) {
               externalFiles = await fetchFromProviderProxy(
@@ -524,16 +500,24 @@ export class B1ChurchProvider implements IProvider {
               files.push(...externalFiles);
             }
           }
+        } else if (canExpandLocally) {
+          // Get files from venue feed for section items
+          const itemFiles = getFilesFromVenueFeed(venueFeed, childItemType!, child.relatedId);
+          files.push(...itemFiles);
+        } else if ((childItemType === "providerFile" || childItemType === "providerPresentation") && child.link) {
+          // Fallback: use stored link when no provider info available
+          const file = getFileFromProviderFileItem(child);
+          if (file) files.push(file);
         } else if (venueFeed && (childItemType === "lessonAction" || childItemType === "action" ||
                childItemType === "lessonAddOn" || childItemType === "addon")) {
-          // Handle action/addon items from venue feed
+          // Handle action items from venue feed
           const itemFiles = getFilesFromVenueFeed(venueFeed, childItemType, child.relatedId);
           files.push(...itemFiles);
         }
       }
     }
 
-    return files;
+    return files.length > 0 ? files : null;
   }
 
   supportsDeviceFlow(): boolean {
