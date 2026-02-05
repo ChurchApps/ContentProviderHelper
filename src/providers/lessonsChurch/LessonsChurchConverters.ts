@@ -1,4 +1,4 @@
-import { ContentFile, FeedVenueInterface, Plan, PlanSection, PlanPresentation, InstructionItem, VenueActionsResponseInterface } from "../../interfaces";
+import { ContentFile, FeedVenueInterface, Plan, PlanSection, PlanPresentation, InstructionItem, Instructions, VenueActionsResponseInterface } from "../../interfaces";
 import { detectMediaType } from "../../utils";
 import { estimateImageDuration } from "../../durationUtils";
 import { apiRequest, API_BASE } from "./LessonsChurchApi";
@@ -120,4 +120,54 @@ export function processInstructionItem(item: Record<string, unknown>, sectionAct
   }
 
   return { id: item.id as string | undefined, itemType, relatedId, label: item.label as string | undefined, description: item.description as string | undefined, seconds: item.seconds as number | undefined, children: processedChildren, embedUrl: getEmbedUrl(itemType, relatedId) };
+}
+
+export async function convertAddOnCategoryToPlan(category: string): Promise<Plan | null> {
+  const decodedCategory = decodeURIComponent(category);
+  const response = await apiRequest<Record<string, unknown>[]>("/addOns/public");
+  if (!response || !Array.isArray(response)) return null;
+
+  const filtered = response.filter((a) => a.category === decodedCategory);
+  const presentations: PlanPresentation[] = [];
+  const allFiles: ContentFile[] = [];
+
+  for (const addOn of filtered) {
+    const file = await convertAddOnToFile(addOn);
+    if (file) {
+      presentations.push({ id: addOn.id as string, name: addOn.name as string, actionType: "add-on", files: [file] });
+      allFiles.push(file);
+    }
+  }
+
+  if (presentations.length === 0) return null;
+
+  const section: PlanSection = { id: `category-${decodedCategory}`, name: decodedCategory, presentations };
+  return { id: `addons-${decodedCategory}`, name: decodedCategory, sections: [section], allFiles };
+}
+
+export async function convertAddOnCategoryToInstructions(category: string): Promise<Instructions | null> {
+  const decodedCategory = decodeURIComponent(category);
+  const response = await apiRequest<Record<string, unknown>[]>("/addOns/public");
+  if (!response || !Array.isArray(response)) return null;
+
+  const filtered = response.filter((a) => a.category === decodedCategory);
+  const children: InstructionItem[] = filtered.map(addOn => {
+    const id = addOn.id as string;
+    const label = addOn.name as string;
+    const seconds = (addOn.seconds as number) || 10;
+    return {
+      id,
+      itemType: "addon",
+      relatedId: id,
+      label,
+      description: "Add-On",
+      seconds,
+      children: [{ id: id + "-file", itemType: "file", label, seconds, embedUrl: getEmbedUrl("addon", id) }]
+    };
+  });
+
+  if (children.length === 0) return null;
+
+  const sectionItem: InstructionItem = { id: `category-${decodedCategory}`, itemType: "section", label: decodedCategory, children };
+  return { venueName: decodedCategory, items: [sectionItem] };
 }

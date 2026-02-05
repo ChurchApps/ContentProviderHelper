@@ -77,6 +77,7 @@ export interface ContentFile {
   loop?: boolean;
   loopVideo?: boolean;
   streamUrl?: string;
+  providerData?: Record<string, unknown>;
 }
 
 export type ContentItem = ContentFolder | ContentFile;
