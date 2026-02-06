@@ -52,7 +52,7 @@ export class LessonsChurchProvider implements IProvider {
         const url = f.url as string;
         const fileId = (f.id as string) || `playlist-${fileIndex++}`;
 
-        files.push({ type: "file", id: fileId, title: (f.name || msg.name) as string, mediaType: detectMediaType(url, f.fileType as string | undefined), thumbnail: response.lessonImage as string | undefined, url, seconds: f.seconds as number | undefined, loop: f.loop as boolean | undefined, loopVideo: f.loopVideo as boolean | undefined });
+        files.push({ type: "file", id: fileId, title: (f.name || msg.name) as string, mediaType: detectMediaType(url, f.fileType as string | undefined), thumbnail: (f.thumbnail as string | undefined) || (response.lessonImage as string | undefined), url, downloadUrl: url, seconds: f.seconds as number | undefined, loop: f.loop as boolean | undefined, loopVideo: f.loopVideo as boolean | undefined });
       }
     }
 
