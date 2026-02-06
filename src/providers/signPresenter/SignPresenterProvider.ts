@@ -1,5 +1,5 @@
 import { ContentProviderConfig, ContentProviderAuthData, ContentItem, ContentFile, ProviderLogos, Plan, PlanPresentation, ProviderCapabilities, IProvider, AuthType, Instructions, InstructionItem, DeviceAuthorizationResponse, DeviceFlowPollResult } from "../../interfaces";
-import { detectMediaType } from "../../utils";
+import { detectMediaType, createFile } from "../../utils";
 import { parsePath } from "../../pathUtils";
 import { ApiHelper, OAuthHelper, DeviceFlowHelper } from "../../helpers";
 
@@ -97,31 +97,41 @@ export class SignPresenterProvider implements IProvider {
 
       const url = msg.url as string;
       const seconds = msg.seconds as number | undefined;
-
-      files.push({ type: "file", id: msg.id as string, title: msg.name as string, mediaType: detectMediaType(url, msg.mediaType as string | undefined), thumbnail: (msg.thumbnail || msg.image) as string | undefined, url, downloadUrl: url, seconds });
+      const file = createFile(
+        msg.id as string,
+        msg.name as string,
+        url,
+        {
+          mediaType: detectMediaType(url, msg.mediaType as string | undefined),
+          thumbnail: (msg.thumbnail || msg.image) as string | undefined,
+          seconds
+        }
+      );
+      file.downloadUrl = url;
+      files.push(file);
     }
 
     return files;
   }
 
-  async getPresentations(path: string, auth?: ContentProviderAuthData | null): Promise<Plan | null> {
-    const { segments, depth } = parsePath(path);
+  // async getPresentations(path: string, auth?: ContentProviderAuthData | null): Promise<Plan | null> {
+  //   const { segments, depth } = parsePath(path);
 
-    if (depth < 2 || segments[0] !== "playlists") return null;
+  //   if (depth < 2 || segments[0] !== "playlists") return null;
 
-    const playlistId = segments[1];
-    const files = await this.getMessages(playlistId, auth) as ContentFile[];
-    if (files.length === 0) return null;
+  //   const playlistId = segments[1];
+  //   const files = await this.getMessages(playlistId, auth) as ContentFile[];
+  //   if (files.length === 0) return null;
 
-    // Get playlist info for title
-    const playlists = await this.getPlaylists(auth);
-    const playlist = playlists.find(p => p.id === playlistId);
-    const title = playlist?.title || "Playlist";
-    const thumbnail = (playlist as Record<string, unknown> | undefined)?.image as string | undefined;
+  //   // Get playlist info for title
+  //   const playlists = await this.getPlaylists(auth);
+  //   const playlist = playlists.find(p => p.id === playlistId);
+  //   const title = playlist?.title || "Playlist";
+  //   const thumbnail = (playlist as Record<string, unknown> | undefined)?.image as string | undefined;
 
-    const presentations: PlanPresentation[] = files.map(f => ({ id: f.id, name: f.title, actionType: "play" as const, files: [f] }));
-    return { id: playlistId, name: title as string, thumbnail, sections: [{ id: `section-${playlistId}`, name: title as string, presentations }], allFiles: files };
-  }
+  //   const presentations: PlanPresentation[] = files.map(f => ({ id: f.id, name: f.title, actionType: "play" as const, files: [f] }));
+  //   return { id: playlistId, name: title as string, thumbnail, sections: [{ id: `section-${playlistId}`, name: title as string, presentations }], allFiles: files };
+  // }
 
   async getPlaylist(path: string, auth?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
     const { segments, depth } = parsePath(path);

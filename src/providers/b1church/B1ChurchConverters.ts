@@ -31,7 +31,7 @@ export async function planItemToPresentation(item: B1PlanItem, venueFeed: FeedVe
   if ((itemType === "providerFile" || itemType === "providerPresentation") && item.link) {
     const file: ContentFile = {
       type: "file",
-      id: item.relatedId || item.id,
+      id: item.relatedId ?? item.id ?? "unknown",
       title: item.label || "File",
       mediaType: detectMediaType(item.link),
       url: item.link,
@@ -97,7 +97,7 @@ export function getFileFromProviderFileItem(item: B1PlanItem): ContentFile | nul
   if ((item.itemType !== "providerFile" && item.itemType !== "providerPresentation") || !item.link) return null;
   return {
     type: "file",
-    id: item.relatedId || item.id,
+    id: item.relatedId ?? item.id ?? "unknown",
     title: item.label || "File",
     mediaType: detectMediaType(item.link),
     url: item.link,

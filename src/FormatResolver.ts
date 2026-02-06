@@ -39,10 +39,10 @@ export class FormatResolver {
       if (result && result.length > 0) return result;
     }
 
-    if (caps.presentations) {
-      const plan = await this.provider.getPresentations(path, auth);
-      if (plan) return Converters.presentationsToPlaylist(plan);
-    }
+    // if (caps.presentations) {
+    //   const plan = await this.provider.getPresentations(path, auth);
+    //   if (plan) return Converters.presentationsToPlaylist(plan);
+    // }
 
     if (caps.instructions && this.provider.getInstructions) {
       const expanded = await this.provider.getInstructions(path, auth);
@@ -62,10 +62,10 @@ export class FormatResolver {
       }
     }
 
-    if (caps.presentations) {
-      const plan = await this.provider.getPresentations(path, auth);
-      if (plan) return { data: Converters.presentationsToPlaylist(plan), meta: { isNative: false, sourceFormat: "presentations", isLossy: false } };
-    }
+    // if (caps.presentations) {
+    //   const plan = await this.provider.getPresentations(path, auth);
+    //   if (plan) return { data: Converters.presentationsToPlaylist(plan), meta: { isNative: false, sourceFormat: "presentations", isLossy: false } };
+    // }
 
     if (caps.instructions && this.provider.getInstructions) {
       const expanded = await this.provider.getInstructions(path, auth);
@@ -75,53 +75,53 @@ export class FormatResolver {
     return { data: null, meta: { isNative: false, isLossy: false } };
   }
 
-  async getPresentations(path: string, auth?: ContentProviderAuthData | null): Promise<Plan | null> {
-    const caps = this.provider.capabilities;
-    const fallbackId = this.getIdFromPath(path);
+  // async getPresentations(path: string, auth?: ContentProviderAuthData | null): Promise<Plan | null> {
+  //   const caps = this.provider.capabilities;
+  //   const fallbackId = this.getIdFromPath(path);
 
-    if (caps.presentations) {
-      const result = await this.provider.getPresentations(path, auth);
-      if (result) return result;
-    }
+  //   if (caps.presentations) {
+  //     const result = await this.provider.getPresentations(path, auth);
+  //     if (result) return result;
+  //   }
 
-    if (caps.instructions && this.provider.getInstructions) {
-      const expanded = await this.provider.getInstructions(path, auth);
-      if (expanded) return Converters.instructionsToPresentations(expanded, fallbackId);
-    }
+  //   if (caps.instructions && this.provider.getInstructions) {
+  //     const expanded = await this.provider.getInstructions(path, auth);
+  //     if (expanded) return Converters.instructionsToPresentations(expanded, fallbackId);
+  //   }
 
-    if (this.options.allowLossy && caps.playlist && this.provider.getPlaylist) {
-      const playlist = await this.provider.getPlaylist(path, auth);
-      if (playlist && playlist.length > 0) {
-        return Converters.playlistToPresentations(playlist, fallbackId);
-      }
-    }
+  //   if (this.options.allowLossy && caps.playlist && this.provider.getPlaylist) {
+  //     const playlist = await this.provider.getPlaylist(path, auth);
+  //     if (playlist && playlist.length > 0) {
+  //       return Converters.playlistToPresentations(playlist, fallbackId);
+  //     }
+  //   }
 
-    return null;
-  }
+  //   return null;
+  // }
 
-  async getPresentationsWithMeta(path: string, auth?: ContentProviderAuthData | null): Promise<{ data: Plan | null; meta: ResolvedFormatMeta }> {
-    const caps = this.provider.capabilities;
-    const fallbackId = this.getIdFromPath(path);
+  // async getPresentationsWithMeta(path: string, auth?: ContentProviderAuthData | null): Promise<{ data: Plan | null; meta: ResolvedFormatMeta }> {
+  //   const caps = this.provider.capabilities;
+  //   const fallbackId = this.getIdFromPath(path);
 
-    if (caps.presentations) {
-      const result = await this.provider.getPresentations(path, auth);
-      if (result) {
-        return { data: result, meta: { isNative: true, isLossy: false } };
-      }
-    }
+  //   if (caps.presentations) {
+  //     const result = await this.provider.getPresentations(path, auth);
+  //     if (result) {
+  //       return { data: result, meta: { isNative: true, isLossy: false } };
+  //     }
+  //   }
 
-    if (caps.instructions && this.provider.getInstructions) {
-      const expanded = await this.provider.getInstructions(path, auth);
-      if (expanded) return { data: Converters.instructionsToPresentations(expanded, fallbackId), meta: { isNative: false, sourceFormat: "instructions", isLossy: false } };
-    }
+  //   if (caps.instructions && this.provider.getInstructions) {
+  //     const expanded = await this.provider.getInstructions(path, auth);
+  //     if (expanded) return { data: Converters.instructionsToPresentations(expanded, fallbackId), meta: { isNative: false, sourceFormat: "instructions", isLossy: false } };
+  //   }
 
-    if (this.options.allowLossy && caps.playlist && this.provider.getPlaylist) {
-      const playlist = await this.provider.getPlaylist(path, auth);
-      if (playlist && playlist.length > 0) return { data: Converters.playlistToPresentations(playlist, fallbackId), meta: { isNative: false, sourceFormat: "playlist", isLossy: true } };
-    }
+  //   if (this.options.allowLossy && caps.playlist && this.provider.getPlaylist) {
+  //     const playlist = await this.provider.getPlaylist(path, auth);
+  //     if (playlist && playlist.length > 0) return { data: Converters.playlistToPresentations(playlist, fallbackId), meta: { isNative: false, sourceFormat: "playlist", isLossy: true } };
+  //   }
 
-    return { data: null, meta: { isNative: false, isLossy: false } };
-  }
+  //   return { data: null, meta: { isNative: false, isLossy: false } };
+  // }
 
   async getInstructions(path: string, auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
     const caps = this.provider.capabilities;
@@ -132,10 +132,10 @@ export class FormatResolver {
       if (result) return result;
     }
 
-    if (caps.presentations) {
-      const plan = await this.provider.getPresentations(path, auth);
-      if (plan) return Converters.presentationsToExpandedInstructions(plan);
-    }
+    // if (caps.presentations) {
+    //   const plan = await this.provider.getPresentations(path, auth);
+    //   if (plan) return Converters.presentationsToExpandedInstructions(plan);
+    // }
 
     if (this.options.allowLossy && caps.playlist && this.provider.getPlaylist) {
       const playlist = await this.provider.getPlaylist(path, auth);
@@ -158,10 +158,10 @@ export class FormatResolver {
       }
     }
 
-    if (caps.presentations) {
-      const plan = await this.provider.getPresentations(path, auth);
-      if (plan) return { data: Converters.presentationsToExpandedInstructions(plan), meta: { isNative: false, sourceFormat: "presentations", isLossy: false } };
-    }
+    // if (caps.presentations) {
+    //   const plan = await this.provider.getPresentations(path, auth);
+    //   if (plan) return { data: Converters.presentationsToExpandedInstructions(plan), meta: { isNative: false, sourceFormat: "presentations", isLossy: false } };
+    // }
 
     if (this.options.allowLossy && caps.playlist && this.provider.getPlaylist) {
       const playlist = await this.provider.getPlaylist(path, auth);

@@ -21,19 +21,8 @@ export {
   type DurationEstimationConfig
 } from "./durationUtils";
 
-// Format conversion utilities
+// Format conversion utilities (access via FormatConverters namespace)
 export * as FormatConverters from "./FormatConverters";
-export {
-  presentationsToPlaylist,
-  presentationsToExpandedInstructions,
-  instructionsToPlaylist,
-  expandedInstructionsToPlaylist,
-  instructionsToPresentations,
-  expandedInstructionsToPresentations,
-  playlistToPresentations,
-  playlistToInstructions,
-  playlistToExpandedInstructions
-} from "./FormatConverters";
 
 // Format resolver
 export { FormatResolver, type FormatResolverOptions, type ResolvedFormatMeta } from "./FormatResolver";

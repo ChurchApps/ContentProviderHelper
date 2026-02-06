@@ -7,6 +7,12 @@ export interface ContentProviderAuthData {
   scope: string;
 }
 
+/** A single endpoint value - either a static string or a function that generates a path */
+export type EndpointValue = string | ((...args: string[]) => string);
+
+/** Configuration for provider API endpoints */
+export type EndpointsConfig = Record<string, EndpointValue>;
+
 export interface ContentProviderConfig {
   id: string;
   name: string;
@@ -16,7 +22,7 @@ export interface ContentProviderConfig {
   scopes: string[];
   supportsDeviceFlow?: boolean;
   deviceAuthEndpoint?: string;
-  endpoints: Record<string, string | ((...args: string[]) => string)>;
+  endpoints: EndpointsConfig;
 }
 
 export interface DeviceAuthorizationResponse {
@@ -77,6 +83,7 @@ export interface ContentFile {
   loop?: boolean;
   loopVideo?: boolean;
   streamUrl?: string;
+  /** Provider-specific metadata that varies by provider implementation */
   providerData?: Record<string, unknown>;
 }
 
@@ -220,7 +227,7 @@ export interface IProvider {
 
   // Core methods (required)
   browse(path?: string | null, auth?: ContentProviderAuthData | null): Promise<ContentItem[]>;
-  getPresentations(path: string, auth?: ContentProviderAuthData | null): Promise<Plan | null>;
+  // getPresentations(path: string, auth?: ContentProviderAuthData | null): Promise<Plan | null>;
 
   // Auth methods (required)
   supportsDeviceFlow(): boolean;
