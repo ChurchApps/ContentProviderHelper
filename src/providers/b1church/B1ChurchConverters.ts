@@ -4,7 +4,7 @@ import { B1Ministry, B1PlanType, B1Plan, B1PlanItem, ArrangementKeyResponse } fr
 import { fetchArrangementKey } from "./B1ChurchApi";
 
 export function ministryToFolder(ministry: B1Ministry): ContentItem {
-  return { type: "folder" as const, id: ministry.id, title: ministry.name, path: "", image: ministry.photoUrl };
+  return { type: "folder" as const, id: ministry.id, title: ministry.name, path: "", thumbnail: ministry.photoUrl };
 }
 
 export function planTypeToFolder(planType: B1PlanType): ContentItem {
@@ -89,7 +89,7 @@ export function getFilesFromVenueFeed(venueFeed: FeedVenueInterface, itemType: s
 }
 
 export function convertFeedFiles(feedFiles: Array<{ id?: string; name?: string; url?: string; streamUrl?: string; seconds?: number; fileType?: string }>, thumbnailImage?: string): ContentFile[] {
-  return feedFiles.filter(f => f.url).map(f => ({ type: "file" as const, id: f.id || "", title: f.name || "", mediaType: detectMediaType(f.url || "", f.fileType), image: thumbnailImage, url: f.url || "", seconds: f.seconds, streamUrl: f.streamUrl }));
+  return feedFiles.filter(f => f.url).map(f => ({ type: "file" as const, id: f.id || "", title: f.name || "", mediaType: detectMediaType(f.url || "", f.fileType), thumbnail: thumbnailImage, url: f.url || "", seconds: f.seconds, streamUrl: f.streamUrl }));
 }
 
 export function getFileFromProviderFileItem(item: B1PlanItem): ContentFile | null {
@@ -105,7 +105,7 @@ export function getFileFromProviderFileItem(item: B1PlanItem): ContentFile | nul
   };
 }
 
-export function planItemToInstruction(item: B1PlanItem): InstructionItem {
+export function planItemToInstruction(item: B1PlanItem, thumbnail?: string): InstructionItem {
   // Convert B1 API itemTypes to standardized short names
   let itemType: string | undefined = item.itemType;
   switch (item.itemType) {
@@ -114,7 +114,8 @@ export function planItemToInstruction(item: B1PlanItem): InstructionItem {
     case "lessonAddOn": itemType = "action"; break;
   }
 
-  return { id: item.id, itemType, relatedId: item.relatedId, label: item.label, description: item.description, seconds: item.seconds, embedUrl: item.link, children: item.children?.map(planItemToInstruction) };
+  const isFileType = itemType === "file" || (item.link && !item.children?.length);
+  return { id: item.id, itemType, relatedId: item.relatedId, label: item.label, description: item.description, seconds: item.seconds, downloadUrl: item.link, thumbnail: isFileType ? thumbnail : undefined, children: item.children?.map(child => planItemToInstruction(child, thumbnail)) };
 }
 
 /**
@@ -177,13 +178,13 @@ function getEmbedUrl(apiType?: string, relatedId?: string): string | undefined {
   }
 }
 
-export function buildSectionActionsMap(actionsResponse: VenueActionsResponseInterface | null): Map<string, InstructionItem[]> {
+export function buildSectionActionsMap(actionsResponse: VenueActionsResponseInterface | null, thumbnail?: string): Map<string, InstructionItem[]> {
   const sectionActionsMap = new Map<string, InstructionItem[]>();
   if (actionsResponse?.sections) {
     for (const section of actionsResponse.sections) {
       if (section.id && section.actions) {
         sectionActionsMap.set(section.id, section.actions.map(action => {
-          const embedUrl = getEmbedUrl("action", action.id);
+          const downloadUrl = getEmbedUrl("action", action.id);
           const seconds = action.seconds ?? 10;
           return {
             id: action.id,
@@ -196,7 +197,8 @@ export function buildSectionActionsMap(actionsResponse: VenueActionsResponseInte
               itemType: "file",
               label: action.name,
               seconds,
-              embedUrl
+              downloadUrl,
+              thumbnail
             }]
           };
         }));
@@ -206,7 +208,7 @@ export function buildSectionActionsMap(actionsResponse: VenueActionsResponseInte
   return sectionActionsMap;
 }
 
-export function processVenueInstructionItem(item: Record<string, unknown>, sectionActionsMap: Map<string, InstructionItem[]>): InstructionItem {
+export function processVenueInstructionItem(item: Record<string, unknown>, sectionActionsMap: Map<string, InstructionItem[]>, thumbnail?: string): InstructionItem {
   const relatedId = item.relatedId as string | undefined;
   const rawItemType = item.itemType as string | undefined;
 
@@ -240,13 +242,14 @@ export function processVenueInstructionItem(item: Record<string, unknown>, secti
           description: child.description as string | undefined,
           seconds: child.seconds as number | undefined,
           children: sectionActionsMap.get(childRelatedId),
-          embedUrl: getEmbedUrl(rawChildItemType, childRelatedId)
+          downloadUrl: getEmbedUrl(rawChildItemType, childRelatedId)
         };
       }
-      return processVenueInstructionItem(child, sectionActionsMap);
+      return processVenueInstructionItem(child, sectionActionsMap, thumbnail);
     });
   }
 
+  const isFileType = itemType === "file" || (itemType === "action" && !children?.length);
   return {
     id: item.id as string | undefined,
     itemType,
@@ -255,6 +258,7 @@ export function processVenueInstructionItem(item: Record<string, unknown>, secti
     description: item.description as string | undefined,
     seconds: item.seconds as number | undefined,
     children: processedChildren,
-    embedUrl: getEmbedUrl(rawItemType, relatedId)
+    downloadUrl: getEmbedUrl(rawItemType, relatedId),
+    thumbnail: isFileType ? thumbnail : undefined
   };
 }

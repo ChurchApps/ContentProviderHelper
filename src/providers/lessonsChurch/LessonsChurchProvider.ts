@@ -52,7 +52,7 @@ export class LessonsChurchProvider implements IProvider {
         const url = f.url as string;
         const fileId = (f.id as string) || `playlist-${fileIndex++}`;
 
-        files.push({ type: "file", id: fileId, title: (f.name || msg.name) as string, mediaType: detectMediaType(url, f.fileType as string | undefined), image: response.lessonImage as string | undefined, url, seconds: f.seconds as number | undefined, loop: f.loop as boolean | undefined, loopVideo: f.loopVideo as boolean | undefined });
+        files.push({ type: "file", id: fileId, title: (f.name || msg.name) as string, mediaType: detectMediaType(url, f.fileType as string | undefined), thumbnail: (f.thumbnail as string | undefined) || (response.lessonImage as string | undefined), url, downloadUrl: url, seconds: f.seconds as number | undefined, loop: f.loop as boolean | undefined, loopVideo: f.loopVideo as boolean | undefined });
       }
     }
 
@@ -96,7 +96,7 @@ export class LessonsChurchProvider implements IProvider {
       type: "folder" as const,
       id: p.id as string,
       title: p.name as string,
-      image: p.image as string | undefined,
+      thumbnail: p.image as string | undefined,
       path: `/lessons/${p.id}`
     }));
   }
@@ -111,7 +111,7 @@ export class LessonsChurchProvider implements IProvider {
       type: "folder" as const,
       id: s.id as string,
       title: s.name as string,
-      image: s.image as string | undefined,
+      thumbnail: s.image as string | undefined,
       path: `${currentPath}/${s.id}`
     }));
   }
@@ -126,7 +126,7 @@ export class LessonsChurchProvider implements IProvider {
       type: "folder" as const,
       id: l.id as string,
       title: (l.name || l.title) as string,
-      image: l.image as string | undefined,
+      thumbnail: l.image as string | undefined,
       path: `${currentPath}/${l.id}`
     }));
   }
@@ -144,7 +144,7 @@ export class LessonsChurchProvider implements IProvider {
       type: "folder" as const,
       id: v.id as string,
       title: v.name as string,
-      image: lessonImage,
+      thumbnail: lessonImage,
       isLeaf: true,
       path: `${currentPath}/${v.id}`
     }));
@@ -216,16 +216,18 @@ export class LessonsChurchProvider implements IProvider {
   async getInstructions(path: string, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
     const venueId = getSegment(path, 4);
     if (venueId) {
-      const [planItemsResponse, actionsResponse] = await Promise.all([
+      const [planItemsResponse, actionsResponse, feedResponse] = await Promise.all([
         apiRequest<{ venueName?: string; items?: Record<string, unknown>[] }>(`/venues/public/planItems/${venueId}`),
-        apiRequest<VenueActionsResponseInterface>(`/venues/public/actions/${venueId}`)
+        apiRequest<VenueActionsResponseInterface>(`/venues/public/actions/${venueId}`),
+        apiRequest<FeedVenueInterface>(`/venues/public/feed/${venueId}`)
       ]);
 
       if (!planItemsResponse) return null;
 
-      const sectionActionsMap = buildSectionActionsMap(actionsResponse);
+      const lessonImage = feedResponse?.lessonImage;
+      const sectionActionsMap = buildSectionActionsMap(actionsResponse, lessonImage, feedResponse);
 
-      return { name: planItemsResponse.venueName, items: (planItemsResponse.items || []).map(item => processInstructionItem(item, sectionActionsMap)) };
+      return { name: planItemsResponse.venueName, items: (planItemsResponse.items || []).map(item => processInstructionItem(item, sectionActionsMap, lessonImage)) };
     }
 
     const { segments } = parsePath(path);

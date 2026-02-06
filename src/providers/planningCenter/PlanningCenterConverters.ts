@@ -110,7 +110,8 @@ export function buildInstructionsFromPlan(plan: Plan): Instructions {
         id: file.id,
         itemType: "file",
         label: file.title,
-        embedUrl: file.url
+        downloadUrl: file.url,
+        thumbnail: file.thumbnail
       }));
 
       return {

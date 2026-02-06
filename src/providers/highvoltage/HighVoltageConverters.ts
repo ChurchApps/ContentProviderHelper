@@ -21,7 +21,7 @@ export function getStudyFolders(data: HighVoltageData, collectionSlug: string, c
     type: "folder" as const,
     id: study.id,
     title: study.name,
-    image: study.image || undefined,
+    thumbnail: study.image || undefined,
     path: `${currentPath}/${study.id}`
   }));
 }
@@ -37,7 +37,7 @@ export function getLessonFolders(data: HighVoltageData, collectionSlug: string, 
     type: "folder" as const,
     id: lesson.id,
     title: lesson.name,
-    image: lesson.image || undefined,
+    thumbnail: lesson.image || undefined,
     isLeaf: true,
     path: `${currentPath}/${lesson.id}`
   }));
@@ -76,7 +76,7 @@ export function buildStudyPlan(study: StudyFolder): Plan {
   const allFiles: ContentFile[] = [];
   const sections: PlanSection[] = study.lessons.map(lesson => {
     const files: ContentFile[] = lesson.files.map(file => {
-      const contentFile: ContentFile = { type: "file", id: file.id, title: file.title, mediaType: file.mediaType as "video" | "image", url: file.url, image: lesson.image };
+      const contentFile: ContentFile = { type: "file", id: file.id, title: file.title, mediaType: file.mediaType as "video" | "image", url: file.url, thumbnail: lesson.image };
       allFiles.push(contentFile);
       return contentFile;
     });
@@ -84,25 +84,25 @@ export function buildStudyPlan(study: StudyFolder): Plan {
     return { id: lesson.id, name: lesson.name, presentations: [presentation] };
   });
 
-  return { id: study.id, name: study.name, description: study.description, image: study.image, sections, allFiles };
+  return { id: study.id, name: study.name, description: study.description, thumbnail: study.image, sections, allFiles };
 }
 
 export function buildLessonPlan(lesson: LessonFolder): Plan {
-  const files: ContentFile[] = lesson.files.map(file => ({ type: "file" as const, id: file.id, title: file.title, mediaType: file.mediaType as "video" | "image", url: file.url, image: lesson.image }));
+  const files: ContentFile[] = lesson.files.map(file => ({ type: "file" as const, id: file.id, title: file.title, mediaType: file.mediaType as "video" | "image", url: file.url, thumbnail: lesson.image }));
   const presentation: PlanPresentation = { id: lesson.id, name: lesson.name, actionType: "play", files };
-  return { id: lesson.id, name: lesson.name, image: lesson.image, sections: [{ id: "main", name: "Content", presentations: [presentation] }], allFiles: files };
+  return { id: lesson.id, name: lesson.name, thumbnail: lesson.image, sections: [{ id: "main", name: "Content", presentations: [presentation] }], allFiles: files };
 }
 
 export function buildStudyPlaylist(study: StudyFolder): ContentFile[] {
   const allFiles: ContentFile[] = [];
   for (const lesson of study.lessons) {
     for (const file of lesson.files) {
-      allFiles.push({ type: "file", id: file.id, title: file.title, mediaType: file.mediaType as "video" | "image", url: file.url, image: lesson.image });
+      allFiles.push({ type: "file", id: file.id, title: file.title, mediaType: file.mediaType as "video" | "image", url: file.url, thumbnail: lesson.image });
     }
   }
   return allFiles;
 }
 
 export function buildLessonPlaylist(lesson: LessonFolder): ContentFile[] {
-  return lesson.files.map(file => ({ type: "file" as const, id: file.id, title: file.title, mediaType: file.mediaType as "video" | "image", url: file.url, image: lesson.image }));
+  return lesson.files.map(file => ({ type: "file" as const, id: file.id, title: file.title, mediaType: file.mediaType as "video" | "image", url: file.url, thumbnail: lesson.image }));
 }

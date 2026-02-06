@@ -58,7 +58,7 @@ export function convertMediaToFiles(mediaItems: Record<string, unknown>[]): Cont
     const detectedMediaType = detectMediaType(url, mediaType);
     const fileId = (item.mediaId || item.id) as string;
 
-    files.push({ type: "file", id: fileId, title: (item.title || item.name || item.fileName || "") as string, mediaType: detectedMediaType, image: thumbnail, url, muxPlaybackId, mediaId: fileId });
+    files.push({ type: "file", id: fileId, title: (item.title || item.name || item.fileName || "") as string, mediaType: detectedMediaType, thumbnail: thumbnail, url, muxPlaybackId, mediaId: fileId });
   }
 
   return files;
@@ -81,7 +81,7 @@ export function convertModulesToFolders(modules: Record<string, unknown>[]): Con
       type: "folder" as const,
       id: moduleId,
       title: moduleTitle,
-      image: moduleImage,
+      thumbnail: moduleImage,
       path: `/modules/${moduleId}`
     });
   }
@@ -97,7 +97,7 @@ export function convertLibrariesToFolders(libraries: Record<string, unknown>[], 
     type: "folder" as const,
     id: (l.libraryId || l.id) as string,
     title: (l.title || l.name) as string,
-    image: l.image as string | undefined,
+    thumbnail: l.image as string | undefined,
     isLeaf: true,
     path: `${currentPath}/${l.libraryId || l.id}`
   }));
@@ -111,7 +111,7 @@ export function convertProductsToFolders(products: Record<string, unknown>[], cu
     type: "folder" as const,
     id: (p.productId || p.id) as string,
     title: (p.title || p.name) as string,
-    image: p.image as string | undefined,
+    thumbnail: p.image as string | undefined,
     path: `${currentPath}/products/${p.productId || p.id}`
   }));
 }
@@ -142,7 +142,8 @@ export function convertFilesToInstructions(files: ContentFile[], _libraryId: str
       itemType: "file",
       label: file.title,
       seconds: file.seconds,
-      embedUrl: file.url
+      downloadUrl: file.url,
+      thumbnail: file.thumbnail
     }]
   }));
 

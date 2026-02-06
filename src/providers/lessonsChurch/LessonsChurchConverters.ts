@@ -44,9 +44,7 @@ export function convertVenueToPlan(venue: FeedVenueInterface): Plan {
       for (const file of action.files || []) {
         if (!file.url) continue;
 
-        const embedUrl = action.id ? `https://lessons.church/embed/action/${action.id}` : undefined;
-
-        const contentFile: ContentFile = { type: "file", id: file.id || "", title: file.name || "", mediaType: detectMediaType(file.url, file.fileType), image: venue.lessonImage, url: file.url, embedUrl, seconds: file.seconds, streamUrl: file.streamUrl };
+        const contentFile: ContentFile = { type: "file", id: file.id || "", title: file.name || "", mediaType: detectMediaType(file.url, file.fileType), thumbnail: file.thumbnail || venue.lessonImage, url: file.url, downloadUrl: file.url, seconds: file.seconds, streamUrl: file.streamUrl };
 
         files.push(contentFile);
         allFiles.push(contentFile);
@@ -62,7 +60,7 @@ export function convertVenueToPlan(venue: FeedVenueInterface): Plan {
     }
   }
 
-  return { id: venue.id || "", name: venue.lessonName || venue.name || "Plan", description: venue.lessonDescription, image: venue.lessonImage, sections, allFiles };
+  return { id: venue.id || "", name: venue.lessonName || venue.name || "Plan", description: venue.lessonDescription, thumbnail: venue.lessonImage, sections, allFiles };
 }
 
 export async function convertAddOnToFile(addOn: Record<string, unknown>): Promise<ContentFile | null> {
@@ -88,18 +86,37 @@ export async function convertAddOnToFile(addOn: Record<string, unknown>): Promis
     return null;
   }
 
-  return { type: "file", id: addOn.id as string, title: addOn.name as string, mediaType, image: addOn.image as string | undefined, url, embedUrl: `https://lessons.church/embed/addon/${addOn.id}`, seconds, loopVideo: ((video as Record<string, unknown> | undefined)?.loopVideo as boolean) || false };
+  return { type: "file", id: addOn.id as string, title: addOn.name as string, mediaType, thumbnail: addOn.image as string | undefined, url, downloadUrl: url, seconds, loopVideo: ((video as Record<string, unknown> | undefined)?.loopVideo as boolean) || false };
 }
 
-export function buildSectionActionsMap(actionsResponse: VenueActionsResponseInterface | null): Map<string, InstructionItem[]> {
+export function buildSectionActionsMap(actionsResponse: VenueActionsResponseInterface | null, lessonImage?: string, feedResponse?: FeedVenueInterface | null): Map<string, InstructionItem[]> {
   const sectionActionsMap = new Map<string, InstructionItem[]>();
+
+  // Build maps of action ID -> file data from feed
+  const actionThumbnailMap = new Map<string, string>();
+  const actionUrlMap = new Map<string, string>();
+  if (feedResponse?.sections) {
+    for (const section of feedResponse.sections) {
+      for (const action of section.actions || []) {
+        if (action.id && action.files?.length) {
+          const firstFile = action.files[0];
+          if (firstFile?.thumbnail) actionThumbnailMap.set(action.id, firstFile.thumbnail);
+          if (firstFile?.url) actionUrlMap.set(action.id, firstFile.url);
+        }
+      }
+    }
+  }
+
   if (actionsResponse?.sections) {
     for (const section of actionsResponse.sections) {
       if (section.id && section.actions) {
         sectionActionsMap.set(section.id, section.actions.map(action => {
-          const embedUrl = getEmbedUrl("action", action.id);
           const seconds = action.seconds ?? estimateImageDuration();
-          return { id: action.id, itemType: "action", relatedId: action.id, label: action.name, description: action.actionType, seconds, children: [{ id: action.id + "-file", itemType: "file", label: action.name, seconds, embedUrl }] };
+          const rawActionType = action.actionType?.toLowerCase() || "";
+          const hasFiles = rawActionType === "play" || rawActionType === "add-on";
+          const thumbnail = (action.id && actionThumbnailMap.get(action.id)) || lessonImage;
+          const downloadUrl = action.id ? actionUrlMap.get(action.id) : undefined;
+          return { id: action.id, itemType: "action", relatedId: action.id, label: action.name, description: action.actionType, seconds, children: hasFiles ? [{ id: action.id + "-file", itemType: "file", label: action.name, seconds, downloadUrl, thumbnail }] : undefined };
         }));
       }
     }
@@ -107,7 +124,7 @@ export function buildSectionActionsMap(actionsResponse: VenueActionsResponseInte
   return sectionActionsMap;
 }
 
-export function processInstructionItem(item: Record<string, unknown>, sectionActionsMap: Map<string, InstructionItem[]>): InstructionItem {
+export function processInstructionItem(item: Record<string, unknown>, sectionActionsMap: Map<string, InstructionItem[]>, thumbnail?: string): InstructionItem {
   const relatedId = item.relatedId as string | undefined;
   const rawItemType = item.itemType as string | undefined;
   const itemType = normalizeItemType(rawItemType);
@@ -121,13 +138,14 @@ export function processInstructionItem(item: Record<string, unknown>, sectionAct
       const rawChildItemType = child.itemType as string | undefined;
       const childItemType = normalizeItemType(rawChildItemType);
       if (childRelatedId && sectionActionsMap.has(childRelatedId)) {
-        return { id: child.id as string | undefined, itemType: childItemType, relatedId: childRelatedId, label: child.label as string | undefined, description: child.description as string | undefined, seconds: child.seconds as number | undefined, children: sectionActionsMap.get(childRelatedId), embedUrl: getEmbedUrl(rawChildItemType, childRelatedId) };
+        return { id: child.id as string | undefined, itemType: childItemType, relatedId: childRelatedId, label: child.label as string | undefined, description: child.description as string | undefined, seconds: child.seconds as number | undefined, children: sectionActionsMap.get(childRelatedId), downloadUrl: getEmbedUrl(rawChildItemType, childRelatedId) };
       }
-      return processInstructionItem(child, sectionActionsMap);
+      return processInstructionItem(child, sectionActionsMap, thumbnail);
     });
   }
 
-  return { id: item.id as string | undefined, itemType, relatedId, label: item.label as string | undefined, description: item.description as string | undefined, seconds: item.seconds as number | undefined, children: processedChildren, embedUrl: getEmbedUrl(rawItemType, relatedId) };
+  const isFileType = itemType === "file" || (itemType === "action" && !children?.length);
+  return { id: item.id as string | undefined, itemType, relatedId, label: item.label as string | undefined, description: item.description as string | undefined, seconds: item.seconds as number | undefined, children: processedChildren, downloadUrl: getEmbedUrl(rawItemType, relatedId), thumbnail: isFileType ? thumbnail : undefined };
 }
 
 export async function convertAddOnCategoryToPlan(category: string): Promise<Plan | null> {
@@ -159,19 +177,25 @@ export async function convertAddOnCategoryToInstructions(category: string): Prom
   if (!response || !Array.isArray(response)) return null;
 
   const filtered = response.filter((a) => a.category === decodedCategory);
-  const children: InstructionItem[] = filtered.map(addOn => {
+  const children: InstructionItem[] = [];
+
+  for (const addOn of filtered) {
     const id = addOn.id as string;
     const label = addOn.name as string;
-    const seconds = (addOn.seconds as number) || 10;
-    return {
+    const addOnImage = addOn.image as string | undefined;
+    const file = await convertAddOnToFile(addOn);
+    const seconds = file?.seconds || (addOn.seconds as number) || 10;
+    const downloadUrl = file?.url;
+
+    children.push({
       id,
       itemType: "action",
       relatedId: id,
       label,
       seconds,
-      children: [{ id: id + "-file", itemType: "file", label, seconds, embedUrl: getEmbedUrl("addon", id) }]
-    };
-  });
+      children: [{ id: id + "-file", itemType: "file", label, seconds, downloadUrl, thumbnail: addOnImage }]
+    });
+  }
 
   if (children.length === 0) return null;
 

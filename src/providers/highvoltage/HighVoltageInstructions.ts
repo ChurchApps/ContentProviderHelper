@@ -14,7 +14,7 @@ function getBaseName(title: string): string {
 /**
  * Group consecutive files with the same base name into actions
  */
-export function groupFilesIntoActions(files: LessonFileJson[]): InstructionItem[] {
+export function groupFilesIntoActions(files: LessonFileJson[], thumbnail?: string): InstructionItem[] {
   const actionItems: InstructionItem[] = [];
   let currentGroup: LessonFileJson[] = [];
   let currentBaseName: string | null = null;
@@ -28,7 +28,8 @@ export function groupFilesIntoActions(files: LessonFileJson[]): InstructionItem[
         itemType: "file" as const,
         label: file.title,
         seconds,
-        embedUrl: file.url
+        downloadUrl: file.url,
+        thumbnail
       };
     });
     // Use base name as label only if multiple files were grouped
@@ -67,7 +68,7 @@ export function buildStudyInstructions(study: StudyFolder): Instructions {
   const lessonItems: InstructionItem[] = study.lessons.map(lesson => {
     const fileItems: InstructionItem[] = lesson.files.map(file => {
       const seconds = estimateDuration(file.mediaType as "video" | "image");
-      return { id: file.id, itemType: "file", label: file.title, seconds, embedUrl: file.url };
+      return { id: file.id, itemType: "file", label: file.title, seconds, downloadUrl: file.url, thumbnail: lesson.image };
     });
     return { id: lesson.id, itemType: "action", label: lesson.name, description: "play", children: fileItems };
   });
@@ -76,6 +77,6 @@ export function buildStudyInstructions(study: StudyFolder): Instructions {
 }
 
 export function buildLessonInstructions(lesson: LessonFolder): Instructions {
-  const actionItems = groupFilesIntoActions(lesson.files);
+  const actionItems = groupFilesIntoActions(lesson.files, lesson.image);
   return { name: lesson.name, items: [{ id: "main", itemType: "section", label: lesson.name, children: actionItems }] };
 }

@@ -72,15 +72,18 @@ export function displayPlaylist(files: ContentFile[]): void {
   }
 
   const table = new Table({
-    head: [chalk.cyan('#'), chalk.cyan('Title'), chalk.cyan('Type'), chalk.cyan('URL')],
+    head: [chalk.cyan('#'), chalk.cyan('Title'), chalk.cyan('Type'), chalk.cyan('URL'), chalk.cyan('Thumbnail')],
     style: { head: [], border: [] },
-    colWidths: [5, 35, 10, 50],
+    colWidths: [5, 30, 10, 40, 30],
   });
 
   files.forEach((file, i) => {
     const icon = file.mediaType === 'video' ? '🎬' : '🖼️';
-    const url = file.url.length > 47 ? file.url.substring(0, 44) + '...' : file.url;
-    table.push([String(i + 1), file.title, `${icon} ${file.mediaType}`, url]);
+    const url = file.url.length > 37 ? file.url.substring(0, 34) + '...' : file.url;
+    const thumb = file.thumbnail
+      ? (file.thumbnail.length > 27 ? file.thumbnail.substring(0, 24) + '...' : file.thumbnail)
+      : chalk.dim('none');
+    table.push([String(i + 1), file.title, `${icon} ${file.mediaType}`, url, thumb]);
   });
 
   console.log(table.toString());
@@ -151,6 +154,10 @@ export function displayInstructions(instructions: Instructions, isExpanded: bool
 
     if (item.description) {
       console.log(chalk.dim(`${indent}   ${item.description}`));
+    }
+
+    if (item.thumbnail) {
+      console.log(chalk.blue(`${indent}   img: ${item.thumbnail}`));
     }
 
     if (item.children && item.children.length > 0) {

@@ -76,7 +76,7 @@ export class BibleProjectProvider implements IProvider {
         type: "folder" as const,
         id: slugify(collection.name),
         title: collection.name,
-        image: collection.image || undefined,
+        thumbnail: collection.image || undefined,
         path: `/${slugify(collection.name)}`
       }));
   }
@@ -89,7 +89,7 @@ export class BibleProjectProvider implements IProvider {
       type: "folder" as const,
       id: video.id,
       title: video.title,
-      image: video.thumbnailUrl,
+      thumbnail: video.thumbnailUrl,
       isLeaf: true,
       path: `${currentPath}/${video.id}`
     }));
@@ -118,12 +118,12 @@ export class BibleProjectProvider implements IProvider {
     if (depth === 1) {
       const allFiles: ContentFile[] = [];
       const presentations: PlanPresentation[] = collection.videos.map(video => {
-        const file: ContentFile = { type: "file", id: video.id, title: video.title, mediaType: "video", url: video.videoUrl, image: video.thumbnailUrl, muxPlaybackId: video.muxPlaybackId, seconds: 0 };
+        const file: ContentFile = { type: "file", id: video.id, title: video.title, mediaType: "video", url: video.videoUrl, thumbnail: video.thumbnailUrl, muxPlaybackId: video.muxPlaybackId, seconds: 0 };
         allFiles.push(file);
         return { id: video.id, name: video.title, actionType: "play" as const, files: [file] };
       });
 
-      return { id: slugify(collection.name), name: collection.name, image: collection.image || undefined, sections: [{ id: "videos", name: "Videos", presentations }], allFiles };
+      return { id: slugify(collection.name), name: collection.name, thumbnail: collection.image || undefined, sections: [{ id: "videos", name: "Videos", presentations }], allFiles };
     }
 
     // For video level (depth 2, single video), create a simple plan
@@ -132,8 +132,8 @@ export class BibleProjectProvider implements IProvider {
       const video = collection.videos.find(v => v.id === videoId);
       if (!video) return null;
 
-      const file: ContentFile = { type: "file", id: video.id, title: video.title, mediaType: "video", url: video.videoUrl, image: video.thumbnailUrl, muxPlaybackId: video.muxPlaybackId, seconds: 0 };
-      return { id: video.id, name: video.title, image: video.thumbnailUrl, sections: [{ id: "main", name: "Content", presentations: [{ id: video.id, name: video.title, actionType: "play", files: [file] }] }], allFiles: [file] };
+      const file: ContentFile = { type: "file", id: video.id, title: video.title, mediaType: "video", url: video.videoUrl, thumbnail: video.thumbnailUrl, muxPlaybackId: video.muxPlaybackId, seconds: 0 };
+      return { id: video.id, name: video.title, thumbnail: video.thumbnailUrl, sections: [{ id: "main", name: "Content", presentations: [{ id: video.id, name: video.title, actionType: "play", files: [file] }] }], allFiles: [file] };
     }
 
     return null;
@@ -150,7 +150,7 @@ export class BibleProjectProvider implements IProvider {
 
     // For collection level, return all videos
     if (depth === 1) {
-      const files = collection.videos.map(video => ({ type: "file" as const, id: video.id, title: video.title, mediaType: "video" as const, url: video.videoUrl, image: video.thumbnailUrl, muxPlaybackId: video.muxPlaybackId, seconds: 0 }));
+      const files = collection.videos.map(video => ({ type: "file" as const, id: video.id, title: video.title, mediaType: "video" as const, url: video.videoUrl, thumbnail: video.thumbnailUrl, muxPlaybackId: video.muxPlaybackId, seconds: 0 }));
       return files.length > 0 ? files : null;
     }
 
@@ -159,7 +159,7 @@ export class BibleProjectProvider implements IProvider {
       const videoId = segments[1];
       const video = collection.videos.find(v => v.id === videoId);
       if (!video) return null;
-      return [{ type: "file", id: video.id, title: video.title, mediaType: "video", url: video.videoUrl, image: video.thumbnailUrl, muxPlaybackId: video.muxPlaybackId, seconds: 0 }];
+      return [{ type: "file", id: video.id, title: video.title, mediaType: "video", url: video.videoUrl, thumbnail: video.thumbnailUrl, muxPlaybackId: video.muxPlaybackId, seconds: 0 }];
     }
 
     return null;
@@ -185,7 +185,8 @@ export class BibleProjectProvider implements IProvider {
           id: video.id,
           itemType: "file",
           label: video.title,
-          embedUrl: video.videoUrl
+          downloadUrl: video.videoUrl,
+          thumbnail: video.thumbnailUrl
         }]
       }));
 
@@ -209,7 +210,8 @@ export class BibleProjectProvider implements IProvider {
             id: video.id,
             itemType: "file",
             label: video.title,
-            embedUrl: video.videoUrl
+            downloadUrl: video.videoUrl,
+            thumbnail: video.thumbnailUrl
           }]
         }]
       };

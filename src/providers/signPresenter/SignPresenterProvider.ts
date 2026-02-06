@@ -73,7 +73,7 @@ export class SignPresenterProvider implements IProvider {
       type: "folder" as const,
       id: p.id as string,
       title: p.name as string,
-      image: p.image as string | undefined,
+      thumbnail: p.image as string | undefined,
       path: `/playlists/${p.id}`,
       isLeaf: true
     }));
@@ -98,7 +98,7 @@ export class SignPresenterProvider implements IProvider {
       const url = msg.url as string;
       const seconds = msg.seconds as number | undefined;
 
-      files.push({ type: "file", id: msg.id as string, title: msg.name as string, mediaType: detectMediaType(url, msg.mediaType as string | undefined), image: (msg.thumbnail || msg.image) as string | undefined, url, embedUrl: url, seconds });
+      files.push({ type: "file", id: msg.id as string, title: msg.name as string, mediaType: detectMediaType(url, msg.mediaType as string | undefined), thumbnail: (msg.thumbnail || msg.image) as string | undefined, url, downloadUrl: url, seconds });
     }
 
     return files;
@@ -117,10 +117,10 @@ export class SignPresenterProvider implements IProvider {
     const playlists = await this.getPlaylists(auth);
     const playlist = playlists.find(p => p.id === playlistId);
     const title = playlist?.title || "Playlist";
-    const image = (playlist as Record<string, unknown> | undefined)?.image as string | undefined;
+    const thumbnail = (playlist as Record<string, unknown> | undefined)?.image as string | undefined;
 
     const presentations: PlanPresentation[] = files.map(f => ({ id: f.id, name: f.title, actionType: "play" as const, files: [f] }));
-    return { id: playlistId, name: title as string, image, sections: [{ id: `section-${playlistId}`, name: title as string, presentations }], allFiles: files };
+    return { id: playlistId, name: title as string, thumbnail, sections: [{ id: `section-${playlistId}`, name: title as string, presentations }], allFiles: files };
   }
 
   async getPlaylist(path: string, auth?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
@@ -158,7 +158,8 @@ export class SignPresenterProvider implements IProvider {
         itemType: "file",
         label: file.title,
         seconds: file.seconds,
-        embedUrl: file.embedUrl || file.url
+        downloadUrl: file.downloadUrl || file.url,
+        thumbnail: file.thumbnail
       }]
     }));
 
