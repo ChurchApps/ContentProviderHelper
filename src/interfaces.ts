@@ -125,6 +125,7 @@ export interface FeedFileInterface {
   streamUrl?: string;
   seconds?: number;
   fileType?: string;
+  thumbnail?: string;
 }
 
 export interface FeedActionInterface {
