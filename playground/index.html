@@ -168,14 +168,13 @@
               <pre class="docs-code">{
   id: string,
   name: string,
-  actionType: 'play' | 'add-on' | 'other',
+  actionType: 'play' | 'other',
   files: ContentFile[]
 }</pre>
               <div class="docs-values">
                 <strong>actionType values:</strong>
                 <ul>
                   <li><code>'play'</code> — Main playable content</li>
-                  <li><code>'add-on'</code> — Supplementary content</li>
                   <li><code>'other'</code> — Non-playable item (lyrics, notes, etc.)</li>
                 </ul>
               </div>
@@ -183,7 +182,7 @@
 
             <div class="docs-type">
               <h4>Instructions</h4>
-              <p class="docs-desc">Instructions/run sheet for a venue. Returned by <code>getExpandedInstructions()</code>.</p>
+              <p class="docs-desc">Instructions/run sheet for a venue. Returned by <code>getInstructions()</code>.</p>
               <pre class="docs-code">{
   name?: string,
   items: InstructionItem[]
@@ -394,6 +393,35 @@
                 <span class="auth-choice-desc">Sign in directly in this browser</span>
               </button>
             </div>
+          </div>
+
+          <!-- Presentation Detail Section -->
+          <div id="presentation-detail-section" class="presentation-detail-section hidden">
+            <h3 id="presentation-detail-title" class="presentation-detail-title"></h3>
+            <div class="presentation-detail-meta">
+              <span id="presentation-detail-type" class="action-badge"></span>
+              <span id="presentation-detail-count" class="file-count"></span>
+            </div>
+            <div id="presentation-detail-files" class="presentation-detail-files"></div>
+            <div class="presentation-detail-actions">
+              <button id="presentation-play-all-btn" class="play-all-btn">▶ Play All</button>
+              <button id="presentation-close-btn" class="btn-secondary">Close</button>
+            </div>
+          </div>
+
+          <!-- Playlist Queue Section -->
+          <div id="playlist-queue-section" class="playlist-queue-section hidden">
+            <h3>Now Playing</h3>
+            <div id="queue-current" class="queue-current">
+              <span id="queue-current-title" class="queue-current-title"></span>
+              <span id="queue-current-index" class="queue-current-index"></span>
+            </div>
+            <div class="queue-controls">
+              <button id="queue-prev-btn" class="queue-nav-btn" disabled>← Previous</button>
+              <button id="queue-next-btn" class="queue-nav-btn">Next →</button>
+            </div>
+            <div id="queue-list" class="queue-list"></div>
+            <button id="queue-close-btn" class="btn-secondary">Close Queue</button>
           </div>
 
           <!-- OAuth PKCE flow section -->
