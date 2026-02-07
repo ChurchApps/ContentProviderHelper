@@ -250,6 +250,13 @@ export function processVenueInstructionItem(item: Record<string, unknown>, secti
   }
 
   const isFileType = itemType === "file" || (itemType === "action" && !children?.length);
+
+  // Check if this item itself is a section that needs expansion
+  let finalChildren = processedChildren;
+  if (itemType === "section" && relatedId && sectionActionsMap.has(relatedId) && !processedChildren?.length) {
+    finalChildren = sectionActionsMap.get(relatedId);
+  }
+
   return {
     id: item.id as string | undefined,
     itemType,
@@ -257,7 +264,7 @@ export function processVenueInstructionItem(item: Record<string, unknown>, secti
     label: item.label as string | undefined,
     content: item.description as string | undefined,
     seconds: item.seconds as number | undefined,
-    children: processedChildren,
+    children: finalChildren,
     downloadUrl: getEmbedUrl(rawItemType, relatedId),
     thumbnail: isFileType ? thumbnail : undefined
   };

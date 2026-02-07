@@ -181,7 +181,14 @@ export function processInstructionItem(item: Record<string, unknown>, sectionAct
   }
 
   const isFileType = itemType === "file" || (itemType === "action" && !children?.length);
-  return { id: item.id as string | undefined, itemType, relatedId, label: item.label as string | undefined, actionType: item.actionType as string | undefined, content: item.content as string | undefined, seconds: item.seconds as number | undefined, children: processedChildren, downloadUrl: undefined, thumbnail: isFileType ? thumbnail : undefined };
+
+  // Check if this item itself is a section that needs expansion
+  let finalChildren = processedChildren;
+  if (itemType === "section" && relatedId && sectionActionsMap.has(relatedId) && !processedChildren?.length) {
+    finalChildren = sectionActionsMap.get(relatedId);
+  }
+
+  return { id: item.id as string | undefined, itemType, relatedId, label: item.label as string | undefined, actionType: item.actionType as string | undefined, content: item.content as string | undefined, seconds: item.seconds as number | undefined, children: finalChildren, downloadUrl: undefined, thumbnail: isFileType ? thumbnail : undefined };
 }
 
 export async function convertAddOnCategoryToPlan(category: string): Promise<Plan | null> {
