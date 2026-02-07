@@ -147,14 +147,13 @@ export function displayInstructions(instructions: Instructions, isExpanded: bool
     if (item.itemType) {
       line += chalk.dim(` [${item.itemType}]`);
     }
+    if (item.actionType) {
+      line += chalk.cyan(` (${item.actionType})`);
+    }
     if (item.seconds) {
       line += chalk.yellow(` ${item.seconds}s`);
     }
     console.log(line);
-
-    if (item.description) {
-      console.log(chalk.dim(`${indent}   ${item.description}`));
-    }
 
     if (item.thumbnail) {
       console.log(chalk.blue(`${indent}   img: ${item.thumbnail}`));

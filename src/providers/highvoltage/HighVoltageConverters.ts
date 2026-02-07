@@ -84,7 +84,7 @@ export function buildStudyPlan(study: StudyFolder): Plan {
     return { id: lesson.id, name: lesson.name, presentations: [presentation] };
   });
 
-  return { id: study.id, name: study.name, description: study.description, thumbnail: study.image, sections, allFiles };
+  return { id: study.id, name: study.name, thumbnail: study.image, sections, allFiles };
 }
 
 export function buildLessonPlan(lesson: LessonFolder): Plan {

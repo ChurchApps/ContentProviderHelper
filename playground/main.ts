@@ -15,7 +15,7 @@ import {
   retryAuth,
   deviceFlowHelper
 } from './auth';
-import { loadContent, viewAsPlaylist, viewAsPresentations, viewAsInstructions } from './api';
+import { loadContent, viewAsPlaylist, /* viewAsPresentations, */ viewAsInstructions } from './api';
 import { renderProviders, renderContent } from './views/common';
 import {
   renderPlaylistView,
@@ -159,30 +159,30 @@ function handleContentGridClick(e: Event) {
     return;
   }
 
-  // Play presentation button
-  const playPresentationBtn = target.closest('.play-presentation-btn');
-  if (playPresentationBtn) {
-    e.stopPropagation();
-    const sectionIdx = parseInt(playPresentationBtn.getAttribute('data-section') || '0');
-    const presentationIdx = parseInt(playPresentationBtn.getAttribute('data-presentation') || '0');
-    if (state.currentPlan) {
-      const presentation = state.currentPlan.sections[sectionIdx]?.presentations[presentationIdx];
-      if (presentation) playPlanFiles(presentation.files);
-    }
-    return;
-  }
+  // // Play presentation button
+  // const playPresentationBtn = target.closest('.play-presentation-btn');
+  // if (playPresentationBtn) {
+  //   e.stopPropagation();
+  //   const sectionIdx = parseInt(playPresentationBtn.getAttribute('data-section') || '0');
+  //   const presentationIdx = parseInt(playPresentationBtn.getAttribute('data-presentation') || '0');
+  //   if (state.currentPlan) {
+  //     const presentation = state.currentPlan.sections[sectionIdx]?.presentations[presentationIdx];
+  //     if (presentation) playPlanFiles(presentation.files);
+  //   }
+  //   return;
+  // }
 
-  // Presentation card click (for details)
-  const presentationCard = target.closest('.presentation-card');
-  if (presentationCard && !target.closest('button')) {
-    const sectionIdx = parseInt(presentationCard.getAttribute('data-section') || '0');
-    const presentationIdx = parseInt(presentationCard.getAttribute('data-presentation') || '0');
-    if (state.currentPlan) {
-      const presentation = state.currentPlan.sections[sectionIdx]?.presentations[presentationIdx];
-      if (presentation) showPresentationDetails(presentation);
-    }
-    return;
-  }
+  // // Presentation card click (for details)
+  // const presentationCard = target.closest('.presentation-card');
+  // if (presentationCard && !target.closest('button')) {
+  //   const sectionIdx = parseInt(presentationCard.getAttribute('data-section') || '0');
+  //   const presentationIdx = parseInt(presentationCard.getAttribute('data-presentation') || '0');
+  //   if (state.currentPlan) {
+  //     const presentation = state.currentPlan.sections[sectionIdx]?.presentations[presentationIdx];
+  //     if (presentation) showPresentationDetails(presentation);
+  //   }
+  //   return;
+  // }
 
   // Play All button
   const playAllBtn = target.closest('#play-all-btn');
@@ -455,9 +455,9 @@ function showVenueChoiceModal(folder: ContentFolder) {
     `;
   };
 
-  const getPlaylistSource = () => caps?.presentations ? 'Presentations' : caps?.instructions ? 'Instructions' : 'Playlist';
-  const getPresentationsSource = () => caps?.instructions ? 'Instructions' : 'Playlist';
-  const getInstructionsSource = () => caps?.presentations ? 'Presentations' : 'Playlist';
+  const getPlaylistSource = () => caps?.instructions ? 'Instructions' : 'Playlist';
+  // const getPresentationsSource = () => caps?.instructions ? 'Instructions' : 'Playlist';
+  const getInstructionsSource = () => 'Playlist';
 
   const choiceHtml = `
     <div class="venue-choice-modal" id="venue-choice-modal">
@@ -467,7 +467,6 @@ function showVenueChoiceModal(folder: ContentFolder) {
         <p class="format-legend"><span class="native-badge">Native</span> = Direct provider support &nbsp; <span class="derived-badge">Derived</span> = Converted from another format</p>
         <div class="venue-choice-buttons">
           ${formatBtn('view-playlist-btn', '📋', 'Playlist', 'Simple list of media files', !!caps?.playlist, getPlaylistSource())}
-          ${formatBtn('view-presentations-btn', '🎬', 'Presentations', 'Structured sections with media files', !!caps?.presentations, getPresentationsSource())}
           ${formatBtn('view-expanded-btn', '📚', 'Instructions', 'Full hierarchy with all actions', !!caps?.instructions, getInstructionsSource())}
         </div>
         <button id="venue-choice-cancel" class="cancel-btn">Cancel</button>
@@ -485,10 +484,10 @@ function showVenueChoiceModal(folder: ContentFolder) {
     handleViewAsPlaylist(folder);
   });
 
-  document.getElementById('view-presentations-btn')!.addEventListener('click', () => {
-    closeVenueChoiceModal();
-    handleViewAsPresentations(folder);
-  });
+  // document.getElementById('view-presentations-btn')!.addEventListener('click', () => {
+  //   closeVenueChoiceModal();
+  //   handleViewAsPresentations(folder);
+  // });
 
   document.getElementById('view-expanded-btn')!.addEventListener('click', () => {
     closeVenueChoiceModal();
@@ -525,16 +524,16 @@ async function handleViewAsPlaylist(folder: ContentFolder) {
   renderPlaylistView(result.playlist, result.meta);
 }
 
-async function handleViewAsPresentations(folder: ContentFolder) {
-  if (!elements) return;
+// async function handleViewAsPresentations(folder: ContentFolder) {
+//   if (!elements) return;
 
-  const result = await viewAsPresentations(folder);
+//   const result = await viewAsPresentations(folder);
 
-  if (!result) return;
+//   if (!result) return;
 
-  updateBreadcrumb();
-  renderPlanView(result.plan, result.meta);
-}
+//   updateBreadcrumb();
+//   renderPlanView(result.plan, result.meta);
+// }
 
 async function handleViewAsInstructions(folder: ContentFolder) {
   if (!elements) return;

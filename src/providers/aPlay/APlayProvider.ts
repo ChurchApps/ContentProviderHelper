@@ -5,6 +5,26 @@ import { checkMediaLicense, API_BASE } from "./APlayApi";
 import { extractLibraryId, convertMediaToFiles, convertModulesToFolders, convertLibrariesToFolders, convertProductsToFolders, convertFilesToPresentations, convertFilesToInstructions } from "./APlayConverters";
 
 /**
+ * Extracts an array from an API response that may have different formats.
+ * Handles: { data: [...] }, { <key>: [...] }, or [...] directly.
+ */
+function extractArray<T = Record<string, unknown>>(
+  response: Record<string, unknown> | null,
+  ...keys: string[]
+): T[] {
+  if (!response) return [];
+  if (Array.isArray(response)) return response as T[];
+
+  for (const key of keys) {
+    if (response[key] && Array.isArray(response[key])) {
+      return response[key] as T[];
+    }
+  }
+
+  return [];
+}
+
+/**
  * APlay Provider
  *
  * Path structure (variable depth based on module products):
@@ -53,21 +73,13 @@ export class APlayProvider implements IProvider {
 
   private async getModules(auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const response = await this.apiRequest<Record<string, unknown>>(this.config.endpoints.modules as string, auth);
-    if (!response) return [];
-
-    const modules = (response.data || response.modules || response) as Record<string, unknown>[];
-    if (!Array.isArray(modules)) return [];
-
+    const modules = extractArray(response, "data", "modules");
     return convertModulesToFolders(modules);
   }
 
   private async getModuleContent(moduleId: string, currentPath: string, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const response = await this.apiRequest<Record<string, unknown>>(this.config.endpoints.modules as string, auth);
-    if (!response) return [];
-
-    const modules = (response.data || response.modules || response) as Record<string, unknown>[];
-    if (!Array.isArray(modules)) return [];
-
+    const modules = extractArray(response, "data", "modules");
     const module = modules.find(m => (m.id || m.moduleId) === moduleId);
     if (!module) return [];
 
@@ -87,34 +99,26 @@ export class APlayProvider implements IProvider {
   private async getLibraryFolders(productId: string, currentPath: string, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const pathFn = this.config.endpoints.productLibraries as (id: string) => string;
     const response = await this.apiRequest<Record<string, unknown>>(pathFn(productId), auth);
-    if (!response) return [];
-
-    const libraries = (response.data || response.libraries || response) as Record<string, unknown>[];
-    if (!Array.isArray(libraries)) return [];
-
+    const libraries = extractArray(response, "data", "libraries");
     return convertLibrariesToFolders(libraries, currentPath);
   }
 
   private async getMediaFiles(libraryId: string, auth?: ContentProviderAuthData | null): Promise<ContentItem[]> {
     const pathFn = this.config.endpoints.libraryMedia as (id: string) => string;
     const response = await this.apiRequest<Record<string, unknown>>(pathFn(libraryId), auth);
-    if (!response) return [];
-
-    const mediaItems = (response.data || response.media || response) as Record<string, unknown>[];
-    if (!Array.isArray(mediaItems)) return [];
-
+    const mediaItems = extractArray(response, "data", "media");
     return convertMediaToFiles(mediaItems);
   }
 
-  async getPresentations(path: string, auth?: ContentProviderAuthData | null): Promise<Plan | null> {
-    const libraryId = extractLibraryId(path);
-    if (!libraryId) return null;
+  // async getPresentations(path: string, auth?: ContentProviderAuthData | null): Promise<Plan | null> {
+  //   const libraryId = extractLibraryId(path);
+  //   if (!libraryId) return null;
 
-    const files = await this.getMediaFiles(libraryId, auth) as ContentFile[];
-    if (files.length === 0) return null;
+  //   const files = await this.getMediaFiles(libraryId, auth) as ContentFile[];
+  //   if (files.length === 0) return null;
 
-    return convertFilesToPresentations(files, libraryId).plan;
-  }
+  //   return convertFilesToPresentations(files, libraryId).plan;
+  // }
 
   async getPlaylist(path: string, auth?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
     const libraryId = extractLibraryId(path);

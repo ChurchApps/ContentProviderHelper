@@ -105,39 +105,39 @@ export class BibleProjectProvider implements IProvider {
     return [createFile(video.id, video.title, video.videoUrl, { mediaType: "video", muxPlaybackId: video.muxPlaybackId, seconds: 0 })];
   }
 
-  async getPresentations(path: string, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
-    const { segments, depth } = parsePath(path);
+  // async getPresentations(path: string, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
+  //   const { segments, depth } = parsePath(path);
 
-    if (depth < 1) return null;
+  //   if (depth < 1) return null;
 
-    const collectionSlug = segments[0];
-    const collection = this.data.collections.find(c => slugify(c.name) === collectionSlug);
-    if (!collection) return null;
+  //   const collectionSlug = segments[0];
+  //   const collection = this.data.collections.find(c => slugify(c.name) === collectionSlug);
+  //   if (!collection) return null;
 
-    // For collection level (depth 1), create a plan with all videos
-    if (depth === 1) {
-      const allFiles: ContentFile[] = [];
-      const presentations: PlanPresentation[] = collection.videos.map(video => {
-        const file: ContentFile = { type: "file", id: video.id, title: video.title, mediaType: "video", url: video.videoUrl, thumbnail: video.thumbnailUrl, muxPlaybackId: video.muxPlaybackId, seconds: 0 };
-        allFiles.push(file);
-        return { id: video.id, name: video.title, actionType: "play" as const, files: [file] };
-      });
+  //   // For collection level (depth 1), create a plan with all videos
+  //   if (depth === 1) {
+  //     const allFiles: ContentFile[] = [];
+  //     const presentations: PlanPresentation[] = collection.videos.map(video => {
+  //       const file: ContentFile = { type: "file", id: video.id, title: video.title, mediaType: "video", url: video.videoUrl, thumbnail: video.thumbnailUrl, muxPlaybackId: video.muxPlaybackId, seconds: 0 };
+  //       allFiles.push(file);
+  //       return { id: video.id, name: video.title, actionType: "play" as const, files: [file] };
+  //     });
 
-      return { id: slugify(collection.name), name: collection.name, thumbnail: collection.image || undefined, sections: [{ id: "videos", name: "Videos", presentations }], allFiles };
-    }
+  //     return { id: slugify(collection.name), name: collection.name, thumbnail: collection.image || undefined, sections: [{ id: "videos", name: "Videos", presentations }], allFiles };
+  //   }
 
-    // For video level (depth 2, single video), create a simple plan
-    if (depth === 2) {
-      const videoId = segments[1];
-      const video = collection.videos.find(v => v.id === videoId);
-      if (!video) return null;
+  //   // For video level (depth 2, single video), create a simple plan
+  //   if (depth === 2) {
+  //     const videoId = segments[1];
+  //     const video = collection.videos.find(v => v.id === videoId);
+  //     if (!video) return null;
 
-      const file: ContentFile = { type: "file", id: video.id, title: video.title, mediaType: "video", url: video.videoUrl, thumbnail: video.thumbnailUrl, muxPlaybackId: video.muxPlaybackId, seconds: 0 };
-      return { id: video.id, name: video.title, thumbnail: video.thumbnailUrl, sections: [{ id: "main", name: "Content", presentations: [{ id: video.id, name: video.title, actionType: "play", files: [file] }] }], allFiles: [file] };
-    }
+  //     const file: ContentFile = { type: "file", id: video.id, title: video.title, mediaType: "video", url: video.videoUrl, thumbnail: video.thumbnailUrl, muxPlaybackId: video.muxPlaybackId, seconds: 0 };
+  //     return { id: video.id, name: video.title, thumbnail: video.thumbnailUrl, sections: [{ id: "main", name: "Content", presentations: [{ id: video.id, name: video.title, actionType: "play", files: [file] }] }], allFiles: [file] };
+  //   }
 
-    return null;
-  }
+  //   return null;
+  // }
 
   async getPlaylist(path: string, _auth?: ContentProviderAuthData | null, _resolution?: number): Promise<ContentFile[] | null> {
     const { segments, depth } = parsePath(path);
@@ -174,13 +174,13 @@ export class BibleProjectProvider implements IProvider {
     const collection = this.data.collections.find(c => slugify(c.name) === collectionSlug);
     if (!collection) return null;
 
-    // For collection level (depth 1), create instructions with all videos
+    // For collection level (depth 1), create instructions with all videos wrapped in a section
     if (depth === 1) {
-      const items: InstructionItem[] = collection.videos.map(video => ({
+      const actionItems: InstructionItem[] = collection.videos.map(video => ({
         id: video.id + "-action",
         itemType: "action",
         label: video.title,
-        description: "play",
+        actionType: "play",
         children: [{
           id: video.id,
           itemType: "file",
@@ -190,31 +190,46 @@ export class BibleProjectProvider implements IProvider {
         }]
       }));
 
-      return { name: collection.name, items };
+      // Wrap actions in a section using the collection name
+      const sectionItem: InstructionItem = {
+        id: slugify(collection.name) + "-section",
+        itemType: "section",
+        label: collection.name,
+        children: actionItems
+      };
+
+      return { name: collection.name, items: [sectionItem] };
     }
 
-    // For video level (depth 2), create instructions for single video
+    // For video level (depth 2), create instructions for single video wrapped in a section
     if (depth === 2) {
       const videoId = segments[1];
       const video = collection.videos.find(v => v.id === videoId);
       if (!video) return null;
 
-      return {
-        name: video.title,
-        items: [{
-          id: video.id + "-action",
-          itemType: "action",
+      const actionItem: InstructionItem = {
+        id: video.id + "-action",
+        itemType: "action",
+        label: video.title,
+        actionType: "play",
+        children: [{
+          id: video.id,
+          itemType: "file",
           label: video.title,
-          description: "play",
-          children: [{
-            id: video.id,
-            itemType: "file",
-            label: video.title,
-            downloadUrl: video.videoUrl,
-            thumbnail: video.thumbnailUrl
-          }]
+          downloadUrl: video.videoUrl,
+          thumbnail: video.thumbnailUrl
         }]
       };
+
+      // Wrap in a section using the collection name
+      const sectionItem: InstructionItem = {
+        id: slugify(collection.name) + "-section",
+        itemType: "section",
+        label: collection.name,
+        children: [actionItem]
+      };
+
+      return { name: video.title, items: [sectionItem] };
     }
 
     return null;

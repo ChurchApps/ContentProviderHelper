@@ -31,7 +31,7 @@ export async function planItemToPresentation(item: B1PlanItem, venueFeed: FeedVe
   if ((itemType === "providerFile" || itemType === "providerPresentation") && item.link) {
     const file: ContentFile = {
       type: "file",
-      id: item.relatedId || item.id,
+      id: item.relatedId ?? item.id ?? "unknown",
       title: item.label || "File",
       mediaType: detectMediaType(item.link),
       url: item.link,
@@ -97,7 +97,7 @@ export function getFileFromProviderFileItem(item: B1PlanItem): ContentFile | nul
   if ((item.itemType !== "providerFile" && item.itemType !== "providerPresentation") || !item.link) return null;
   return {
     type: "file",
-    id: item.relatedId || item.id,
+    id: item.relatedId ?? item.id ?? "unknown",
     title: item.label || "File",
     mediaType: detectMediaType(item.link),
     url: item.link,
@@ -115,7 +115,7 @@ export function planItemToInstruction(item: B1PlanItem, thumbnail?: string): Ins
   }
 
   const isFileType = itemType === "file" || (item.link && !item.children?.length);
-  return { id: item.id, itemType, relatedId: item.relatedId, label: item.label, description: item.description, seconds: item.seconds, downloadUrl: item.link, thumbnail: isFileType ? thumbnail : undefined, children: item.children?.map(child => planItemToInstruction(child, thumbnail)) };
+  return { id: item.id, itemType, relatedId: item.relatedId, label: item.label, content: item.description, seconds: item.seconds, downloadUrl: item.link, thumbnail: isFileType ? thumbnail : undefined, children: item.children?.map(child => planItemToInstruction(child, thumbnail)) };
 }
 
 /**
@@ -239,7 +239,7 @@ export function processVenueInstructionItem(item: Record<string, unknown>, secti
           itemType: childItemType,
           relatedId: childRelatedId,
           label: child.label as string | undefined,
-          description: child.description as string | undefined,
+          content: child.description as string | undefined,
           seconds: child.seconds as number | undefined,
           children: sectionActionsMap.get(childRelatedId),
           downloadUrl: getEmbedUrl(rawChildItemType, childRelatedId)
@@ -250,14 +250,21 @@ export function processVenueInstructionItem(item: Record<string, unknown>, secti
   }
 
   const isFileType = itemType === "file" || (itemType === "action" && !children?.length);
+
+  // Check if this item itself is a section that needs expansion
+  let finalChildren = processedChildren;
+  if (itemType === "section" && relatedId && sectionActionsMap.has(relatedId) && !processedChildren?.length) {
+    finalChildren = sectionActionsMap.get(relatedId);
+  }
+
   return {
     id: item.id as string | undefined,
     itemType,
     relatedId,
     label: item.label as string | undefined,
-    description: item.description as string | undefined,
+    content: item.description as string | undefined,
     seconds: item.seconds as number | undefined,
-    children: processedChildren,
+    children: finalChildren,
     downloadUrl: getEmbedUrl(rawItemType, relatedId),
     thumbnail: isFileType ? thumbnail : undefined
   };

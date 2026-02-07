@@ -45,7 +45,29 @@ function mapActionTypeToItemType(actionType: "play" | "other"): string {
 
 // LOSSLESS: All hierarchy and file data preserved
 export function presentationsToExpandedInstructions(plan: Plan): Instructions {
-  return { name: plan.name, items: plan.sections.map(section => ({ id: section.id, itemType: "section", label: section.name, children: section.presentations.map(pres => ({ id: pres.id, itemType: mapActionTypeToItemType(pres.actionType), label: pres.name, description: pres.actionType !== "other" ? pres.actionType : undefined, seconds: pres.files.reduce((sum, f) => sum + (f.seconds || 0), 0) || undefined, children: pres.files.map(f => ({ id: f.id, itemType: "file", label: f.title, seconds: f.seconds, downloadUrl: f.downloadUrl || f.url, thumbnail: f.thumbnail })) })) })) };
+  return {
+    name: plan.name,
+    items: plan.sections.map(section => ({
+      id: section.id,
+      itemType: "section",
+      label: section.name,
+      children: section.presentations.map(pres => ({
+        id: pres.id,
+        itemType: mapActionTypeToItemType(pres.actionType),
+        label: pres.name,
+        description: pres.actionType !== "other" ? pres.actionType : undefined,
+        seconds: pres.files.reduce((sum, f) => sum + (f.seconds || 0), 0) || undefined,
+        children: pres.files.map(f => ({
+          id: f.id,
+          itemType: "file",
+          label: f.title,
+          seconds: f.seconds,
+          downloadUrl: f.downloadUrl || f.url,
+          thumbnail: f.thumbnail
+        }))
+      }))
+    }))
+  };
 }
 
 // LOSSLESS for media: All items with downloadUrl become files

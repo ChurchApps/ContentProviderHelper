@@ -197,21 +197,21 @@ export class LessonsChurchProvider implements IProvider {
     return files;
   }
 
-  async getPresentations(path: string, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
-    const venueId = getSegment(path, 4);
-    if (venueId) {
-      const venueData = await apiRequest<FeedVenueInterface>(`/venues/public/feed/${venueId}`);
-      if (!venueData) return null;
-      return convertVenueToPlan(venueData);
-    }
+  // async getPresentations(path: string, _auth?: ContentProviderAuthData | null): Promise<Plan | null> {
+  //   const venueId = getSegment(path, 4);
+  //   if (venueId) {
+  //     const venueData = await apiRequest<FeedVenueInterface>(`/venues/public/feed/${venueId}`);
+  //     if (!venueData) return null;
+  //     return convertVenueToPlan(venueData);
+  //   }
 
-    const { segments } = parsePath(path);
-    if (segments[0] === "addons" && segments.length === 2) {
-      return convertAddOnCategoryToPlan(segments[1]);
-    }
+  //   const { segments } = parsePath(path);
+  //   if (segments[0] === "addons" && segments.length === 2) {
+  //     return convertAddOnCategoryToPlan(segments[1]);
+  //   }
 
-    return null;
-  }
+  //   return null;
+  // }
 
   async getInstructions(path: string, _auth?: ContentProviderAuthData | null): Promise<Instructions | null> {
     const venueId = getSegment(path, 4);

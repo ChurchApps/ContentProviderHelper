@@ -119,7 +119,7 @@ export function buildInstructionsFromPlan(plan: Plan): Instructions {
         itemType: "action",
         relatedId: pres.id,
         label: pres.name,
-        description: pres.actionType,
+        actionType: pres.actionType,
         children: fileItems.length > 0 ? fileItems : undefined
       };
     });

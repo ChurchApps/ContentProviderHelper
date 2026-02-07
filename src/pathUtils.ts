@@ -39,7 +39,7 @@ export function getSegment(path: string | null | undefined, index: number): stri
  * @returns Path string with leading slash
  */
 export function buildPath(segments: string[]): string {
-  if (segments.length === 0) return "";
+  if (segments.length === 0) return "/";
   return "/" + segments.join("/");
 }
 
