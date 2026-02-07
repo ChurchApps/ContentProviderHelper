@@ -181,7 +181,15 @@ export class SignPresenterProvider implements IProvider {
       children: actionItems
     };
 
-    return { name: title as string, items: [sectionItem] };
+    // Wrap section in a header for consistency with other providers
+    const headerItem: InstructionItem = {
+      id: playlistId + "-header",
+      itemType: "header",
+      label: title as string,
+      children: [sectionItem]
+    };
+
+    return { name: title as string, items: [headerItem] };
   }
 
   // Auth methods
