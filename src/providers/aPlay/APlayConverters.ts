@@ -136,7 +136,7 @@ export function convertFilesToInstructions(files: ContentFile[], _libraryId: str
     id: file.id + "-action",
     itemType: "action",
     label: file.title,
-    description: "play",
+    actionType: "play",
     children: [{
       id: file.id,
       itemType: "file",

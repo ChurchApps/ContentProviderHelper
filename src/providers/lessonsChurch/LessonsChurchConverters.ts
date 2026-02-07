@@ -10,6 +10,20 @@ export function normalizeItemType(type?: string): string | undefined {
   return type;
 }
 
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, "$1")  // **bold**
+    .replace(/__(.+?)__/g, "$1")       // __bold__
+    .replace(/\*(.+?)\*/g, "$1")       // *italic*
+    .replace(/_(.+?)_/g, "$1")         // _italic_
+    .replace(/#{1,6}\s*/g, "")         // # headers
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")  // [text](url)
+    .replace(/`([^`]+)`/g, "$1")       // `code`
+    .replace(/\n+/g, " ")              // newlines to spaces
+    .replace(/\s+/g, " ")              // collapse whitespace
+    .trim();
+}
+
 export function getEmbedUrl(apiType?: string, relatedId?: string): string | undefined {
   if (!relatedId) return undefined;
 
@@ -92,16 +106,20 @@ export async function convertAddOnToFile(addOn: Record<string, unknown>): Promis
 export function buildSectionActionsMap(actionsResponse: VenueActionsResponseInterface | null, lessonImage?: string, feedResponse?: FeedVenueInterface | null): Map<string, InstructionItem[]> {
   const sectionActionsMap = new Map<string, InstructionItem[]>();
 
-  // Build maps of action ID -> file data from feed
+  // Build maps of action ID -> file data and content from feed
   const actionThumbnailMap = new Map<string, string>();
   const actionUrlMap = new Map<string, string>();
+  const actionContentMap = new Map<string, string>();
   if (feedResponse?.sections) {
     for (const section of feedResponse.sections) {
       for (const action of section.actions || []) {
-        if (action.id && action.files?.length) {
-          const firstFile = action.files[0];
-          if (firstFile?.thumbnail) actionThumbnailMap.set(action.id, firstFile.thumbnail);
-          if (firstFile?.url) actionUrlMap.set(action.id, firstFile.url);
+        if (action.id) {
+          if (action.content) actionContentMap.set(action.id, action.content);
+          if (action.files?.length) {
+            const firstFile = action.files[0];
+            if (firstFile?.thumbnail) actionThumbnailMap.set(action.id, firstFile.thumbnail);
+            if (firstFile?.url) actionUrlMap.set(action.id, firstFile.url);
+          }
         }
       }
     }
@@ -116,7 +134,11 @@ export function buildSectionActionsMap(actionsResponse: VenueActionsResponseInte
           const hasFiles = rawActionType === "play" || rawActionType === "add-on";
           const thumbnail = (action.id && actionThumbnailMap.get(action.id)) || lessonImage;
           const downloadUrl = action.id ? actionUrlMap.get(action.id) : undefined;
-          return { id: action.id, itemType: "action", relatedId: action.id, label: action.name, description: action.actionType, seconds, downloadUrl, thumbnail, children: hasFiles ? [{ id: action.id + "-file", itemType: "file", label: action.name, seconds, downloadUrl, thumbnail }] : undefined };
+          const fullContent = action.id ? actionContentMap.get(action.id) : undefined;
+          const plainText = fullContent ? stripMarkdown(fullContent) : action.name;
+          const label = plainText && plainText.length > 100 ? plainText.substring(0, 100) + "..." : plainText;
+          const content = fullContent && fullContent.length > 100 ? fullContent : undefined;
+          return { id: action.id, itemType: "action", relatedId: action.id, label, actionType: rawActionType || undefined, content, seconds, downloadUrl, thumbnail, children: hasFiles ? [{ id: action.id + "-file", itemType: "file", label: action.name, seconds, downloadUrl, thumbnail }] : undefined };
         }));
       }
     }
@@ -142,14 +164,14 @@ export function processInstructionItem(item: Record<string, unknown>, sectionAct
         const sectionActions = sectionActionsMap.get(childRelatedId);
         // Get download URL from first action's child file if available
         const firstActionUrl = sectionActions?.[0]?.downloadUrl;
-        return { id: child.id as string | undefined, itemType: childItemType, relatedId: childRelatedId, label: child.label as string | undefined, description: child.description as string | undefined, seconds: child.seconds as number | undefined, children: sectionActions, downloadUrl: firstActionUrl, thumbnail };
+        return { id: child.id as string | undefined, itemType: childItemType, relatedId: childRelatedId, label: child.label as string | undefined, actionType: child.actionType as string | undefined, content: child.content as string | undefined, seconds: child.seconds as number | undefined, children: sectionActions, downloadUrl: firstActionUrl, thumbnail };
       }
       return processInstructionItem(child, sectionActionsMap, thumbnail);
     });
   }
 
   const isFileType = itemType === "file" || (itemType === "action" && !children?.length);
-  return { id: item.id as string | undefined, itemType, relatedId, label: item.label as string | undefined, description: item.description as string | undefined, seconds: item.seconds as number | undefined, children: processedChildren, downloadUrl: undefined, thumbnail: isFileType ? thumbnail : undefined };
+  return { id: item.id as string | undefined, itemType, relatedId, label: item.label as string | undefined, actionType: item.actionType as string | undefined, content: item.content as string | undefined, seconds: item.seconds as number | undefined, children: processedChildren, downloadUrl: undefined, thumbnail: isFileType ? thumbnail : undefined };
 }
 
 export async function convertAddOnCategoryToPlan(category: string): Promise<Plan | null> {

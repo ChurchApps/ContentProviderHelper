@@ -38,7 +38,7 @@ export function groupFilesIntoActions(files: LessonFileJson[], thumbnail?: strin
       id: currentGroup[0].id + "-action",
       itemType: "action",
       label,
-      description: "play",
+      actionType: "play",
       children
     });
     currentGroup = [];
@@ -70,7 +70,7 @@ export function buildStudyInstructions(study: StudyFolder): Instructions {
       const seconds = estimateDuration(file.mediaType as "video" | "image");
       return { id: file.id, itemType: "file", label: file.title, seconds, downloadUrl: file.url, thumbnail: lesson.image };
     });
-    return { id: lesson.id, itemType: "action", label: lesson.name, description: "play", children: fileItems };
+    return { id: lesson.id, itemType: "action", label: lesson.name, actionType: "play", children: fileItems };
   });
 
   return { name: study.name, items: [{ id: "main", itemType: "section", label: "Content", children: lessonItems }] };

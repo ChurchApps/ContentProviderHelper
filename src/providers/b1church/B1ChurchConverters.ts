@@ -115,7 +115,7 @@ export function planItemToInstruction(item: B1PlanItem, thumbnail?: string): Ins
   }
 
   const isFileType = itemType === "file" || (item.link && !item.children?.length);
-  return { id: item.id, itemType, relatedId: item.relatedId, label: item.label, description: item.description, seconds: item.seconds, downloadUrl: item.link, thumbnail: isFileType ? thumbnail : undefined, children: item.children?.map(child => planItemToInstruction(child, thumbnail)) };
+  return { id: item.id, itemType, relatedId: item.relatedId, label: item.label, content: item.description, seconds: item.seconds, downloadUrl: item.link, thumbnail: isFileType ? thumbnail : undefined, children: item.children?.map(child => planItemToInstruction(child, thumbnail)) };
 }
 
 /**
@@ -239,7 +239,7 @@ export function processVenueInstructionItem(item: Record<string, unknown>, secti
           itemType: childItemType,
           relatedId: childRelatedId,
           label: child.label as string | undefined,
-          description: child.description as string | undefined,
+          content: child.description as string | undefined,
           seconds: child.seconds as number | undefined,
           children: sectionActionsMap.get(childRelatedId),
           downloadUrl: getEmbedUrl(rawChildItemType, childRelatedId)
@@ -255,7 +255,7 @@ export function processVenueInstructionItem(item: Record<string, unknown>, secti
     itemType,
     relatedId,
     label: item.label as string | undefined,
-    description: item.description as string | undefined,
+    content: item.description as string | undefined,
     seconds: item.seconds as number | undefined,
     children: processedChildren,
     downloadUrl: getEmbedUrl(rawItemType, relatedId),

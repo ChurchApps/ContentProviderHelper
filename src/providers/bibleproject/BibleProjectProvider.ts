@@ -180,7 +180,7 @@ export class BibleProjectProvider implements IProvider {
         id: video.id + "-action",
         itemType: "action",
         label: video.title,
-        description: "play",
+        actionType: "play",
         children: [{
           id: video.id,
           itemType: "file",
@@ -211,7 +211,7 @@ export class BibleProjectProvider implements IProvider {
         id: video.id + "-action",
         itemType: "action",
         label: video.title,
-        description: "play",
+        actionType: "play",
         children: [{
           id: video.id,
           itemType: "file",

@@ -1086,11 +1086,12 @@ h2 {
   font-size: 0.8rem;
 }
 
-.instruction-description {
-  margin-top: 0.5rem;
+.instruction-action-type {
+  margin-top: 0.25rem;
   color: #888;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   padding-left: 2rem;
+  text-transform: capitalize;
 }
 
 .instruction-embed-link {

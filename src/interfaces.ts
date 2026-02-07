@@ -163,7 +163,8 @@ export interface InstructionItem {
   itemType?: string;
   relatedId?: string;
   label?: string;
-  description?: string;
+  actionType?: string;
+  content?: string;
   seconds?: number;
   children?: InstructionItem[];
   downloadUrl?: string;

@@ -161,7 +161,7 @@ export class SignPresenterProvider implements IProvider {
       id: file.id + "-action",
       itemType: "action",
       label: file.title,
-      description: "play",
+      actionType: "play",
       seconds: file.seconds,
       children: [{
         id: file.id,

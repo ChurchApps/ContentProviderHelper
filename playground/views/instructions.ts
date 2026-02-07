@@ -75,7 +75,7 @@ export function renderInstructionsView(instructions: Instructions, meta?: Resolv
           ${item.itemType ? `<span class="instruction-type">${escapeHtml(item.itemType)}</span>` : ''}
           ${item.seconds ? `<span class="instruction-seconds">${item.seconds}s</span>` : ''}
         </div>
-        ${item.description ? `<div class="instruction-description">${escapeHtml(item.description)}</div>` : ''}
+        ${item.actionType ? `<div class="instruction-action-type">${escapeHtml(item.actionType)}</div>` : ''}
         ${item.downloadUrl ? `<a href="${escapeHtml(item.downloadUrl)}" target="_blank" class="instruction-embed-link">Open Embed</a>` : ''}
       </div>
     `;
