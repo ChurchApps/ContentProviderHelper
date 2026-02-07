@@ -116,7 +116,7 @@ export function buildSectionActionsMap(actionsResponse: VenueActionsResponseInte
           const hasFiles = rawActionType === "play" || rawActionType === "add-on";
           const thumbnail = (action.id && actionThumbnailMap.get(action.id)) || lessonImage;
           const downloadUrl = action.id ? actionUrlMap.get(action.id) : undefined;
-          return { id: action.id, itemType: "action", relatedId: action.id, label: action.name, description: action.actionType, seconds, children: hasFiles ? [{ id: action.id + "-file", itemType: "file", label: action.name, seconds, downloadUrl, thumbnail }] : undefined };
+          return { id: action.id, itemType: "action", relatedId: action.id, label: action.name, description: action.actionType, seconds, downloadUrl, thumbnail, children: hasFiles ? [{ id: action.id + "-file", itemType: "file", label: action.name, seconds, downloadUrl, thumbnail }] : undefined };
         }));
       }
     }
@@ -138,14 +138,18 @@ export function processInstructionItem(item: Record<string, unknown>, sectionAct
       const rawChildItemType = child.itemType as string | undefined;
       const childItemType = normalizeItemType(rawChildItemType);
       if (childRelatedId && sectionActionsMap.has(childRelatedId)) {
-        return { id: child.id as string | undefined, itemType: childItemType, relatedId: childRelatedId, label: child.label as string | undefined, description: child.description as string | undefined, seconds: child.seconds as number | undefined, children: sectionActionsMap.get(childRelatedId), downloadUrl: getEmbedUrl(rawChildItemType, childRelatedId) };
+        // Section has actions with direct download URLs from sectionActionsMap
+        const sectionActions = sectionActionsMap.get(childRelatedId);
+        // Get download URL from first action's child file if available
+        const firstActionUrl = sectionActions?.[0]?.downloadUrl;
+        return { id: child.id as string | undefined, itemType: childItemType, relatedId: childRelatedId, label: child.label as string | undefined, description: child.description as string | undefined, seconds: child.seconds as number | undefined, children: sectionActions, downloadUrl: firstActionUrl, thumbnail };
       }
       return processInstructionItem(child, sectionActionsMap, thumbnail);
     });
   }
 
   const isFileType = itemType === "file" || (itemType === "action" && !children?.length);
-  return { id: item.id as string | undefined, itemType, relatedId, label: item.label as string | undefined, description: item.description as string | undefined, seconds: item.seconds as number | undefined, children: processedChildren, downloadUrl: getEmbedUrl(rawItemType, relatedId), thumbnail: isFileType ? thumbnail : undefined };
+  return { id: item.id as string | undefined, itemType, relatedId, label: item.label as string | undefined, description: item.description as string | undefined, seconds: item.seconds as number | undefined, children: processedChildren, downloadUrl: undefined, thumbnail: isFileType ? thumbnail : undefined };
 }
 
 export async function convertAddOnCategoryToPlan(category: string): Promise<Plan | null> {

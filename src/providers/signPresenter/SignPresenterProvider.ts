@@ -173,7 +173,15 @@ export class SignPresenterProvider implements IProvider {
       }]
     }));
 
-    return { name: title as string, items: actionItems };
+    // Wrap actions in a section using the playlist name
+    const sectionItem: InstructionItem = {
+      id: playlistId + "-section",
+      itemType: "section",
+      label: title as string,
+      children: actionItems
+    };
+
+    return { name: title as string, items: [sectionItem] };
   }
 
   // Auth methods

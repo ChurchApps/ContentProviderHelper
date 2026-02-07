@@ -174,9 +174,9 @@ export class BibleProjectProvider implements IProvider {
     const collection = this.data.collections.find(c => slugify(c.name) === collectionSlug);
     if (!collection) return null;
 
-    // For collection level (depth 1), create instructions with all videos
+    // For collection level (depth 1), create instructions with all videos wrapped in a section
     if (depth === 1) {
-      const items: InstructionItem[] = collection.videos.map(video => ({
+      const actionItems: InstructionItem[] = collection.videos.map(video => ({
         id: video.id + "-action",
         itemType: "action",
         label: video.title,
@@ -190,31 +190,46 @@ export class BibleProjectProvider implements IProvider {
         }]
       }));
 
-      return { name: collection.name, items };
+      // Wrap actions in a section using the collection name
+      const sectionItem: InstructionItem = {
+        id: slugify(collection.name) + "-section",
+        itemType: "section",
+        label: collection.name,
+        children: actionItems
+      };
+
+      return { name: collection.name, items: [sectionItem] };
     }
 
-    // For video level (depth 2), create instructions for single video
+    // For video level (depth 2), create instructions for single video wrapped in a section
     if (depth === 2) {
       const videoId = segments[1];
       const video = collection.videos.find(v => v.id === videoId);
       if (!video) return null;
 
-      return {
-        name: video.title,
-        items: [{
-          id: video.id + "-action",
-          itemType: "action",
+      const actionItem: InstructionItem = {
+        id: video.id + "-action",
+        itemType: "action",
+        label: video.title,
+        description: "play",
+        children: [{
+          id: video.id,
+          itemType: "file",
           label: video.title,
-          description: "play",
-          children: [{
-            id: video.id,
-            itemType: "file",
-            label: video.title,
-            downloadUrl: video.videoUrl,
-            thumbnail: video.thumbnailUrl
-          }]
+          downloadUrl: video.videoUrl,
+          thumbnail: video.thumbnailUrl
         }]
       };
+
+      // Wrap in a section using the collection name
+      const sectionItem: InstructionItem = {
+        id: slugify(collection.name) + "-section",
+        itemType: "section",
+        label: collection.name,
+        children: [actionItem]
+      };
+
+      return { name: video.title, items: [sectionItem] };
     }
 
     return null;
