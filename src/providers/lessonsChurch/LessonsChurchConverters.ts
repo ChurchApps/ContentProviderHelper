@@ -24,6 +24,16 @@ function stripMarkdown(text: string): string {
     .trim();
 }
 
+function truncateForLabel(text: string): string {
+  // Find first line break
+  const lineBreakPos = text.search(/\n/);
+  // Cut at line break or 100 chars, whichever comes first
+  const cutoff = lineBreakPos > 0 && lineBreakPos < 100 ? lineBreakPos : 100;
+  const truncated = text.length > cutoff ? text.substring(0, cutoff) : text;
+  // Strip markdown and clean up for label
+  return stripMarkdown(truncated) + (text.length > cutoff ? "..." : "");
+}
+
 export function getEmbedUrl(apiType?: string, relatedId?: string): string | undefined {
   if (!relatedId) return undefined;
 
@@ -74,7 +84,7 @@ export function convertVenueToPlan(venue: FeedVenueInterface): Plan {
     }
   }
 
-  return { id: venue.id || "", name: venue.lessonName || venue.name || "Plan", description: venue.lessonDescription, thumbnail: venue.lessonImage, sections, allFiles };
+  return { id: venue.id || "", name: venue.lessonName || venue.name || "Plan", thumbnail: venue.lessonImage, sections, allFiles };
 }
 
 export async function convertAddOnToFile(addOn: Record<string, unknown>): Promise<ContentFile | null> {
@@ -135,9 +145,9 @@ export function buildSectionActionsMap(actionsResponse: VenueActionsResponseInte
           const thumbnail = (action.id && actionThumbnailMap.get(action.id)) || lessonImage;
           const downloadUrl = action.id ? actionUrlMap.get(action.id) : undefined;
           const fullContent = action.id ? actionContentMap.get(action.id) : undefined;
-          const plainText = fullContent ? stripMarkdown(fullContent) : action.name;
-          const label = plainText && plainText.length > 100 ? plainText.substring(0, 100) + "..." : plainText;
-          const content = fullContent && fullContent.length > 100 ? fullContent : undefined;
+          const label = fullContent ? truncateForLabel(fullContent) : action.name;
+          const needsFullContent = fullContent && (fullContent.length > 100 || fullContent.includes("\n"));
+          const content = needsFullContent ? fullContent : undefined;
           return { id: action.id, itemType: "action", relatedId: action.id, label, actionType: rawActionType || undefined, content, seconds, downloadUrl, thumbnail, children: hasFiles ? [{ id: action.id + "-file", itemType: "file", label: action.name, seconds, downloadUrl, thumbnail }] : undefined };
         }));
       }
